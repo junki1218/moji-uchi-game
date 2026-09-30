@@ -1,0 +1,13 @@
+{
+  "task_id": "TASK-001",
+  "status": "COMPLETED",
+  "completed_at": "2026-09-30T15:57:00+09:00",
+  "outputs": [
+    ".agent_flow/assets/asset_TASK-001_ref_person.png",
+    ".agent_flow/assets/asset_TASK-001_mono_07_shouboushya.png",
+    ".agent_flow/assets/asset_TASK-001_kimochi_01_ureshii.png",
+    ".agent_flow/assets/asset_TASK-001_ugoki_01_hashiru.png",
+    ".agent_flow/artifacts/verify_TASK-001.png"
+  ],
+  "notes": "TASK-001の画風見本4枚および確認用一覧シートを作成しました。ユーザーの画風承認待ちです。"
+}

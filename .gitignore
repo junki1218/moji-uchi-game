@@ -3,3 +3,8 @@ dist/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# 生成画像の元データ（1枚約1MB）はリポジトリに入れない。正本は Google ドライブ
+# 「画像材料/moji-uchi-game」。アプリで使う WebP は public/images/ に入る。
+.agent_flow/assets/*.png
+.agent_flow/artifacts/*.png
