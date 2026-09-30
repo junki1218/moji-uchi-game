@@ -1,6 +1,8 @@
 import './style.css';
 import { registerSW } from 'virtual:pwa-register';
-import { CATEGORIES, QUESTIONS, type Category, type Question } from './questions';
+import { CATEGORIES, MAX_CHARS, type Category, type Question } from './questions';
+import { allQuestions, applyImport, attachPhoto, deleteCustom, enabledQuestions, exportJson, isEnabled, parseImport, setEnabled, type ImportPlan } from './bank';
+import { hasPhoto, loadPhotoIndex, photoUrl, removePhoto } from './photos';
 import { chars, DAKUON, inScript, SEION, SMALL } from './kana';
 import { loadSettings, saveSettings, VOLUME_LEVEL, type Settings } from './settings';
 import { duckBgm, playBgm, playJingle, setSound, stopBgm, unlockAudio } from './audio';
@@ -61,6 +63,20 @@ function picture(name: string, fallback: () => Node, cls = ''): HTMLElement {
 }
 
 const emoji = (e: string) => () => h('span', { class: 'emoji' }, e);
+
+/** 問題の絵。先生が付けた写真 → 最初からの絵（images/{id}.webp）→ 絵文字 の順に使う */
+function questionPicture(q: Question, cls = ''): HTMLElement {
+  if (hasPhoto(q.id)) {
+    const box = h('div', { class: `picture ${cls}` });
+    void photoUrl(q.id).then((url) => {
+      if (url) box.replaceChildren(h('img', { src: url, alt: '', draggable: 'false' }));
+      else box.replaceChildren(emoji(q.emoji)());
+    });
+    return box;
+  }
+  if (q.builtin) return picture(q.id, emoji(q.emoji), cls);
+  return h('div', { class: `picture ${cls}` }, emoji(q.emoji)());
+}
 
 // ボタン・題名などの UI の文言は、設定がカタカナでもひらがなのまま（読めない操作ボタンを作らない）
 
@@ -143,14 +159,16 @@ function categoryScreen(): void {
       h(
         'div',
         { class: 'category-grid' },
-        ...CATEGORIES.map((c) =>
-          h(
+        ...CATEGORIES.map((c) => {
+          // 出題する問題が1つもないカテゴリは押せない
+          const empty = enabledQuestions(c.id).length === 0;
+          return h(
             'button',
-            { class: 'category-btn', onclick: () => startRound(c.id) },
+            { class: `category-btn ${empty ? 'disabled' : ''}`, disabled: empty, onclick: () => startRound(c.id) },
             picture(`cat_${c.id}`, emoji(c.emoji), 'category-pic'),
             h('span', { class: 'category-label' }, c.label),
-          ),
-        ),
+          );
+        }),
       ),
     ),
   );
@@ -168,7 +186,7 @@ interface Round {
 }
 
 function startRound(cat: Category): void {
-  const pool = QUESTIONS.filter((q) => q.category === cat);
+  const pool = enabledQuestions(cat);
   const round: Round = { questions: shuffle(pool).slice(0, ROUND_SIZE), index: 0 };
   questionScreen(round);
 }
@@ -224,7 +242,7 @@ function questionScreen(round: Round): void {
     h('button', { class: 'speaker-btn', 'aria-label': 'よみあげ', onclick: say }, '🔊'),
     sample,
   );
-  const top = h('div', { class: 'q-top' }, picture(q.id, emoji(q.emoji), 'q-pic'), side);
+  const top = h('div', { class: 'q-top' }, questionPicture(q, 'q-pic'), side);
 
   const next = () => {
     const overlay = h('div', { class: 'overlay clear' }, hanamaru('pop'));
@@ -500,9 +518,149 @@ function settingsScreen(): void {
       choice('aColumn', 'あ行の位置', [['right', '右はし（50音表と同じ）'], ['left', '左はし']]),
       choice('sound', 'おと（BGM）', [[true, 'あり'], [false, 'なし']]),
       choice('volume', '音量', [['low', '小'], ['mid', '中'], ['high', '大']]),
+      h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'もんだい'),
+        h('div', { class: 'seg' }, h('button', { class: 'seg-btn', onclick: () => questionsScreen('mono') }, '出題する問題を選ぶ・読み込む'))),
       h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, '暗証番号'), h('div', { class: 'seg' }, pinInput, pinSave, pinMsg)),
     ),
   );
 }
 
-startScreen();
+// ------------------------------------------------------------ 出題する問題（先生用）
+
+function questionsScreen(cat: Category, message = ''): void {
+  stopBgm();
+  const rerender = (msg = '') => questionsScreen(cat, msg);
+  const list = allQuestions(cat);
+  const onCount = list.filter((q) => isEnabled(q.id)).length;
+
+  const tabs = h(
+    'div',
+    { class: 'seg' },
+    ...CATEGORIES.map((c) => {
+      const all = allQuestions(c.id);
+      const on = all.filter((q) => isEnabled(q.id)).length;
+      return h('button', { class: `seg-btn ${c.id === cat ? 'on' : ''}`, onclick: () => questionsScreen(c.id) }, `${c.label}  ${on}/${all.length}`);
+    }),
+  );
+
+  // JSON 読み込み（iPad では「ファイル」アプリから選べる）
+  const fileInput = h('input', { type: 'file', accept: 'application/json,.json', class: 'hidden-input' });
+  fileInput.addEventListener('change', async () => {
+    const file = fileInput.files?.[0];
+    if (!file) return;
+    importDialog(parseImport(await file.text()), rerender);
+  });
+
+  const exportBtn = h('button', {
+    class: 'seg-btn',
+    onclick: async () => {
+      const blob = await exportJson();
+      const d = new Date();
+      const name = `moji-uchi-questions-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}.json`;
+      const file = new File([blob], name, { type: 'application/json' });
+      // iPad は共有シートから「ファイルに保存」や AirDrop で渡せる。使えない環境ではダウンロード
+      const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+      if (nav.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file] }).catch(() => undefined);
+      } else {
+        const a = h('a', { href: URL.createObjectURL(blob), download: name });
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      }
+    },
+  }, 'JSONに書き出す');
+
+  const cards = list.map((q) => {
+    const on = isEnabled(q.id);
+    const photoInput = h('input', { type: 'file', accept: 'image/*', class: 'hidden-input' });
+    photoInput.addEventListener('change', async () => {
+      const f = photoInput.files?.[0];
+      if (!f) return;
+      const note = document.querySelector('.q-note');
+      if (note) note.textContent = '写真を読み込んでいます…';
+      try {
+        await attachPhoto(q.id, f);
+        rerender(`「${q.hira}」に写真を付けました`);
+      } catch {
+        rerender('写真を読み込めませんでした');
+      }
+    });
+    const stop = (fn: () => void) => (e: Event) => { e.stopPropagation(); fn(); };
+    return h(
+      'div',
+      { class: `q-card ${on ? 'on' : 'off'}`, role: 'button', 'aria-pressed': String(on), onclick: () => { setEnabled([q.id], !on); rerender(); } },
+      h('span', { class: 'q-card-mark' }, on ? '✓' : ''),
+      questionPicture(q, 'q-card-pic'),
+      h('span', { class: 'q-card-word' }, q.hira),
+      h(
+        'div',
+        { class: 'q-card-tools' },
+        photoInput,
+        h('button', { class: 'mini-btn', onclick: stop(() => photoInput.click()) }, hasPhoto(q.id) ? '写真を変える' : '写真'),
+        hasPhoto(q.id) && h('button', { class: 'mini-btn', onclick: stop(() => void removePhoto(q.id).then(() => rerender())) }, '写真をはずす'),
+        !q.builtin && h('button', {
+          class: 'mini-btn danger',
+          onclick: stop(() => { if (confirm(`「${q.hira}」を消しますか？`)) void deleteCustom(q.id).then(() => rerender()); }),
+        }, 'けす'),
+      ),
+    );
+  });
+
+  show(
+    h(
+      'main',
+      { class: 'screen questions' },
+      backButton(settingsScreen, '設定へ'),
+      h('h2', {}, '出題する問題'),
+      tabs,
+      h(
+        'div',
+        { class: 'seg toolbar' },
+        h('button', { class: 'seg-btn', onclick: () => { setEnabled(list.map((q) => q.id), true); rerender(); } }, 'ぜんぶ ON'),
+        h('button', { class: 'seg-btn', onclick: () => { setEnabled(list.map((q) => q.id), false); rerender(); } }, 'ぜんぶ OFF'),
+        fileInput,
+        h('button', { class: 'seg-btn', onclick: () => fileInput.click() }, 'JSONを読み込む'),
+        exportBtn,
+      ),
+      h('p', { class: 'q-note' },
+        message || `タップで ON/OFF。ON の問題から1回に最大10問を出します（いま ${onCount}問）。単語は${MAX_CHARS}文字まで。`),
+      onCount === 0 && h('p', { class: 'q-note warn' }, 'このカテゴリは ON の問題がないので、子どもの画面で選べません'),
+      h('div', { class: 'q-grid' }, ...cards),
+    ),
+  );
+}
+
+function importDialog(plan: ImportPlan, done: (msg: string) => void): void {
+  const n = plan.items.length;
+  const errs = plan.errors;
+  const run = async (mode: 'add' | 'replace') => {
+    overlay.remove();
+    const count = await applyImport(plan, mode);
+    done(`${count}問を${mode === 'add' ? '追加' : '入れ替え'}しました${errs.length ? `（読み込めなかった ${errs.length}件は除きました）` : ''}`);
+  };
+  const overlay = h(
+    'div',
+    { class: 'overlay' },
+    h(
+      'div',
+      { class: 'dialog import-dialog' },
+      h('p', {}, n ? `${n}問を読み込めます` : '読み込める問題がありません'),
+      errs.length > 0 && h('div', { class: 'import-errors' },
+        h('strong', {}, `読み込めないもの ${errs.length}件`),
+        ...errs.slice(0, 8).map((e) => h('div', {}, e)),
+        errs.length > 8 && h('div', {}, `ほか ${errs.length - 8}件`)),
+      n > 0 && h('p', { class: 'import-help' }, '追加する＝今の問題に足す／入れ替える＝読み込んだ問題だけを出題する'),
+      h(
+        'div',
+        { class: 'dialog-buttons' },
+        h('button', { class: 'mid-btn secondary', onclick: () => overlay.remove() }, 'やめる'),
+        n > 0 && h('button', { class: 'mid-btn primary', onclick: () => void run('add') }, '追加する'),
+        n > 0 && h('button', { class: 'mid-btn primary', onclick: () => void run('replace') }, '入れ替える'),
+      ),
+    ),
+  );
+  app.append(overlay);
+}
+
+// 写真の一覧を読んでから始める（読めなくても始める）
+void loadPhotoIndex().finally(startScreen);

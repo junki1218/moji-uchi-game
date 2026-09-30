@@ -202,8 +202,9 @@ button {
 .answer-cell.current { border-color: var(--primary); }
 .answer-cell.filled { border-color: var(--done); }
 
-/* 長い単語（7〜8字）はマスを少し小さく */
+/* 長い単語はマスを小さく（最大10字） */
 .q-side:has(.answer-cell:nth-child(7)) { --cell: min(6.6vw, 9vh); }
+.q-side:has(.answer-cell:nth-child(9)) { --cell: min(5.2vw, 7.4vh); }
 
 /* ---------- キーボード ---------- */
 
@@ -243,6 +244,7 @@ button {
 .hw-cells { display: flex; gap: var(--gap); }
 .handwriting:has(.hw-cell:nth-child(5)) { --cell: min(11vw, 22vh); }
 .handwriting:has(.hw-cell:nth-child(7)) { --cell: min(9.5vw, 18vh); }
+.handwriting:has(.hw-cell:nth-child(9)) { --cell: min(8.3vw, 16vh); }
 .hw-cell {
   width: var(--cell);
   height: var(--cell);
@@ -345,3 +347,58 @@ button {
   user-select: text;
 }
 .pin-msg { color: var(--sub); font-size: min(1.8vw, 2.5vh); }
+
+/* ---------- 先生用画面（縦にスクロールできる） ---------- */
+
+.settings, .questions { overflow-y: auto; -webkit-overflow-scrolling: touch; justify-content: flex-start; }
+.questions { gap: 1.6vh; padding-top: 9vh; }
+.questions h2 { margin: 0; font-size: min(3vw, 4.2vh); }
+.hidden-input { display: none; }
+.toolbar { justify-content: center; }
+.q-note { margin: 0; color: var(--sub); font-size: min(1.8vw, 2.5vh); }
+.q-note.warn { color: #c0392b; font-weight: 700; }
+.q-grid {
+  width: min(94vw, 1100px);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  padding-bottom: 4vh;
+}
+.q-card {
+  position: relative;
+  background: var(--card);
+  border: 3px solid var(--line);
+  border-radius: 16px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.q-card.on { border-color: var(--done); }
+.q-card.off { opacity: 0.45; }
+.q-card-mark {
+  position: absolute; top: 6px; right: 8px; z-index: 1;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--done); color: #fff; font-weight: 700;
+  display: grid; place-items: center;
+}
+.q-card.off .q-card-mark { background: var(--line); }
+.q-card-pic { width: 100%; aspect-ratio: 1; border-radius: 10px; background: #fffaf3; font-size: 64px; }
+.q-card-pic img { border-radius: 10px; }
+.q-card-word { font-size: 20px; font-weight: 700; word-break: break-all; text-align: center; }
+.q-card-tools { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
+.mini-btn {
+  background: #f4eee6; border: 2px solid var(--line); border-radius: 999px;
+  font-size: 13px; padding: 3px 10px;
+}
+.mini-btn.danger { color: #c0392b; }
+.category-btn.disabled { opacity: 0.35; }
+.import-dialog { max-width: min(80vw, 760px); text-align: left; }
+.import-dialog p { font-size: min(3vw, 4vh); }
+.import-dialog .import-help { font-size: min(1.8vw, 2.5vh); font-weight: 400; color: var(--sub); }
+.import-errors {
+  max-height: 32vh; overflow-y: auto; margin-bottom: 2vh;
+  font-size: min(1.7vw, 2.3vh); color: #c0392b; display: flex; flex-direction: column; gap: 4px;
+}
