@@ -19,13 +19,13 @@ export interface Settings {
   pin: string;
 }
 
-export const DEFAULT_PIN = '1234';
+export const DEFAULT_PIN = '1024';
 
 const DEFAULTS: Settings = {
   script: 'hira',
   input: 'keyboard',
   prompt: 'look',
-  aColumn: 'left',
+  aColumn: 'right', // 教室の50音表と同じ（右上が「あ」）
   sound: true,
   volume: 'mid',
   pin: DEFAULT_PIN,
