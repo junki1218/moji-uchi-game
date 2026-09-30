@@ -1,4 +1,135 @@
 {
-  "last_updated": "2026-09-30T09:49:47+09:00",
-  "assets": []
+  "last_updated": "2026-09-30T17:15:00+09:00",
+  "assets": [
+    {
+      "id": "ref_person",
+      "type": "image",
+      "purpose": "基準人物シート（きもち・うごき共通）",
+      "file_path": ".agent_flow/assets/asset_TASK-001_ref_person.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-001",
+      "prompt": "Claymation style character design reference sheet of a child, soft handmade clay texture, stop-motion puppet look, 3 full body poses arranged horizontally side by side: front view, side view, and back view. The child is gender-neutral, elementary school age (around 7 years old), round face, cute large eyes, simple short black hair (bob cut). Wearing a solid yellow t-shirt, solid blue pants, and white sneakers. Plain solid off-white background (#FFF7EC), bright clear colors, simple shapes, soft front studio lighting, child-friendly, no text, no letters, no numbers, no labels, no watermark"
+    },
+    {
+      "id": "mono_07",
+      "type": "image",
+      "purpose": "問題イラスト もの: しょうぼうしゃ",
+      "file_path": ".agent_flow/assets/asset_TASK-001_mono_07_shouboushya.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-001",
+      "prompt": "Claymation style illustration of a bright red fire truck with a white ladder on top, soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, 45 degree isometric angle view, plain solid off-white background (#FFF7EC), bright clear primary colors (red, white, black wheels), simple shapes, soft front lighting, child-friendly, no text, no letters, no numbers, no logo, no watermark"
+    },
+    {
+      "id": "kimochi_01",
+      "type": "image",
+      "purpose": "問題イラスト きもち: うれしい",
+      "file_path": ".agent_flow/assets/asset_TASK-001_kimochi_01_ureshii.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-001",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt), expressing happiness / joy (\"ureshii\"). Upper body portrait from chest up, facing forward. Eyes happily squinted in crescent shapes, big joyful open mouth smile, both hands raised in the air cheerfully. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no numbers, no logo"
+    },
+    {
+      "id": "ugoki_01",
+      "type": "image",
+      "purpose": "問題イラスト うごき: はしる",
+      "file_path": ".agent_flow/assets/asset_TASK-001_ugoki_01_hashiru.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-001",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing solid yellow t-shirt, solid blue pants, white sneakers), running dynamically (\"hashiru\"). Full body side profile view, running to the side with arms swinging vigorously, one foot lifted in mid-air in a running pose, happy smiling face. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no numbers, no logo"
+    },
+    {
+      "id": "mono_01",
+      "type": "image",
+      "purpose": "問題イラスト もの: りんご",
+      "file_path": ".agent_flow/assets/asset_TASK-002_mono_01_ringo.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-002",
+      "prompt": "Claymation style illustration of a single red apple with one green leaf on the stem, soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear red and green colors, simple shapes, soft front lighting, child-friendly, no text, no letters, no numbers, no logo, no watermark"
+    },
+    {
+      "id": "mono_02",
+      "type": "image",
+      "purpose": "問題イラスト もの: いぬ",
+      "file_path": ".agent_flow/assets/asset_TASK-002_mono_02_inu.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-002",
+      "prompt": "Claymation style illustration of a cute brown puppy sitting and facing forward, soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, front view, plain solid off-white background (#FFF7EC), bright clear warm brown and white colors, simple shapes, soft front lighting, child-friendly, no text, no letters, no numbers, no logo, no watermark"
+    },
+    {
+      "id": "mono_03",
+      "type": "image",
+      "purpose": "問題イラスト もの: ねこ",
+      "file_path": ".agent_flow/assets/asset_TASK-002_mono_03_neko.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-002",
+      "prompt": "Claymation style illustration of a cute calico cat (white and orange patches) sitting and facing forward, soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, front view, plain solid off-white background (#FFF7EC), bright clear colors, simple shapes, soft front lighting, child-friendly, no text, no letters, no numbers, no logo, no watermark"
+    },
+    {
+      "id": "mono_04",
+      "type": "image",
+      "purpose": "問題イラスト もの: くるま",
+      "file_path": ".agent_flow/assets/asset_TASK-002_mono_04_kuruma.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-002",
+      "prompt": "Claymation style illustration of a bright blue passenger car / sedan, soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, 45 degree isometric angle view, plain solid off-white background (#FFF7EC), bright clear primary blue color with black tires and grey windows, simple shapes, soft front lighting, child-friendly, no text, no letters, no numbers, no logo, no watermark"
+    },
+    {
+      "id": "mono_05",
+      "type": "image",
+      "purpose": "問題イラスト もの: でんしゃ",
+      "file_path": ".agent_flow/assets/asset_TASK-002_mono_05_densha.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-002",
+      "prompt": "Claymation style illustration of a green and white Japanese commuter train (single train car), soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, 45 degree isometric angle view, plain solid off-white background (#FFF7EC), bright clear green and white colors, simple shapes, soft front lighting, child-friendly, no text, no letters, no numbers, no logo, no destination board text, no watermark"
+    },
+    {
+      "id": "mono_06",
+      "type": "image",
+      "purpose": "問題イラスト もの: ばす",
+      "file_path": ".agent_flow/assets/asset_TASK-002_mono_06_basu.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-002",
+      "prompt": "Claymation style illustration of a yellow Japanese route bus, soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, side profile view, plain solid off-white background (#FFF7EC), bright clear yellow and white colors, simple shapes, soft front lighting, child-friendly, no text, no destination letters, no numbers, no logo, no watermark"
+    },
+    {
+      "id": "mono_08",
+      "type": "image",
+      "purpose": "問題イラスト もの: ぱとかー",
+      "file_path": ".agent_flow/assets/asset_TASK-002_mono_08_patoka.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-002",
+      "prompt": "Claymation style illustration of a Japanese police patrol car (black and white sedan with red emergency light bar on roof), soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, 45 degree isometric angle view, plain solid off-white background (#FFF7EC), bright clear colors, simple shapes, soft front lighting, child-friendly, no text, no letters (do not write police on car), no numbers, no logo, no watermark"
+    },
+    {
+      "id": "mono_09",
+      "type": "image",
+      "purpose": "問題イラスト もの: きょうりゅう",
+      "file_path": ".agent_flow/assets/asset_TASK-002_mono_09_kyouryuu.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-002",
+      "prompt": "Claymation style illustration of a cute green tyrannosaurus rex dinosaur, standing on two feet, smiling friendly face, not scary, soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, side view / 45 degree angle, plain solid off-white background (#FFF7EC), bright clear green colors, simple rounded shapes, soft front lighting, child-friendly, no text, no letters, no numbers, no logo, no watermark"
+    },
+    {
+      "id": "mono_10",
+      "type": "image",
+      "purpose": "問題イラスト もの: ひこうき",
+      "file_path": ".agent_flow/assets/asset_TASK-002_mono_10_hikouki.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-002",
+      "prompt": "Claymation style illustration of a white passenger airplane / jet airliner, soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, diagonal upward angle view, plain solid off-white background (#FFF7EC), bright clear white and blue colors, simple shapes, soft front lighting, child-friendly, no clouds in background, no text, no letters on plane body, no numbers, no airline logo, no watermark"
+    }
+  ]
 }
