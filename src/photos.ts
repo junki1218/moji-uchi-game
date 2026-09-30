@@ -1,30 +1,11 @@
 // 先生が問題に付けた写真を iPad の中（IndexedDB）に保存する。キーは問題の id。
 // localStorage は容量が小さい（約5MB）ので、画像はこちらに置く。
 
-const DB = 'moji-uchi-game';
-const STORE = 'photos';
+import { tx as dbTx } from './idb';
+
 const MAX_SIDE = 512;
 
-let dbp: Promise<IDBDatabase> | null = null;
-
-function db(): Promise<IDBDatabase> {
-  dbp ??= new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB, 1);
-    req.onupgradeneeded = () => req.result.createObjectStore(STORE);
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-  return dbp;
-}
-
-async function tx<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<T>): Promise<T> {
-  const d = await db();
-  return new Promise((resolve, reject) => {
-    const req = fn(d.transaction(STORE, mode).objectStore(STORE));
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
+const tx = <T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<T>) => dbTx('photos', mode, fn);
 
 // 画面に出すための URL をためておく（毎回 Blob から作り直さない）
 const urls = new Map<string, string>();

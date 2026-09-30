@@ -3,6 +3,7 @@ import { registerSW } from 'virtual:pwa-register';
 import { CATEGORIES, MAX_CHARS, type Category, type Question } from './questions';
 import { allQuestions, applyImport, attachPhoto, deleteCustom, enabledQuestions, exportJson, isEnabled, parseImport, setEnabled, type ImportPlan } from './bank';
 import { hasPhoto, loadPhotoIndex, photoUrl, removePhoto } from './photos';
+import { clearWritings, deleteWriting, exportWritings, listWritings, MAX_WRITINGS, saveWriting } from './writings';
 import { chars, DAKUON, inScript, SEION, SMALL } from './kana';
 import { loadSettings, saveSettings, VOLUME_LEVEL, type Settings } from './settings';
 import { duckBgm, playBgm, playJingle, setSound, stopBgm, unlockAudio } from './audio';
@@ -446,7 +447,13 @@ function handwritingArea(answer: string[], sample: HTMLElement | null, onDone: (
     load();
   }
 
-  const doneBtn = h('button', { class: 'mid-btn primary', onclick: onDone }, 'できた');
+  const doneBtn = h('button', {
+    class: 'mid-btn primary',
+    onclick: () => {
+      if (written.some(Boolean)) void saveWriting(glyphs, answer.join('')).catch(() => undefined);
+      onDone();
+    },
+  }, 'できた');
 
   // マスは画面に出てから大きさが決まるので、そこで一度描く
   requestAnimationFrame(() => cellCanvases.forEach((_, i) => paintCell(i)));
@@ -572,6 +579,8 @@ function settingsScreen(): void {
       choice('volume', '音量', [['low', '小'], ['mid', '中'], ['high', '大']]),
       h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'もんだい'),
         h('div', { class: 'seg' }, h('button', { class: 'seg-btn', onclick: () => questionsScreen('mono') }, '出題する問題を選ぶ・読み込む'))),
+      h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'てがきのきろく'),
+        h('div', { class: 'seg' }, h('button', { class: 'seg-btn', onclick: () => void writingsScreen() }, '見る・書き出す'))),
       h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, '暗証番号'), h('div', { class: 'seg' }, pinInput, pinSave, pinMsg)),
     ),
   );
@@ -712,6 +721,60 @@ function importDialog(plan: ImportPlan, done: (msg: string) => void): void {
     ),
   );
   app.append(overlay);
+}
+
+// ------------------------------------------------------------ 手書きの記録（先生用）
+
+async function writingsScreen(message = ''): Promise<void> {
+  stopBgm();
+  let ws: Awaited<ReturnType<typeof listWritings>> = [];
+  try {
+    ws = await listWritings();
+  } catch {
+    message = 'この端末では記録を読めませんでした';
+  }
+  const urls: string[] = [];
+  const leave = (to: () => void) => () => { urls.forEach((u) => URL.revokeObjectURL(u)); to(); };
+
+  const cards = ws.map((w) => {
+    const url = URL.createObjectURL(w.png);
+    urls.push(url);
+    const d = new Date(w.createdAt);
+    return h(
+      'div',
+      { class: 'w-card' },
+      h('img', { src: url, alt: `${w.word} のてがき`, class: 'w-img' }),
+      h('div', { class: 'w-meta' },
+        h('span', { class: 'w-word' }, w.word),
+        h('span', { class: 'w-date' }, `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`)),
+      h('div', { class: 'q-card-tools' },
+        h('button', { class: 'mini-btn', onclick: () => void exportWritings([w]) }, '書き出す'),
+        h('button', {
+          class: 'mini-btn danger',
+          onclick: () => { if (confirm('この記録を消しますか？')) void deleteWriting(w.key).then(leave(() => void writingsScreen())); },
+        }, 'けす')),
+    );
+  });
+
+  show(
+    h(
+      'main',
+      { class: 'screen questions writings' },
+      backButton(leave(settingsScreen), '設定へ'),
+      h('h2', {}, 'てがきのきろく'),
+      h('div', { class: 'seg toolbar' },
+        h('button', { class: 'seg-btn', disabled: ws.length === 0, onclick: () => void exportWritings(ws) }, `ぜんぶ書き出す（${ws.length}件）`),
+        h('button', {
+          class: 'seg-btn',
+          disabled: ws.length === 0,
+          onclick: () => { if (confirm(`記録 ${ws.length}件をすべて消しますか？`)) void clearWritings().then(leave(() => void writingsScreen('すべて消しました'))); },
+        }, 'ぜんぶけす')),
+      h('p', { class: 'q-note' },
+        message || `てがきモードで「できた」を押した問題を、新しい順に最大${MAX_WRITINGS}件まで残します（古いものから消えます）。iPad では共有から「画像を保存」「ファイルに保存」ができます。`),
+      ws.length === 0 && h('p', { class: 'q-note' }, 'まだ記録がありません'),
+      h('div', { class: 'w-grid' }, ...cards),
+    ),
+  );
 }
 
 // 写真の一覧を読んでから始める（読めなくても始める）
