@@ -2,10 +2,14 @@ import './style.css';
 import { registerSW } from 'virtual:pwa-register';
 import { CATEGORIES, QUESTIONS, type Category, type Question } from './questions';
 import { chars, DAKUON, inScript, SEION, SMALL } from './kana';
-import { loadSettings, saveSettings, type Settings } from './settings';
+import { loadSettings, saveSettings, VOLUME_LEVEL, type Settings } from './settings';
+import { duckBgm, playBgm, setSound, stopBgm, unlockAudio } from './audio';
 import { speak, unlockSpeech } from './speech';
 
 registerSW({ immediate: true });
+
+// iOS は最初のタップまで音を出せない。どこをタップしても解錠する
+document.addEventListener('pointerdown', unlockAudio, { once: true, capture: true });
 
 const ROUND_SIZE = 10;
 const HANAMARU_MS = 1500;
@@ -13,6 +17,7 @@ const HINT_AFTER_MISSES = 2;
 
 const app = document.getElementById('app')!;
 let settings = loadSettings();
+setSound(settings.sound, VOLUME_LEVEL[settings.volume]);
 const base = import.meta.env.BASE_URL;
 
 // ------------------------------------------------------------ 小さな道具
@@ -123,11 +128,13 @@ function startScreen(): void {
   // 背景画像はあれば使う（なければ無地）
   screen.style.backgroundImage = `url(${base}images/start_bg.webp)`;
   show(screen);
+  playBgm('bgm1_start');
 }
 
 // ------------------------------------------------------------ カテゴリ
 
 function categoryScreen(): void {
+  playBgm('bgm1_start');
   show(
     h(
       'main',
@@ -200,10 +207,11 @@ function confirmQuit(): void {
 }
 
 function questionScreen(round: Round): void {
+  playBgm('bgm2_question'); // 10問のあいだ流しっぱなし
   const q = round.questions[round.index];
   const answer = chars(q.hira);
   const shown = (c: string) => inScript(c, settings.script);
-  const say = () => speak(q.hira);
+  const say = () => speak(q.hira, () => duckBgm(true), () => duckBgm(false));
 
   const sample =
     settings.prompt === 'look'
@@ -386,6 +394,7 @@ function handwritingArea(count: number, sample: HTMLElement | null, onDone: () =
 // ------------------------------------------------------------ おわり
 
 function finishScreen(): void {
+  stopBgm();
   const stamps = ['star', 'heart', 'flower', 'thumb'];
   const stampEmoji: Record<string, string> = { star: '⭐', heart: '💗', flower: '🌸', thumb: '👍' };
   show(
@@ -410,6 +419,7 @@ function finishScreen(): void {
 // ------------------------------------------------------------ 暗証番号
 
 function pinScreen(): void {
+  stopBgm(); // 先生用の画面は無音
   let entered = '';
   const dots = h('div', { class: 'pin-dots' }, ...Array.from({ length: 4 }, () => h('span', { class: 'pin-dot' })));
   const paint = () =>
@@ -454,7 +464,7 @@ function settingsScreen(): void {
       Array.from(group.children).forEach((b, i) => b.classList.toggle('on', options[i][0] === settings[key]));
     for (const [value, text] of options) {
       group.append(
-        h('button', { class: 'seg-btn', onclick: () => { settings = { ...settings, [key]: value }; saveSettings(settings); paint(); } }, text),
+        h('button', { class: 'seg-btn', onclick: () => { settings = { ...settings, [key]: value }; saveSettings(settings); setSound(settings.sound, VOLUME_LEVEL[settings.volume]); paint(); } }, text),
       );
     }
     paint();
@@ -485,6 +495,8 @@ function settingsScreen(): void {
       choice('input', '入力方法', [['keyboard', 'キーボード'], ['handwriting', 'てがき']]),
       choice('prompt', '出題', [['look', '① 見本あり'], ['listen', '② 読み上げのみ'], ['picture', '③ 絵だけ']]),
       choice('aColumn', 'あ行の位置', [['left', '左はし'], ['right', '右はし（50音表と同じ）']]),
+      choice('sound', 'おと（BGM）', [[true, 'あり'], [false, 'なし']]),
+      choice('volume', '音量', [['low', '小'], ['mid', '中'], ['high', '大']]),
       h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, '暗証番号'), h('div', { class: 'seg' }, pinInput, pinSave, pinMsg)),
     ),
   );

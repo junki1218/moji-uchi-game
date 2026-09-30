@@ -22,7 +22,7 @@ export default defineConfig(({ command }) => ({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png,webp,json}'],
+        globPatterns: ['**/*.{js,css,html,png,webp,json,m4a}'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
       },
     }),
