@@ -106,26 +106,6 @@ function hanamaru(cls = ''): HTMLElement {
   return picture('hanamaru', hanamaruSvg, cls);
 }
 
-/** 長押しで発火するボタン（子どもの誤操作よけ） */
-function onLongPress(el: HTMLElement, ms: number, fn: () => void): void {
-  let timer = 0;
-  const start = () => {
-    el.classList.add('pressing');
-    timer = window.setTimeout(() => {
-      el.classList.remove('pressing');
-      fn();
-    }, ms);
-  };
-  const cancel = () => {
-    el.classList.remove('pressing');
-    clearTimeout(timer);
-  };
-  el.addEventListener('pointerdown', start);
-  el.addEventListener('pointerup', cancel);
-  el.addEventListener('pointerleave', cancel);
-  el.addEventListener('pointercancel', cancel);
-}
-
 // ------------------------------------------------------------ スタート
 
 function startScreen(): void {
@@ -257,7 +237,7 @@ function questionScreen(round: Round): void {
 
   const input =
     settings.input === 'handwriting'
-      ? handwritingArea(answer.length, sample, next)
+      ? handwritingArea(answer, sample, next)
       : keyboardArea(answer, side, next);
 
   show(
@@ -337,76 +317,148 @@ function keyboardArea(answer: string[], side: HTMLElement, onDone: () => void): 
 }
 
 // ------------------------------------------------------------ 手書き入力（判定なし）
+// 小さなマスをタップすると大きな手書きパッドが開く。書いた字はパッドを閉じると縮小してマスに写る。
+// 字は正方形の画像（PAD_PX 四方）として1文字ずつ持ち、開き直すと続きから書ける。
 
-function handwritingArea(count: number, sample: HTMLElement | null, onDone: () => void): HTMLElement {
-  let active: HTMLCanvasElement | null = null;
-  const canvases: HTMLCanvasElement[] = [];
+const PAD_PX = 600;
 
-  const makeCell = () => {
+function handwritingArea(answer: string[], sample: HTMLElement | null, onDone: () => void): HTMLElement {
+  const count = answer.length;
+  // 1文字ぶんの字。パッドと同じ解像度で持っておき、マスには縮小して写す
+  const glyphs = Array.from({ length: count }, () => {
+    const c = document.createElement('canvas');
+    c.width = PAD_PX;
+    c.height = PAD_PX;
+    return c;
+  });
+  const written = new Array<boolean>(count).fill(false);
+
+  const cellCanvases: HTMLCanvasElement[] = [];
+  const cells = Array.from({ length: count }, (_, i) => {
     const canvas = h('canvas', { class: 'hw-canvas' });
-    let drawing = false;
-    let ctx: CanvasRenderingContext2D | null = null;
+    cellCanvases.push(canvas);
+    return h('button', { class: 'hw-cell', 'aria-label': `${i + 1}もじめ をかく`, onclick: () => openPad(i) }, canvas);
+  });
 
-    const setup = () => {
-      const r = canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = r.width * dpr;
-      canvas.height = r.height * dpr;
-      ctx = canvas.getContext('2d')!;
-      ctx.scale(dpr, dpr);
-      ctx.lineWidth = Math.max(8, r.width / 18);
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.strokeStyle = '#2B2B2B';
-    };
-
-    const point = (e: PointerEvent) => {
-      const r = canvas.getBoundingClientRect();
-      return [e.clientX - r.left, e.clientY - r.top] as const;
-    };
-
-    canvas.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      if (!ctx) setup();
-      canvas.setPointerCapture(e.pointerId);
-      drawing = true;
-      active = canvas;
-      const [x, y] = point(e);
-      ctx!.beginPath();
-      ctx!.moveTo(x, y);
-      ctx!.lineTo(x + 0.1, y + 0.1);
-      ctx!.stroke();
-    });
-    canvas.addEventListener('pointermove', (e) => {
-      if (!drawing) return;
-      const [x, y] = point(e);
-      ctx!.lineTo(x, y);
-      ctx!.stroke();
-    });
-    const end = () => { drawing = false; };
-    canvas.addEventListener('pointerup', end);
-    canvas.addEventListener('pointercancel', end);
-
-    canvases.push(canvas);
-    return h('div', { class: 'hw-cell' }, canvas);
+  const paintCell = (i: number) => {
+    const c = cellCanvases[i];
+    const r = c.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    c.width = Math.max(1, Math.round(r.width * dpr));
+    c.height = Math.max(1, Math.round(r.height * dpr));
+    const ctx = c.getContext('2d')!;
+    ctx.clearRect(0, 0, c.width, c.height);
+    ctx.drawImage(glyphs[i], 0, 0, c.width, c.height);
+    cells[i].classList.toggle('written', written[i]);
   };
 
-  const clear = (c: HTMLCanvasElement) => c.getContext('2d')?.clearRect(0, 0, c.width, c.height);
+  function openPad(index: number): void {
+    let i = index;
+    const pad = h('canvas', { class: 'pad-canvas', width: String(PAD_PX), height: String(PAD_PX) });
+    const ctx = pad.getContext('2d')!;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#2B2B2B';
+    ctx.lineWidth = PAD_PX / 22;
 
-  const eraseBtn = h('button', { class: 'mid-btn secondary' }, 'けす');
-  eraseBtn.addEventListener('click', () => active && clear(active));
-  onLongPress(eraseBtn, 700, () => canvases.forEach(clear));
+    const title = h('p', { class: 'pad-title' });
+    const guide = h('div', { class: 'pad-sample' });
+    const nextBtn = h('button', { class: 'mid-btn secondary' }, 'つぎのじ');
+
+    const load = () => {
+      ctx.clearRect(0, 0, PAD_PX, PAD_PX);
+      ctx.drawImage(glyphs[i], 0, 0);
+      title.textContent = `${i + 1}もじめ（${i + 1}/${count}）`;
+      // 見本あり のときだけ、書く字の見本を横に出す
+      guide.textContent = settings.prompt === 'look' ? inScript(answer[i], settings.script) : '';
+      guide.hidden = settings.prompt !== 'look';
+      nextBtn.hidden = i >= count - 1;
+      cells.forEach((c, k) => c.classList.toggle('selected', k === i));
+    };
+    const save = () => {
+      const g = glyphs[i].getContext('2d')!;
+      g.clearRect(0, 0, PAD_PX, PAD_PX);
+      g.drawImage(pad, 0, 0);
+      paintCell(i);
+    };
+
+    let drawing = false;
+    const point = (e: PointerEvent) => {
+      const r = pad.getBoundingClientRect();
+      return [((e.clientX - r.left) / r.width) * PAD_PX, ((e.clientY - r.top) / r.height) * PAD_PX] as const;
+    };
+    pad.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      pad.setPointerCapture(e.pointerId);
+      drawing = true;
+      written[i] = true;
+      const [x, y] = point(e);
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + 0.1, y + 0.1);
+      ctx.stroke();
+    });
+    pad.addEventListener('pointermove', (e) => {
+      if (!drawing) return;
+      const [x, y] = point(e);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+    });
+    const end = () => { if (drawing) { drawing = false; save(); } };
+    pad.addEventListener('pointerup', end);
+    pad.addEventListener('pointercancel', end);
+
+    const close = () => {
+      save();
+      cells.forEach((c) => c.classList.remove('selected'));
+      overlay.remove();
+    };
+    // けしごむ: いま開いている1文字をまるごと消す
+    const erase = () => {
+      ctx.clearRect(0, 0, PAD_PX, PAD_PX);
+      written[i] = false;
+      save();
+    };
+    nextBtn.addEventListener('click', () => {
+      save();
+      i++;
+      load();
+    });
+
+    const overlay = h(
+      'div',
+      { class: 'overlay pad-overlay' },
+      h(
+        'div',
+        { class: 'pad-dialog' },
+        title,
+        h('div', { class: 'pad-row' }, guide, h('div', { class: 'pad-box' }, pad)),
+        h(
+          'div',
+          { class: 'dialog-buttons' },
+          h('button', { class: 'mid-btn secondary', onclick: erase }, 'けしごむ'),
+          nextBtn,
+          h('button', { class: 'mid-btn primary', onclick: close }, 'とじる'),
+        ),
+      ),
+    );
+    app.append(overlay);
+    load();
+  }
 
   const doneBtn = h('button', { class: 'mid-btn primary', onclick: onDone }, 'できた');
 
-  const cells = h('div', { class: 'hw-cells' }, ...Array.from({ length: count }, makeCell));
+  // マスは画面に出てから大きさが決まるので、そこで一度描く
+  requestAnimationFrame(() => cellCanvases.forEach((_, i) => paintCell(i)));
+
   return h(
     'div',
     { class: 'input-area handwriting' },
-    // 見本はマスの真上に移して、1文字ずつ見比べられるようにする
+    // 見本はマスの真上に置いて、1文字ずつ見比べられるようにする
     sample,
-    cells,
-    h('div', { class: 'hw-buttons' }, eraseBtn, doneBtn),
+    h('div', { class: 'hw-cells' }, ...cells),
+    h('p', { class: 'hw-help' }, 'ますを タップして かこう'),
+    h('div', { class: 'hw-buttons' }, doneBtn),
   );
 }
 
