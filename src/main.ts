@@ -496,7 +496,7 @@ function settingsScreen(): void {
       choice('script', '文字', [['hira', 'ひらがな'], ['kata', 'カタカナ']]),
       choice('input', '入力方法', [['keyboard', 'キーボード'], ['handwriting', 'てがき']]),
       choice('prompt', '出題', [['look', '① 見本あり'], ['listen', '② 読み上げのみ'], ['picture', '③ 絵だけ']]),
-      choice('aColumn', 'あ行の位置', [['left', '左はし'], ['right', '右はし（50音表と同じ）']]),
+      choice('aColumn', 'あ行の位置', [['right', '右はし（50音表と同じ）'], ['left', '左はし']]),
       choice('sound', 'おと（BGM）', [[true, 'あり'], [false, 'なし']]),
       choice('volume', '音量', [['low', '小'], ['mid', '中'], ['high', '大']]),
       h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, '暗証番号'), h('div', { class: 'seg' }, pinInput, pinSave, pinMsg)),
