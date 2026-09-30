@@ -111,3 +111,35 @@ export function setSound(on: boolean, vol: number): void {
   volume = vol;
   if (master && ctx) master.gain.setTargetAtTime(on ? vol : 0, ctx.currentTime, 0.1);
 }
+
+// ------------------------------------------------------------ ジングル
+// 開発完了/ZukeiCollectApp/script.js の correctSound() / fanfaleSound() を流用（音程・長さ・音色は同じ）。
+// 移植にあたり、setTimeout ではなく AudioContext の時刻で並べ、BGM と同じ音量設定（master）を通す。
+
+export type JingleName = 'correct' | 'finish';
+
+const JINGLES: Record<JingleName, { freqs: number[]; step: number; dur: number[] }> = {
+  // correctSound(): 880Hz 0.1秒 → 0.1秒後に 1760Hz 0.4秒
+  correct: { freqs: [880, 1760], step: 0.1, dur: [0.1, 0.4] },
+  // fanfaleSound(): 8音を 0.15秒ずつずらし、各 0.6秒
+  finish: { freqs: [523, 659, 783, 1046, 783, 1046, 1318, 1567], step: 0.15, dur: [0.6] },
+};
+
+export function playJingle(name: JingleName): void {
+  if (!ctx || ctx.state !== 'running' || !master) return;
+  const { freqs, step, dur } = JINGLES[name];
+  const t0 = ctx.currentTime + 0.02;
+  freqs.forEach((f, i) => {
+    const d = dur[i] ?? dur[dur.length - 1];
+    const t = t0 + i * step;
+    const osc = ctx!.createOscillator();
+    const g = ctx!.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(0.2, t);
+    g.gain.exponentialRampToValueAtTime(0.01, t + d);
+    osc.connect(g).connect(master!);
+    osc.start(t);
+    osc.stop(t + d);
+  });
+}

@@ -3,7 +3,7 @@ import { registerSW } from 'virtual:pwa-register';
 import { CATEGORIES, QUESTIONS, type Category, type Question } from './questions';
 import { chars, DAKUON, inScript, SEION, SMALL } from './kana';
 import { loadSettings, saveSettings, VOLUME_LEVEL, type Settings } from './settings';
-import { duckBgm, playBgm, setSound, stopBgm, unlockAudio } from './audio';
+import { duckBgm, playBgm, playJingle, setSound, stopBgm, unlockAudio } from './audio';
 import { speak, unlockSpeech } from './speech';
 
 registerSW({ immediate: true });
@@ -229,6 +229,7 @@ function questionScreen(round: Round): void {
   const next = () => {
     const overlay = h('div', { class: 'overlay clear' }, hanamaru('pop'));
     app.append(overlay);
+    playJingle('correct');
     window.setTimeout(() => {
       round.index++;
       if (round.index < round.questions.length) questionScreen(round);
@@ -395,6 +396,7 @@ function handwritingArea(count: number, sample: HTMLElement | null, onDone: () =
 
 function finishScreen(): void {
   stopBgm();
+  playJingle('finish');
   const stamps = ['star', 'heart', 'flower', 'thumb'];
   const stampEmoji: Record<string, string> = { star: '⭐', heart: '💗', flower: '🌸', thumb: '👍' };
   show(
