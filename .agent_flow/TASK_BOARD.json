@@ -1,0 +1,99 @@
+{
+  "last_updated": "2026-09-30T15:26:31+09:00",
+  "project": "moji-uchi-game",
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "画風見本＋基準人物シート（4枚）",
+      "owner": "Antigravity",
+      "status": "TODO",
+      "retry_count": 0,
+      "needs_asset": true,
+      "needs_browser_check": false,
+      "depends_on": [],
+      "acceptance": "- IMAGE_SPEC.md 3章の4枚がそろう\n- 共通スタイル（1章）を満たす\n- 一覧シート verify_TASK-001.png を出す\n- ユーザーの画風承認を得るまで TASK-002〜005 に着手しない",
+      "history": [
+        {
+          "at": "2026-09-30T15:26:30+09:00",
+          "event": "created"
+        }
+      ]
+    },
+    {
+      "id": "TASK-002",
+      "title": "問題イラスト もの（19枚）",
+      "owner": "Antigravity",
+      "status": "TODO",
+      "retry_count": 0,
+      "needs_asset": true,
+      "needs_browser_check": false,
+      "depends_on": [
+        "TASK-001"
+      ],
+      "acceptance": "- IMAGE_SPEC.md 4.1 の表から mono_07 を除く19枚\n- 7章のチェックをすべて満たす\n- 一覧シート verify_TASK-002.png を出す",
+      "history": [
+        {
+          "at": "2026-09-30T15:26:30+09:00",
+          "event": "created"
+        }
+      ]
+    },
+    {
+      "id": "TASK-003",
+      "title": "問題イラスト きもち（19枚）",
+      "owner": "Antigravity",
+      "status": "TODO",
+      "retry_count": 0,
+      "needs_asset": true,
+      "needs_browser_check": false,
+      "depends_on": [
+        "TASK-001"
+      ],
+      "acceptance": "- IMAGE_SPEC.md 4.2 の表から kimochi_01 を除く19枚\n- 基準人物（ref_person）と同じ人物\n- 7章のチェックをすべて満たす\n- 一覧シート verify_TASK-003.png を出す",
+      "history": [
+        {
+          "at": "2026-09-30T15:26:30+09:00",
+          "event": "created"
+        }
+      ]
+    },
+    {
+      "id": "TASK-004",
+      "title": "問題イラスト うごき（19枚）",
+      "owner": "Antigravity",
+      "status": "TODO",
+      "retry_count": 0,
+      "needs_asset": true,
+      "needs_browser_check": false,
+      "depends_on": [
+        "TASK-001"
+      ],
+      "acceptance": "- IMAGE_SPEC.md 4.3 の表から ugoki_01 を除く19枚\n- 基準人物（ref_person）と同じ人物\n- 7章のチェックをすべて満たす\n- 一覧シート verify_TASK-004.png を出す",
+      "history": [
+        {
+          "at": "2026-09-30T15:26:30+09:00",
+          "event": "created"
+        }
+      ]
+    },
+    {
+      "id": "TASK-005",
+      "title": "UI画像（アイコン・カテゴリ・花丸/スタンプ・スタート背景 10枚）",
+      "owner": "Antigravity",
+      "status": "TODO",
+      "retry_count": 0,
+      "needs_asset": true,
+      "needs_browser_check": false,
+      "depends_on": [
+        "TASK-001"
+      ],
+      "acceptance": "- IMAGE_SPEC.md 5章の10枚（サイズ指定どおり）\n- 7章のチェックを満たす\n- 一覧シート verify_TASK-005.png を出す",
+      "history": [
+        {
+          "at": "2026-09-30T15:26:31+09:00",
+          "event": "created"
+        }
+      ]
+    }
+  ]
+}
