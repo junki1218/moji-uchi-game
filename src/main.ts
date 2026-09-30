@@ -125,8 +125,8 @@ function startScreen(): void {
         h('button', { class: 'big-btn secondary', onclick: pinScreen }, 'せってい'),
       ),
   );
-  // 背景画像はあれば使う（なければ無地）
-  screen.style.backgroundImage = `url(${base}images/start_bg.webp)`;
+  // 背景画像はあれば使う（なければ無地）。タイトルとボタンが読めるよう淡い地色を重ねる
+  screen.style.backgroundImage = `linear-gradient(rgba(255, 247, 236, 0.55), rgba(255, 247, 236, 0.55)), url(${base}images/start_bg.webp)`;
   show(screen);
   playBgm('bgm1_start');
 }
@@ -397,8 +397,9 @@ function handwritingArea(count: number, sample: HTMLElement | null, onDone: () =
 function finishScreen(): void {
   stopBgm();
   playJingle('finish');
-  const stamps = ['star', 'heart', 'flower', 'thumb'];
-  const stampEmoji: Record<string, string> = { star: '⭐', heart: '💗', flower: '🌸', thumb: '👍' };
+  // スタンプ画像は tools/ui_from_library.py が作る（animal school の動物）。なければ絵文字
+  const stamps = ['1', '2', '3', '4'];
+  const stampEmoji: Record<string, string> = { '1': '⭐', '2': '💗', '3': '🌸', '4': '👍' };
   show(
     h(
       'main',

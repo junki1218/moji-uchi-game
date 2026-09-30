@@ -95,6 +95,7 @@ button {
 .picture img { width: 100%; height: 100%; object-fit: contain; }
 .emoji { line-height: 1; font-size: 60%; }
 .stamp .emoji { font-size: 90%; }
+.stamp img { border-radius: 50%; box-shadow: 0 6px 0 rgba(0, 0, 0, 0.1); }
 
 /* ---------- スタート ---------- */
 
@@ -109,7 +110,10 @@ button {
   font-size: min(9vw, 12vh);
   letter-spacing: 0.08em;
   color: var(--primary);
-  text-shadow: 0 4px 0 #fff, 0 6px 0 rgba(0, 0, 0, 0.08);
+  text-shadow: 0 0 12px #fff, 0 0 24px #fff, 0 4px 0 #fff, 0 6px 0 rgba(0, 0, 0, 0.08);
+  background: rgba(255, 247, 236, 0.75);
+  padding: 0.1em 0.6em;
+  border-radius: 999px;
 }
 .start-buttons { display: flex; gap: 5vw; }
 
@@ -277,8 +281,8 @@ button {
 .finish-hanamaru { width: min(34vw, 46vh); height: min(34vw, 46vh); }
 .stamps { display: flex; gap: 3vw; }
 .stamp {
-  width: min(11vw, 15vh);
-  height: min(11vw, 15vh);
+  width: min(14vw, 19vh);
+  height: min(14vw, 19vh);
   font-size: min(10vw, 13vh);
   animation: pop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1) both;
 }
