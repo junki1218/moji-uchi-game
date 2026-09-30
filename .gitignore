@@ -8,3 +8,5 @@ desktop.ini
 # 「画像材料/moji-uchi-game」。アプリで使う WebP は public/images/ に入る。
 .agent_flow/assets/*.png
 .agent_flow/artifacts/*.png
+# BGM の元データも同様（正本は Google ドライブ「画像材料/moji-uchi-game/BGM」）。アプリ用は public/audio/
+.agent_flow/audio/

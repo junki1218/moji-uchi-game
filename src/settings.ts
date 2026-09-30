@@ -5,12 +5,17 @@ export type InputMode = 'keyboard' | 'handwriting';
 /** ① みてうつ ② きいてうつ ③ えだけ */
 export type PromptMode = 'look' | 'listen' | 'picture';
 export type AColumn = 'left' | 'right';
+export type Volume = 'low' | 'mid' | 'high';
+
+export const VOLUME_LEVEL: Record<Volume, number> = { low: 0.3, mid: 0.6, high: 0.9 };
 
 export interface Settings {
   script: Script;
   input: InputMode;
   prompt: PromptMode;
   aColumn: AColumn;
+  sound: boolean;
+  volume: Volume;
   pin: string;
 }
 
@@ -21,6 +26,8 @@ const DEFAULTS: Settings = {
   input: 'keyboard',
   prompt: 'look',
   aColumn: 'left',
+  sound: true,
+  volume: 'mid',
   pin: DEFAULT_PIN,
 };
 

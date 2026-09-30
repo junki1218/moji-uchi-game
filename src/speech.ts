@@ -21,10 +21,16 @@ export function unlockSpeech(): void {
   speechSynthesis.speak(u);
 }
 
-export function speak(text: string): void {
+/** onEnd は読み終わり・中断・失敗のいずれでも1回だけ呼ぶ（BGM の音量を戻すため） */
+export function speak(text: string, onStart?: () => void, onEnd?: () => void): void {
   if (!('speechSynthesis' in window)) return;
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
+  let ended = false;
+  const end = () => { if (!ended) { ended = true; onEnd?.(); } };
+  u.onstart = () => onStart?.();
+  u.onend = end;
+  u.onerror = end;
   u.lang = 'ja-JP';
   u.rate = 0.8;
   if (voice) u.voice = voice;
