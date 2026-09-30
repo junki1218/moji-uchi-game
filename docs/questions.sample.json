@@ -1,0 +1,12 @@
+{
+  "format": "moji-uchi-game/questions",
+  "version": 1,
+  "questions": [
+    { "category": "もの", "word": "ぶどう", "emoji": "🍇" },
+    { "category": "もの", "word": "ランドセル", "emoji": "🎒" },
+    { "category": "もの", "word": "すべりだい", "emoji": "🛝" },
+    { "category": "きもち", "word": "わくわく", "emoji": "🤩" },
+    { "category": "うごき", "word": "わらう", "emoji": "😄" },
+    { "category": "うごき", "word": "なわとびをする", "emoji": "🪢" }
+  ]
+}

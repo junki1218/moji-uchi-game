@@ -11,6 +11,8 @@
 ## 先生へ
 - 設定画面は「せってい」→ 暗証番号 **1024**（設定画面で変更できます）
 - iPad の Safari で開き、共有ボタン →「ホーム画面に追加」でアプリとして使えます
+- 出題する問題は設定の「出題する問題を選ぶ・読み込む」で ON/OFF。JSON で問題を足せます → [docs/QUESTIONS_JSON.md](docs/QUESTIONS_JSON.md)
+- 公開版: https://junki1218.github.io/moji-uchi-game/
 
 ## 開発
 ```
