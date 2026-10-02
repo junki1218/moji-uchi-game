@@ -10,3 +10,6 @@ desktop.ini
 .agent_flow/artifacts/*.png
 # BGM の元データも同様（正本は Google ドライブ「画像材料/moji-uchi-game/BGM」）。アプリ用は public/audio/
 .agent_flow/audio/
+
+# Antigravity の作業用スクリプト（手元のパスを含む）はリポジトリに入れない
+scratch_*.py
