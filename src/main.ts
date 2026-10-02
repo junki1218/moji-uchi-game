@@ -209,12 +209,14 @@ function questionScreen(round: Round): void {
   playBgm('bgm2_question'); // 10問のあいだ流しっぱなし
   const q = round.questions[round.index];
   const answer = chars(q.hira);
+  // 文（〇〇が●●）は「が」を最初から入れておき、打たせない
+  const fixed = new Set<number>(q.type === 'sentence' && q.parts ? [chars(q.parts[0]).length] : []);
   const shown = (c: string) => inScript(c, settings.script);
   const say = () => speak(q.hira, () => duckBgm(true), () => duckBgm(false));
 
   const sample =
     settings.prompt === 'look'
-      ? h('div', { class: 'sample' }, ...answer.map((c) => h('span', { class: 'sample-cell' }, shown(c))))
+      ? h('div', { class: 'sample' }, ...answer.map((c, i) => h('span', { class: `sample-cell ${fixed.has(i) ? 'fixed' : ''}` }, shown(c))))
       : null;
 
   const side = h(
@@ -223,7 +225,7 @@ function questionScreen(round: Round): void {
     h('button', { class: 'speaker-btn', 'aria-label': 'よみあげ', onclick: say }, '🔊'),
     sample,
   );
-  const top = h('div', { class: 'q-top' }, questionPicture(q, 'q-pic'), side);
+  const top = h('div', { class: `q-top ${q.type === 'sentence' ? 'sentence' : ''}` }, questionPicture(q, 'q-pic'), side);
 
   const next = () => {
     const overlay = h('div', { class: 'overlay clear' }, hanamaru('pop'));
@@ -238,8 +240,8 @@ function questionScreen(round: Round): void {
 
   const input =
     settings.input === 'handwriting'
-      ? handwritingArea(answer, sample, next)
-      : keyboardArea(answer, side, next);
+      ? handwritingArea(answer, fixed, sample, next)
+      : keyboardArea(answer, fixed, side, next);
 
   show(
     h(
@@ -256,11 +258,18 @@ function questionScreen(round: Round): void {
 
 // ------------------------------------------------------------ キーボード入力
 
-function keyboardArea(answer: string[], side: HTMLElement, onDone: () => void): HTMLElement {
+function keyboardArea(answer: string[], fixed: Set<number>, side: HTMLElement, onDone: () => void): HTMLElement {
   let pos = 0;
   let misses = 0;
-  const cells = answer.map(() => h('span', { class: 'answer-cell' }));
+  const cells = answer.map((c, i) =>
+    fixed.has(i) ? h('span', { class: 'answer-cell fixed' }, inScript(c, settings.script)) : h('span', { class: 'answer-cell' }),
+  );
   cells[0].classList.add('current');
+  // 1段目（〇〇）を打ち終えたとき: 〇〇のマスを緑にして音を鳴らす
+  const stageDone = (upTo: number) => {
+    for (let i = 0; i < upTo; i++) cells[i].classList.add('stage-done');
+    playJingle('correct');
+  };
   side.append(h('div', { class: 'answer' }, ...cells));
 
   const keys = new Map<string, HTMLButtonElement>();
@@ -283,6 +292,10 @@ function keyboardArea(answer: string[], side: HTMLElement, onDone: () => void): 
     clearHint();
     misses = 0;
     pos++;
+    if (fixed.has(pos)) {
+      stageDone(pos);
+      while (fixed.has(pos)) pos++;
+    }
     if (pos < answer.length) cells[pos].classList.add('current');
     else onDone();
   };
@@ -323,13 +336,22 @@ function keyboardArea(answer: string[], side: HTMLElement, onDone: () => void): 
 
 const PAD_PX = 600;
 
-function handwritingArea(answer: string[], sample: HTMLElement | null, onDone: () => void): HTMLElement {
+function handwritingArea(answer: string[], fixed: Set<number>, sample: HTMLElement | null, onDone: () => void): HTMLElement {
   const count = answer.length;
   // 1文字ぶんの字。パッドと同じ解像度で持っておき、マスには縮小して写す
-  const glyphs = Array.from({ length: count }, () => {
+  const glyphs = Array.from({ length: count }, (_, i) => {
     const c = document.createElement('canvas');
     c.width = PAD_PX;
     c.height = PAD_PX;
+    if (fixed.has(i)) {
+      // 「が」など、最初から入っている字は灰色の活字で描いておく
+      const g = c.getContext('2d')!;
+      g.fillStyle = '#9a8f84';
+      g.font = `bold ${PAD_PX * 0.62}px "Hiragino Maru Gothic ProN", "BIZ UDPGothic", sans-serif`;
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText(inScript(answer[i], settings.script), PAD_PX / 2, PAD_PX / 2);
+    }
     return c;
   });
   const written = new Array<boolean>(count).fill(false);
@@ -338,6 +360,7 @@ function handwritingArea(answer: string[], sample: HTMLElement | null, onDone: (
   const cells = Array.from({ length: count }, (_, i) => {
     const canvas = h('canvas', { class: 'hw-canvas' });
     cellCanvases.push(canvas);
+    if (fixed.has(i)) return h('span', { class: 'hw-cell fixed' }, canvas);
     return h('button', { class: 'hw-cell', 'aria-label': `${i + 1}もじめ をかく`, onclick: () => openPad(i) }, canvas);
   });
 
@@ -351,6 +374,12 @@ function handwritingArea(answer: string[], sample: HTMLElement | null, onDone: (
     ctx.clearRect(0, 0, c.width, c.height);
     ctx.drawImage(glyphs[i], 0, 0, c.width, c.height);
     cells[i].classList.toggle('written', written[i]);
+  };
+
+  /** 次に書く字（固定のマスは飛ばす）。なければ -1 */
+  const nextIndex = (from: number) => {
+    for (let k = from + 1; k < count; k++) if (!fixed.has(k)) return k;
+    return -1;
   };
 
   function openPad(index: number): void {
@@ -373,7 +402,7 @@ function handwritingArea(answer: string[], sample: HTMLElement | null, onDone: (
       // 見本あり のときだけ、書く字の見本を横に出す
       guide.textContent = settings.prompt === 'look' ? inScript(answer[i], settings.script) : '';
       guide.hidden = settings.prompt !== 'look';
-      nextBtn.hidden = i >= count - 1;
+      nextBtn.hidden = nextIndex(i) < 0;
       cells.forEach((c, k) => c.classList.toggle('selected', k === i));
     };
     const save = () => {
@@ -422,7 +451,7 @@ function handwritingArea(answer: string[], sample: HTMLElement | null, onDone: (
     };
     nextBtn.addEventListener('click', () => {
       save();
-      i++;
+      i = nextIndex(i);
       load();
     });
 
@@ -455,8 +484,16 @@ function handwritingArea(answer: string[], sample: HTMLElement | null, onDone: (
     },
   }, 'できた');
 
-  // マスは画面に出てから大きさが決まるので、そこで一度描く
-  requestAnimationFrame(() => cellCanvases.forEach((_, i) => paintCell(i)));
+  // マスは画面に出てから大きさが決まるので、大きさが決まった（変わった）ときに描く
+  const ro = new ResizeObserver((entries) => {
+    for (const e of entries) {
+      const i = cellCanvases.indexOf(e.target as HTMLCanvasElement);
+      if (i >= 0) paintCell(i);
+    }
+  });
+  cellCanvases.forEach((c) => ro.observe(c));
+  // 画面に出た直後にも一度描く（表示が止まっている環境では上の通知が来ないことがある）
+  setTimeout(() => cellCanvases.forEach((_, i) => paintCell(i)), 0);
 
   return h(
     'div',

@@ -1,7 +1,7 @@
 // 問題の置き場。最初からの60問＋先生が JSON で足した問題、と「出題しない」印を iPad の中に保存する。
 // 写真は photos.ts（IndexedDB）。
 
-import { BUILTIN_QUESTIONS, CATEGORIES, MAX_CHARS, type Category, type Question } from './questions';
+import { BUILTIN_QUESTIONS, CATEGORIES, MAX_CHARS, MAX_SENTENCE_CHARS, sentence, type Category, type Question } from './questions';
 import { DAKUON, SEION, SMALL } from './kana';
 import { blobToDataUrl, dataUrlToBlob, hasPhoto, photoBlob, removePhoto, savePhoto, shrinkImage } from './photos';
 
@@ -84,6 +84,16 @@ function normalizeKana(s: string): string {
     .replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
 }
 
+/** 打てる単語かを調べる。だめなら理由、よければ null */
+function checkWord(word: string): string | null {
+  const chars = Array.from(word);
+  if (!chars.length) return '言葉がありません';
+  if (chars.length > MAX_CHARS) return `${MAX_CHARS}文字までです（${chars.length}文字）`;
+  const bad = [...new Set(chars.filter((c) => !TYPABLE.has(c)))];
+  if (bad.length) return `キーボードにない字があります（${bad.join('・')}）`;
+  return null;
+}
+
 interface Parsed {
   id: string;
   question: Question | null; // 最初からの問題を指すときは null（ON にするだけ）
@@ -114,10 +124,11 @@ export function parseImport(text: string): ImportPlan {
     if (!raw || typeof raw !== 'object') return errors.push(`${n}: 形がちがいます`);
     const r = raw as Record<string, unknown>;
     const type = r.type ?? 'word';
-    if (type !== 'word') return errors.push(`${n}: type "${String(type)}" にはまだ対応していません（いまは word だけ）`);
+    if (type !== 'word' && type !== 'sentence') return errors.push(`${n}: type "${String(type)}" には対応していません（word か sentence）`);
 
     const id = typeof r.id === 'string' ? r.id.trim() : '';
     const image = typeof r.image === 'string' && r.image.startsWith('data:image/') ? r.image : undefined;
+    const emoji = typeof r.emoji === 'string' && r.emoji.trim() ? r.emoji.trim() : '❔';
 
     // 最初からの問題は id だけで指せる（書き出したファイルを別の iPad で読むとき）
     if (id && builtinIds.has(id)) {
@@ -125,14 +136,28 @@ export function parseImport(text: string): ImportPlan {
       return;
     }
 
+    // 文「〇〇が●●」: カテゴリは「ぶん」に決まる
+    if (type === 'sentence') {
+      const subject = normalizeKana(String(r.subject ?? ''));
+      const predicate = normalizeKana(String(r.predicate ?? ''));
+      const label = `「${subject}が${predicate}」`;
+      const e1 = checkWord(subject);
+      if (e1) return errors.push(`${n}${label}: 〇〇（subject）… ${e1}`);
+      const e2 = checkWord(predicate);
+      if (e2) return errors.push(`${n}${label}: ●●（predicate）… ${e2}`);
+      const total = Array.from(subject + predicate).length;
+      if (total > MAX_SENTENCE_CHARS) return errors.push(`${n}${label}: 〇〇と●●を合わせて${MAX_SENTENCE_CHARS}文字までです（${total}文字）`);
+      const sid = id || `c_bun_${subject}_${predicate}`;
+      items.push({ id: sid, image, question: sentence(sid, subject, predicate, emoji, false) });
+      return;
+    }
+
     const word = normalizeKana(String(r.word ?? r.hira ?? ''));
     const cat = CATEGORY_ALIASES[String(r.category ?? '').trim()];
     if (!word) return errors.push(`${n}: 単語（word）がありません`);
-    if (!cat) return errors.push(`${n}「${word}」: category は もの／きもち／うごき のどれかにしてください`);
-    const chars = Array.from(word);
-    if (chars.length > MAX_CHARS) return errors.push(`${n}「${word}」: ${MAX_CHARS}文字までです（${chars.length}文字）`);
-    const bad = [...new Set(chars.filter((c) => !TYPABLE.has(c)))];
-    if (bad.length) return errors.push(`${n}「${word}」: キーボードにない字があります（${bad.join('・')}）`);
+    if (!cat || cat === 'bun') return errors.push(`${n}「${word}」: category は もの／きもち／うごき のどれかにしてください（文は type: "sentence"）`);
+    const err = checkWord(word);
+    if (err) return errors.push(`${n}「${word}」: ${err}`);
 
     const qid = id || `c_${cat}_${word}`;
     items.push({
@@ -143,7 +168,7 @@ export function parseImport(text: string): ImportPlan {
         type: 'word',
         category: cat,
         hira: word,
-        emoji: typeof r.emoji === 'string' && r.emoji.trim() ? r.emoji.trim() : '❔',
+        emoji,
         builtin: false,
       },
     });
@@ -185,7 +210,7 @@ export async function exportJson(): Promise<Blob> {
       id: q.id,
       type: q.type,
       category: q.category,
-      word: q.hira,
+      ...(q.type === 'sentence' && q.parts ? { subject: q.parts[0], predicate: q.parts[1] } : { word: q.hira }),
       ...(q.builtin ? {} : { emoji: q.emoji }),
       ...(blob ? { image: await blobToDataUrl(blob) } : {}),
     });

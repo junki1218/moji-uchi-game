@@ -1,24 +1,33 @@
-// 最初から入っている60問（IMAGE_SPEC.md 4章の単語表と対応）。表記はすべてひらがな。
+// 最初から入っている問題。単語60問（IMAGE_SPEC.md 4章）＋文20問（IMAGE_SPEC_SENTENCE.md）。表記はすべてひらがな。
 // emoji は画像が届くまでの仮表示。画像は public/images/{id}.webp（tools/sync_images.py が作る）。
 // 先生が JSON で足す問題は bank.ts が扱う。
 
-export type Category = 'mono' | 'kimochi' | 'ugoki';
+export type Category = 'mono' | 'kimochi' | 'ugoki' | 'bun';
 
 /** 単語1つの長さの上限（打つキーの数。ゃ・ー も1字） */
 export const MAX_CHARS = 10;
 
 /**
- * 問題の種類。いまは単語だけ。
- * 将来の「〇〇が〇〇」（名詞＋助詞＋動詞を2段階で打つ）モードは 'sentence' として足す予定で、
- * 読み込み時に知らない type は取り込まずに知らせる。
+ * 問題の種類。
+ * word     … 単語1つ（もの／きもち／うごき）
+ * sentence … 「〇〇が●●」の文（ぶん）。〇〇 → ●● の2段階で打つ。「が」は最初から出ている
  */
-export type QuestionType = 'word';
+export type QuestionType = 'word' | 'sentence';
+
+/** 文の〇〇＋●●の合計の上限（画面に収めるため。各語は MAX_CHARS まで） */
+export const MAX_SENTENCE_CHARS = 12;
+
+/** 文の真ん中に入る助詞（打たせない） */
+export const PARTICLE = 'が';
 
 export interface Question {
   id: string;
   type: QuestionType;
   category: Category;
+  /** 読み上げ・見本に使う全体（文なら「いぬがはしる」） */
   hira: string;
+  /** 文のときだけ: [〇〇, ●●] */
+  parts?: [string, string];
   emoji: string;
   /** 最初から入っている問題（削除できない。画像は public/images/{id}.webp） */
   builtin: boolean;
@@ -28,7 +37,21 @@ export const CATEGORIES: { id: Category; label: string; emoji: string }[] = [
   { id: 'mono', label: 'もの', emoji: '🍎' },
   { id: 'kimochi', label: 'きもち', emoji: '😊' },
   { id: 'ugoki', label: 'うごき', emoji: '🏃' },
+  { id: 'bun', label: 'ぶん', emoji: '📝' },
 ];
+
+/** 文の問題を作る（id は bun_01…） */
+export function sentence(id: string, subject: string, predicate: string, emoji: string, builtin: boolean): Question {
+  return {
+    id,
+    type: 'sentence',
+    category: 'bun',
+    hira: subject + PARTICLE + predicate,
+    parts: [subject, predicate],
+    emoji,
+    builtin,
+  };
+}
 
 const q = (category: Category, rows: [string, string][]): Question[] =>
   rows.map(([hira, emoji], i) => ({
@@ -107,4 +130,25 @@ export const BUILTIN_QUESTIONS: Question[] = [
     ['のぼる', '🧗'],
     ['きがえる', '👕'],
   ]),
+  // 文（〇〇が●●）。●●は うごき の言葉だけ（2026-10-02 ユーザー決定）
+  sentence('bun_01', 'いぬ', 'はしる', '🐕', true),
+  sentence('bun_02', 'ねこ', 'ねる', '🐈', true),
+  sentence('bun_03', 'ぞう', 'あるく', '🐘', true),
+  sentence('bun_04', 'さかな', 'およぐ', '🐟', true),
+  sentence('bun_05', 'ひこうき', 'とぶ', '✈️', true),
+  sentence('bun_06', 'でんしゃ', 'はしる', '🚃', true),
+  sentence('bun_07', 'ふね', 'すすむ', '🚢', true),
+  sentence('bun_08', 'ばす', 'とまる', '🚌', true),
+  sentence('bun_09', 'いぬ', 'たべる', '🐕', true),
+  sentence('bun_10', 'ねこ', 'のむ', '🐈', true),
+  sentence('bun_11', 'うさぎ', 'とぶ', '🐇', true),
+  sentence('bun_12', 'きょうりゅう', 'あるく', '🦖', true),
+  sentence('bun_13', 'くるま', 'はしる', '🚗', true),
+  sentence('bun_14', 'ぞう', 'のむ', '🐘', true),
+  sentence('bun_15', 'とり', 'とぶ', '🐦', true),
+  sentence('bun_16', 'いぬ', 'およぐ', '🐕', true),
+  sentence('bun_17', 'ねこ', 'あるく', '🐈', true),
+  sentence('bun_18', 'しょうぼうしゃ', 'はしる', '🚒', true),
+  sentence('bun_19', 'ぱとかー', 'とまる', '🚓', true),
+  sentence('bun_20', 'さる', 'のぼる', '🐒', true),
 ];

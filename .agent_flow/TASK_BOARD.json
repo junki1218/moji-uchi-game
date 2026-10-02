@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-30T15:26:31+09:00",
+  "last_updated": "2026-10-02T09:17:47+09:00",
   "project": "moji-uchi-game",
   "tasks": [
     {
@@ -91,6 +91,23 @@
       "history": [
         {
           "at": "2026-09-30T15:26:31+09:00",
+          "event": "created"
+        }
+      ]
+    },
+    {
+      "id": "TASK-006",
+      "title": "文（〇〇が●●）の絵 20枚",
+      "owner": "Antigravity",
+      "status": "TODO",
+      "retry_count": 0,
+      "needs_asset": true,
+      "needs_browser_check": false,
+      "depends_on": [],
+      "acceptance": "- IMAGE_SPEC_SENTENCE.md 4章の20枚\n- 主役の見た目を参照画像（もの の絵）とそろえる。同じ主役どうしもそろえる\n- 6章のチェックをすべて満たす\n- 一覧シート verify_TASK-006.png を出す",
+      "history": [
+        {
+          "at": "2026-10-02T09:17:47+09:00",
           "event": "created"
         }
       ]

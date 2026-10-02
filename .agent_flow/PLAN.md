@@ -20,6 +20,7 @@
 | TASK-003 | きもち 20問 | 20 | 001 |
 | TASK-004 | うごき 20問 | 20 | 001 |
 | ~~TASK-005~~ | ~~UI画像~~ → 取りやめ。素材ライブラリ（ClayAnimation / animal school）から流用（tools/ui_from_library.py） | — | — |
+| TASK-006 | 文（〇〇が●●）の絵（IMAGE_SPEC_SENTENCE.md） | 20 | 001・002 |
 
 ## フェーズ2：アプリ本体
 

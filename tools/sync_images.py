@@ -2,7 +2,7 @@
 
     python tools/sync_images.py
 
-- asset_TASK-00N_{id}_{romaji}.png  → public/images/{id}.webp   （問題イラスト 512px）
+- asset_TASK-00N_{id}_{romaji}.png  → public/images/{id}.webp   （問題イラスト 512px。文は bun_01_inu_hashiru など）
 UI 画像（アイコン・カテゴリ・スタンプ・背景）は tools/ui_from_library.py が素材ライブラリから作る
 （2026-09-30 方針変更。TASK-005 の生成は行わない）。
 
@@ -25,7 +25,7 @@ IMAGES = ROOT / "public" / "images"
 # Windows の端末(cp932)でも日本語が化けないように
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-QUESTION_RE = re.compile(r"^asset_(TASK-\d+)_((?:mono|kimochi|ugoki)_\d{2})_[a-z]+\.png$")
+QUESTION_RE = re.compile(r"^asset_(TASK-\d+)_((?:mono|kimochi|ugoki|bun)_\d{2})_[a-z_]+\.png$")
 
 
 
@@ -55,9 +55,9 @@ def main() -> None:
     for key, p in questions.items():
         to_webp(p, IMAGES / f"{key}.webp", 512)
 
-    print(f"問題イラスト {len(questions)}/60 枚")
+    print(f"問題イラスト {len(questions)}/80 枚")
     missing = sorted(
-        f"{c}_{i:02d}" for c in ("mono", "kimochi", "ugoki") for i in range(1, 21)
+        f"{c}_{i:02d}" for c in ("mono", "kimochi", "ugoki", "bun") for i in range(1, 21)
         if f"{c}_{i:02d}" not in questions
     )
     if missing:
