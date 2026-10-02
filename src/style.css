@@ -471,3 +471,17 @@ button {
 .w-word { font-size: 20px; font-weight: 700; }
 .w-date { color: var(--sub); font-size: 14px; }
 .seg-btn:disabled { opacity: 0.4; }
+
+/* ---------- 文（〇〇が●●） ---------- */
+
+.answer-cell.fixed, .sample-cell.fixed { border-color: transparent; background: transparent; color: var(--sub); }
+.answer-cell.stage-done { background: #e7f6e7; border-color: var(--done); }
+.hw-cell.fixed { border-color: transparent; background: transparent; }
+.q-top.sentence .q-pic { max-height: 30vh; }
+.q-side:has(.answer-cell:nth-child(11)) { --cell: min(4.2vw, 6vh); }
+.handwriting:has(.hw-cell:nth-child(11)) { --cell: min(6.8vw, 12vh); }
+
+/* カテゴリが4つ: 上に3つ、下に「ぶん」 */
+.category-grid:has(.category-btn:nth-child(4)) { display: grid; grid-template-columns: repeat(3, auto); row-gap: 3vh; }
+.category-grid:has(.category-btn:nth-child(4)) .category-btn:nth-child(4) { grid-column: 2; }
+.category-grid:has(.category-btn:nth-child(4)) .category-pic { width: min(17vw, 26vh); height: min(17vw, 26vh); font-size: min(12vw, 18vh); }

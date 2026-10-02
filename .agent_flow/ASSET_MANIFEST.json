@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-30T17:15:00+09:00",
+  "last_updated": "2026-09-30T21:00:00+09:00",
   "assets": [
     {
       "id": "ref_person",
@@ -130,6 +130,106 @@
       "created_by": "Antigravity",
       "task_id": "TASK-002",
       "prompt": "Claymation style illustration of a white passenger airplane / jet airliner, soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, diagonal upward angle view, plain solid off-white background (#FFF7EC), bright clear white and blue colors, simple shapes, soft front lighting, child-friendly, no clouds in background, no text, no letters on plane body, no numbers, no airline logo, no watermark"
+    },
+    {
+      "id": "mono_11",
+      "type": "image",
+      "purpose": "問題イラスト もの: ふね",
+      "file_path": ".agent_flow/assets/asset_TASK-002_mono_11_fune.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-002",
+      "prompt": "Claymation style illustration of a small red and white boat, minimal calm water surface only directly underneath the boat, soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, 45 degree angle view, plain solid off-white background (#FFF7EC), bright clear red and white colors, simple shapes, soft front lighting, child-friendly, no text, no letters, no numbers, no logo, no watermark"
+    },
+    {
+      "id": "mono_12",
+      "type": "image",
+      "purpose": "問題イラスト もの: ばなな",
+      "file_path": ".agent_flow/assets/asset_TASK-002_mono_12_banana.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-002",
+      "prompt": "Claymation style illustration of a bunch of three yellow bananas, soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, 45 degree angle view, plain solid off-white background (#FFF7EC), bright clear yellow and green tips colors, simple shapes, soft front lighting, child-friendly, no text, no letters, no numbers, no logo, no watermark"
+    },
+    {
+      "id": "mono_13",
+      "type": "image",
+      "purpose": "問題イラスト もの: いちご",
+      "file_path": ".agent_flow/assets/asset_TASK-002_mono_13_ichigo.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-002",
+      "prompt": "Claymation style illustration of a single bright red strawberry with green calyx leaves on top, soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, front/diagonal view, plain solid off-white background (#FFF7EC), bright clear red and green colors, simple shapes, soft front lighting, child-friendly, no text, no letters, no numbers, no logo, no watermark"
+    },
+    {
+      "id": "mono_14",
+      "type": "image",
+      "purpose": "問題イラスト もの: とけい",
+      "file_path": ".agent_flow/assets/asset_TASK-002_mono_14_tokei.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-002",
+      "prompt": "Claymation style illustration of a round alarm clock with two bells on top and two feet, soft handmade clay texture, stop-motion puppet look, clock face has only simple dot markers instead of numbers, no numbers or digits, single subject centered and large filling 70% of the frame, front view, plain solid off-white background (#FFF7EC), bright clear primary colors (red body, white face), simple shapes, soft front lighting, child-friendly, no text, no letters, no digits, no numbers, no logo, no watermark"
+    },
+    {
+      "id": "mono_15",
+      "type": "image",
+      "purpose": "問題イラスト もの: かさ",
+      "file_path": ".agent_flow/assets/asset_TASK-002_mono_15_kasa.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-002",
+      "prompt": "Claymation style illustration of an open red umbrella, soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, slightly tilted front view, plain solid off-white background (#FFF7EC), bright clear red color with simple handle, simple shapes, soft front lighting, child-friendly, no text, no letters, no numbers, no logo, no watermark"
+    },
+    {
+      "id": "mono_16",
+      "type": "image",
+      "purpose": "問題イラスト もの: くつ",
+      "file_path": ".agent_flow/assets/asset_TASK-002_mono_16_kutsu.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-002",
+      "prompt": "Claymation style illustration of a pair of blue kids sneakers / shoes placed side by side, soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, 45 degree angle view, plain solid off-white background (#FFF7EC), bright clear blue and white colors, simple shapes, soft front lighting, child-friendly, no text, no letters, no brand logo, no watermark"
+    },
+    {
+      "id": "mono_17",
+      "type": "image",
+      "purpose": "問題イラスト もの: ぼうし",
+      "file_path": ".agent_flow/assets/asset_TASK-002_mono_17_boushi.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-002",
+      "prompt": "Claymation style illustration of a yellow Japanese school hat with brim (tsuugakuboushi), soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, 45 degree angle view, plain solid off-white background (#FFF7EC), bright clear yellow color, simple shapes, soft front lighting, child-friendly, no text, no letters, no logo, no watermark"
+    },
+    {
+      "id": "mono_18",
+      "type": "image",
+      "purpose": "問題イラスト もの: さかな",
+      "file_path": ".agent_flow/assets/asset_TASK-002_mono_18_sakana.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-002",
+      "prompt": "Claymation style illustration of a single blue fish, soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, side profile view, swimming horizontally, plain solid off-white background (#FFF7EC), bright clear blue and white colors, simple shapes, soft front lighting, child-friendly, no text, no letters, no numbers, no logo, no watermark"
+    },
+    {
+      "id": "mono_19",
+      "type": "image",
+      "purpose": "問題イラスト もの: ぞう",
+      "file_path": ".agent_flow/assets/asset_TASK-002_mono_19_zou.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-002",
+      "prompt": "Claymation style illustration of a cute grey elephant standing sideways, trunk slightly raised upward, friendly eye, soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, side view / 45 degree angle, plain solid off-white background (#FFF7EC), bright clear grey and white tusks colors, simple shapes, soft front lighting, child-friendly, no text, no letters, no numbers, no logo, no watermark"
+    },
+    {
+      "id": "mono_20",
+      "type": "image",
+      "purpose": "問題イラスト もの: けーき",
+      "file_path": ".agent_flow/assets/asset_TASK-002_mono_20_keki.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-002",
+      "prompt": "Claymation style illustration of a slice of strawberry shortcake with white whipped cream, red strawberry on top, soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, 45 degree isometric angle view, plain solid off-white background (#FFF7EC), bright clear red, white, and yellow sponge colors, simple shapes, soft front lighting, child-friendly, no text, no letters, no numbers, no logo, no watermark"
     }
   ]
 }
