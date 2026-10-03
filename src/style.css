@@ -485,3 +485,32 @@ button {
 .category-grid:has(.category-btn:nth-child(4)) { display: grid; grid-template-columns: repeat(3, auto); row-gap: 3vh; }
 .category-grid:has(.category-btn:nth-child(4)) .category-btn:nth-child(4) { grid-column: 2; }
 .category-grid:has(.category-btn:nth-child(4)) .category-pic { width: min(17vw, 26vh); height: min(17vw, 26vh); font-size: min(12vw, 18vh); }
+
+/* ---------- ヒント（最初の1文字） ---------- */
+
+.hint-btn {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
+  background: #fff6cc;
+  border: 2px solid #e0c35a;
+  border-radius: 999px;
+  font-size: min(2.2vw, 3vh);
+  padding: 0.3em 1em;
+  color: #7a5c00;
+  z-index: 2;
+}
+.hint-btn:disabled { opacity: 0.4; }
+.answer-cell.ghost::after { content: attr(data-ghost); color: #ddd0bf; }
+.pad-box { position: relative; }
+.pad-ghost {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: min(32vw, 38vh);
+  font-weight: 700;
+  color: #efe6da;
+  pointer-events: none;
+}
+.pad-canvas { position: relative; }

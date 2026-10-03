@@ -238,16 +238,24 @@ function questionScreen(round: Round): void {
     }, HANAMARU_MS);
   };
 
+  // ヒント: 最初の1文字を薄く出す。見本ありモードは全部見えているので出さない
+  const hint: Hint = { show: () => undefined, enable: () => undefined };
+  const hintBtn =
+    settings.prompt === 'look'
+      ? null
+      : h('button', { class: 'hint-btn', onclick: () => { hint.show(); hintBtn!.disabled = true; } }, '💡 ヒント');
+  hint.enable = () => { if (hintBtn) hintBtn.disabled = false; };
+
   const input =
     settings.input === 'handwriting'
-      ? handwritingArea(answer, fixed, sample, next)
-      : keyboardArea(answer, fixed, side, next);
+      ? handwritingArea(answer, fixed, sample, next, hint)
+      : keyboardArea(answer, fixed, side, next, hint);
 
   show(
     h(
       'main',
       { class: 'screen game' },
-      h('header', { class: 'game-header' }, quitButton(), progress(round)),
+      h('header', { class: 'game-header' }, quitButton(), progress(round), hintBtn),
       top,
       input,
     ),
@@ -258,7 +266,20 @@ function questionScreen(round: Round): void {
 
 // ------------------------------------------------------------ キーボード入力
 
-function keyboardArea(answer: string[], fixed: Set<number>, side: HTMLElement, onDone: () => void): HTMLElement {
+/** ヒントボタンと入力欄をつなぐ。show＝最初の1文字を出す、enable＝ボタンをもう一度押せるようにする */
+interface Hint {
+  show: () => void;
+  enable: () => void;
+}
+
+/** 文なら 〇〇 と ●● の頭の位置、単語なら [0] */
+function partStarts(answer: string[], fixed: Set<number>): number[] {
+  const starts = [0];
+  for (const i of fixed) if (i + 1 < answer.length) starts.push(i + 1);
+  return starts;
+}
+
+function keyboardArea(answer: string[], fixed: Set<number>, side: HTMLElement, onDone: () => void, hint: Hint): HTMLElement {
   let pos = 0;
   let misses = 0;
   const cells = answer.map((c, i) =>
@@ -269,6 +290,15 @@ function keyboardArea(answer: string[], fixed: Set<number>, side: HTMLElement, o
   const stageDone = (upTo: number) => {
     for (let i = 0; i < upTo; i++) cells[i].classList.add('stage-done');
     playJingle('correct');
+    hint.enable(); // ●●に進んだら、●●の1文字目のヒントをもう一度出せる
+  };
+  // いま打っている段（〇〇／●●）の1文字目を薄く出す。もう打ってあれば、いま打つ字を出す
+  hint.show = () => {
+    const start = Math.max(...partStarts(answer, fixed).filter((s) => s <= pos));
+    const i = cells[start].classList.contains('filled') ? pos : start;
+    if (i >= answer.length) return;
+    cells[i].dataset.ghost = inScript(answer[i], settings.script);
+    cells[i].classList.add('ghost');
   };
   side.append(h('div', { class: 'answer' }, ...cells));
 
@@ -287,7 +317,7 @@ function keyboardArea(answer: string[], fixed: Set<number>, side: HTMLElement, o
       return;
     }
     cells[pos].textContent = inScript(c, settings.script);
-    cells[pos].classList.remove('current');
+    cells[pos].classList.remove('current', 'ghost');
     cells[pos].classList.add('filled');
     clearHint();
     misses = 0;
@@ -336,7 +366,7 @@ function keyboardArea(answer: string[], fixed: Set<number>, side: HTMLElement, o
 
 const PAD_PX = 600;
 
-function handwritingArea(answer: string[], fixed: Set<number>, sample: HTMLElement | null, onDone: () => void): HTMLElement {
+function handwritingArea(answer: string[], fixed: Set<number>, sample: HTMLElement | null, onDone: () => void, hint: Hint): HTMLElement {
   const count = answer.length;
   // 1文字ぶんの字。パッドと同じ解像度で持っておき、マスには縮小して写す
   const glyphs = Array.from({ length: count }, (_, i) => {
@@ -355,6 +385,9 @@ function handwritingArea(answer: string[], fixed: Set<number>, sample: HTMLEleme
     return c;
   });
   const written = new Array<boolean>(count).fill(false);
+  // ヒントで薄く出す字（記録の画像には入れない）
+  const ghost = new Array<boolean>(count).fill(false);
+  const ghostFont = (px: number) => `bold ${px * 0.62}px "Hiragino Maru Gothic ProN", "BIZ UDPGothic", sans-serif`;
 
   const cellCanvases: HTMLCanvasElement[] = [];
   const cells = Array.from({ length: count }, (_, i) => {
@@ -372,8 +405,21 @@ function handwritingArea(answer: string[], fixed: Set<number>, sample: HTMLEleme
     c.height = Math.max(1, Math.round(r.height * dpr));
     const ctx = c.getContext('2d')!;
     ctx.clearRect(0, 0, c.width, c.height);
+    if (ghost[i]) {
+      ctx.fillStyle = '#e2d6c6';
+      ctx.font = ghostFont(c.width);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(inScript(answer[i], settings.script), c.width / 2, c.height / 2);
+    }
     ctx.drawImage(glyphs[i], 0, 0, c.width, c.height);
     cells[i].classList.toggle('written', written[i]);
+  };
+
+  // 〇〇（文なら ●● も）の1文字目を薄く出す。なぞって書ける
+  hint.show = () => {
+    for (const s of partStarts(answer, fixed)) ghost[s] = true;
+    cellCanvases.forEach((_, i) => paintCell(i));
   };
 
   /** 次に書く字（固定のマスは飛ばす）。なければ -1 */
@@ -392,6 +438,7 @@ function handwritingArea(answer: string[], fixed: Set<number>, sample: HTMLEleme
     ctx.lineWidth = PAD_PX / 22;
 
     const title = h('p', { class: 'pad-title' });
+    const padGhost = h('span', { class: 'pad-ghost' });
     const guide = h('div', { class: 'pad-sample' });
     const nextBtn = h('button', { class: 'mid-btn secondary' }, 'つぎのじ');
 
@@ -399,6 +446,7 @@ function handwritingArea(answer: string[], fixed: Set<number>, sample: HTMLEleme
       ctx.clearRect(0, 0, PAD_PX, PAD_PX);
       ctx.drawImage(glyphs[i], 0, 0);
       title.textContent = `${i + 1}もじめ（${i + 1}/${count}）`;
+      padGhost.textContent = ghost[i] ? inScript(answer[i], settings.script) : '';
       // 見本あり のときだけ、書く字の見本を横に出す
       guide.textContent = settings.prompt === 'look' ? inScript(answer[i], settings.script) : '';
       guide.hidden = settings.prompt !== 'look';
@@ -462,7 +510,7 @@ function handwritingArea(answer: string[], fixed: Set<number>, sample: HTMLEleme
         'div',
         { class: 'pad-dialog' },
         title,
-        h('div', { class: 'pad-row' }, guide, h('div', { class: 'pad-box' }, pad)),
+        h('div', { class: 'pad-row' }, guide, h('div', { class: 'pad-box' }, padGhost, pad)),
         h(
           'div',
           { class: 'dialog-buttons' },
