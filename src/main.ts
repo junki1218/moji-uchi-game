@@ -238,13 +238,10 @@ function questionScreen(round: Round): void {
     }, HANAMARU_MS);
   };
 
-  // ヒント: 最初の1文字を薄く出す。見本ありモードは全部見えているので出さない
+  // ヒント: 最初の1文字を薄く出す（キーボードはそのキーも光らせる）。どの出題モードでも出す
   const hint: Hint = { show: () => undefined, enable: () => undefined };
-  const hintBtn =
-    settings.prompt === 'look'
-      ? null
-      : h('button', { class: 'hint-btn', onclick: () => { hint.show(); hintBtn!.disabled = true; } }, '💡 ヒント');
-  hint.enable = () => { if (hintBtn) hintBtn.disabled = false; };
+  const hintBtn: HTMLButtonElement = h('button', { class: 'hint-btn', onclick: () => { hint.show(); hintBtn.disabled = true; } }, '💡 ヒント');
+  hint.enable = () => { hintBtn.disabled = false; };
 
   const input =
     settings.input === 'handwriting'
@@ -299,6 +296,7 @@ function keyboardArea(answer: string[], fixed: Set<number>, side: HTMLElement, o
     if (i >= answer.length) return;
     cells[i].dataset.ghost = inScript(answer[i], settings.script);
     cells[i].classList.add('ghost');
+    keys.get(answer[i])?.classList.add('hint'); // どのキーかもわかるように光らせる
   };
   side.append(h('div', { class: 'answer' }, ...cells));
 
