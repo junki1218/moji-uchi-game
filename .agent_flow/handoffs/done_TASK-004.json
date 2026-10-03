@@ -1,0 +1,28 @@
+{
+  "task_id": "TASK-004",
+  "status": "COMPLETED",
+  "completed_at": "2026-10-03T01:50:00+09:00",
+  "outputs": [
+    ".agent_flow/assets/asset_TASK-004_ugoki_02_aruku.png",
+    ".agent_flow/assets/asset_TASK-004_ugoki_03_taberu.png",
+    ".agent_flow/assets/asset_TASK-004_ugoki_04_nomu.png",
+    ".agent_flow/assets/asset_TASK-004_ugoki_05_neru.png",
+    ".agent_flow/assets/asset_TASK-004_ugoki_06_okiru.png",
+    ".agent_flow/assets/asset_TASK-004_ugoki_07_oyogu.png",
+    ".agent_flow/assets/asset_TASK-004_ugoki_08_nageru.png",
+    ".agent_flow/assets/asset_TASK-004_ugoki_09_keru.png",
+    ".agent_flow/assets/asset_TASK-004_ugoki_10_kaku.png",
+    ".agent_flow/assets/asset_TASK-004_ugoki_11_yomu.png",
+    ".agent_flow/assets/asset_TASK-004_ugoki_12_arau.png",
+    ".agent_flow/assets/asset_TASK-004_ugoki_13_suwaru.png",
+    ".agent_flow/assets/asset_TASK-004_ugoki_14_tatsu.png",
+    ".agent_flow/assets/asset_TASK-004_ugoki_15_utau.png",
+    ".agent_flow/assets/asset_TASK-004_ugoki_16_odoru.png",
+    ".agent_flow/assets/asset_TASK-004_ugoki_17_tobu.png",
+    ".agent_flow/assets/asset_TASK-004_ugoki_18_migaku.png",
+    ".agent_flow/assets/asset_TASK-004_ugoki_19_noboru.png",
+    ".agent_flow/assets/asset_TASK-004_ugoki_20_kigaeru.png",
+    ".agent_flow/artifacts/verify_TASK-004.png"
+  ],
+  "notes": "TASK-004（問題イラスト うごき 19枚）および確認用一覧シートの生成・Googleドライブ同期が完了しました。"
+}

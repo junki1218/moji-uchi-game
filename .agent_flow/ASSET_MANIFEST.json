@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-30T21:00:00+09:00",
+  "last_updated": "2026-10-03T11:15:00+09:00",
   "assets": [
     {
       "id": "ref_person",
@@ -230,6 +230,486 @@
       "created_by": "Antigravity",
       "task_id": "TASK-002",
       "prompt": "Claymation style illustration of a slice of strawberry shortcake with white whipped cream, red strawberry on top, soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, 45 degree isometric angle view, plain solid off-white background (#FFF7EC), bright clear red, white, and yellow sponge colors, simple shapes, soft front lighting, child-friendly, no text, no letters, no numbers, no logo, no watermark"
+    },
+    {
+      "id": "kimochi_02",
+      "type": "image",
+      "purpose": "問題イラスト きもち: かなしい",
+      "file_path": ".agent_flow/assets/asset_TASK-003_kimochi_02_kanashii.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-003",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt), expressing sadness (\"kanashii\"). Upper body portrait from chest up, facing forward. Eyebrows slanting down, a single small teardrop on cheek, dropped shoulders, sad expression. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "kimochi_03",
+      "type": "image",
+      "purpose": "問題イラスト きもち: たのしい",
+      "file_path": ".agent_flow/assets/asset_TASK-003_kimochi_03_tanoshii.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-003",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt), having fun (\"tanoshii\"). Upper body portrait from chest up, facing forward. Open mouth cheerful laughing smile, clapping hands together with joy, lively posture. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "kimochi_04",
+      "type": "image",
+      "purpose": "問題イラスト きもち: おこる",
+      "file_path": ".agent_flow/assets/asset_TASK-003_kimochi_04_okoru.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-003",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt), expressing anger / upset (\"okoru\"). Upper body portrait from chest up, facing forward. Slanted upward angry eyebrows, frowning mouth, puffed red cheeks, clenched fists. Mild cute anger not scary. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "kimochi_05",
+      "type": "image",
+      "purpose": "問題イラスト きもち: こわい",
+      "file_path": ".agent_flow/assets/asset_TASK-003_kimochi_05_kowai.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-003",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt), feeling scared / afraid (\"kowai\"). Upper body portrait from chest up, facing forward. Wide open startled eyes, pursed mouth, shrinking back with both hands held near chest. Gentle mild expression not too scary. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "kimochi_06",
+      "type": "image",
+      "purpose": "問題イラスト きもち: びっくり",
+      "file_path": ".agent_flow/assets/asset_TASK-003_kimochi_06_bikkuri.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-003",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt), expressing surprise / shock (\"bikkuri\"). Upper body portrait from chest up, facing forward. Round wide open surprised eyes and round open mouth 'O' shape, both hands spread open in surprise. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "kimochi_07",
+      "type": "image",
+      "purpose": "問題イラスト きもち: いたい",
+      "file_path": ".agent_flow/assets/asset_TASK-003_kimochi_07_itai.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-003",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt, blue pants), feeling pain / hurt (\"itai\"). Sitting or crouching, holding knee with both hands, small adhesive bandage on knee, eyes tightly shut in pain with mild tears. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, not overly graphic, no text, no letters, no watermark"
+    },
+    {
+      "id": "kimochi_08",
+      "type": "image",
+      "purpose": "問題イラスト きもち: ねむい",
+      "file_path": ".agent_flow/assets/asset_TASK-003_kimochi_08_nemui.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-003",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt), feeling sleepy / tired (\"nemui\"). Upper body portrait from chest up, facing forward. Half-closed heavy sleepy eyes, yawning with one hand rubbing an eye. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "kimochi_09",
+      "type": "image",
+      "purpose": "問題イラスト きもち: さむい",
+      "file_path": ".agent_flow/assets/asset_TASK-003_kimochi_09_samui.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-003",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt and a cozy red scarf/muffler around neck), feeling cold / freezing (\"samui\"). Upper body portrait from chest up, facing forward. Shivering, arms wrapped tightly around torso, closed tight mouth, pale cheeks. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "kimochi_10",
+      "type": "image",
+      "purpose": "問題イラスト きもち: あつい",
+      "file_path": ".agent_flow/assets/asset_TASK-003_kimochi_10_atsui.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-003",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt), feeling hot / warm (\"atsui\"). Upper body portrait from chest up, facing forward. Sweating with small sweat drops on forehead, slightly open mouth panting, fanning face with one hand. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "kimochi_11",
+      "type": "image",
+      "purpose": "問題イラスト きもち: おいしい",
+      "file_path": ".agent_flow/assets/asset_TASK-003_kimochi_11_oishii.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-003",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt), expressing delicious / yummy food (\"oishii\"). Upper body portrait from chest up, facing forward. Squinted happy smiling eyes, one hand holding a small spoon, other hand touching cheek with delight. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "kimochi_12",
+      "type": "image",
+      "purpose": "問題イラスト きもち: まずい",
+      "file_path": ".agent_flow/assets/asset_TASK-003_kimochi_12_mazui.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-003",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt), tasting bad / unpleasant food (\"mazui\"). Upper body portrait from chest up, facing forward. Eyebrows furrowed, tongue slightly sticking out with disgusted expression, holding a spoon. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "kimochi_13",
+      "type": "image",
+      "purpose": "問題イラスト きもち: はずかしい",
+      "file_path": ".agent_flow/assets/asset_TASK-003_kimochi_13_hazukashii.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-003",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt), feeling shy / embarrassed (\"hazukashii\"). Upper body portrait from chest up, facing slightly sideways. Blushing bright pink/red cheeks, looking away shyly, covering lower half of face with both hands. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "kimochi_14",
+      "type": "image",
+      "purpose": "問題イラスト きもち: さびしい",
+      "file_path": ".agent_flow/assets/asset_TASK-003_kimochi_14_sabishii.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-003",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt, blue pants), feeling lonely / solitary (\"sabishii\"). Full body view, sitting alone hugging knees, looking down with slanted down sad eyebrows and lonely expression. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "kimochi_15",
+      "type": "image",
+      "purpose": "問題イラスト きもち: くやしい",
+      "file_path": ".agent_flow/assets/asset_TASK-003_kimochi_15_kuyashii.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-003",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt), feeling frustrated / regretful (\"kuyashii\"). Upper body portrait from chest up, facing forward. Clenching teeth tightly, slight tears in eyes, furrowed determined eyebrows, tightly clenching both fists in frustration. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "kimochi_16",
+      "type": "image",
+      "purpose": "問題イラスト きもち: こまる",
+      "file_path": ".agent_flow/assets/asset_TASK-003_kimochi_16_komaru.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-003",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt), feeling troubled / confused / at a loss (\"komaru\"). Upper body portrait from chest up, facing forward. Slanted downward 'eight-shaped' troubled eyebrows (ha-no-ji), squiggly confused mouth, scratching head with one hand. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "kimochi_17",
+      "type": "image",
+      "purpose": "問題イラスト きもち: つかれた",
+      "file_path": ".agent_flow/assets/asset_TASK-003_kimochi_17_tsukareta.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-003",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt), feeling exhausted / tired out (\"tsukareta\"). Upper body portrait from chest up, facing forward. Drowsy heavy eyes, slightly open mouth sighing / panting, small sweat bead, relaxed exhausted posture. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "kimochi_18",
+      "type": "image",
+      "purpose": "問題イラスト きもち: どきどき",
+      "file_path": ".agent_flow/assets/asset_TASK-003_kimochi_18_dokidoki.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-003",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt), feeling excited anticipation / heart pounding nervous (\"dokidoki\"). Upper body portrait from chest up, facing forward. Slightly wide open eyes looking forward, tight lips, placing both hands over chest / heart. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "kimochi_19",
+      "type": "image",
+      "purpose": "問題イラスト きもち: いやだ",
+      "file_path": ".agent_flow/assets/asset_TASK-003_kimochi_19_iyada.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-003",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt), refusing / disliking (\"iyada\"). Upper body portrait from chest up, facing slightly sideways. Grimacing face with closed eyes turning away, one palm pushed forward in a \"stop / no\" gesture. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "kimochi_20",
+      "type": "image",
+      "purpose": "問題イラスト きもち: げんき",
+      "file_path": ".agent_flow/assets/asset_TASK-003_kimochi_20_genki.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-003",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt), full of energy and vigor (\"genki\"). Upper body portrait from chest up, facing forward. Big energetic radiant smile, both arms making powerful fist pump / victory poses (\"guts pose\"). Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "ugoki_02",
+      "type": "image",
+      "purpose": "問題イラスト うごき: あるく",
+      "file_path": ".agent_flow/assets/asset_TASK-004_ugoki_02_aruku.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-004",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt, blue pants, white sneakers), walking calmly (\"aruku\"). Full body side profile view, walking slowly with both feet touching the ground, smiling face. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "ugoki_03",
+      "type": "image",
+      "purpose": "問題イラスト うごき: たべる",
+      "file_path": ".agent_flow/assets/asset_TASK-004_ugoki_03_taberu.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-004",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt, blue pants), eating an onigiri rice ball (\"taberu\"). Full body or sitting view, holding a triangular onigiri rice ball with seaweed with both hands and taking a bite with happy smiling face. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "ugoki_04",
+      "type": "image",
+      "purpose": "問題イラスト うごき: のむ",
+      "file_path": ".agent_flow/assets/asset_TASK-004_ugoki_04_nomu.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-004",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt, blue pants), drinking water from a cup (\"nomu\"). Full body view, holding a plain blue cup with both hands and drinking water from it. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "ugoki_05",
+      "type": "image",
+      "purpose": "問題イラスト うごき: ねる",
+      "file_path": ".agent_flow/assets/asset_TASK-004_ugoki_05_neru.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-004",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair), sleeping peacefully in a futon bed (\"neru\"). Lying down with closed eyes, head on a pillow, covered with a cozy blanket / quilt. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "ugoki_06",
+      "type": "image",
+      "purpose": "問題イラスト うごき: おきる",
+      "file_path": ".agent_flow/assets/asset_TASK-004_ugoki_06_okiru.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-004",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt), waking up from futon bed (\"okiru\"). Sitting up from futon, raising both arms and stretching with a pleasant refreshed morning smile. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "ugoki_07",
+      "type": "image",
+      "purpose": "問題イラスト うごき: およぐ",
+      "file_path": ".agent_flow/assets/asset_TASK-004_ugoki_07_oyogu.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-004",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair), swimming crawl stroke in water (\"oyogu\"). Head and one arm reaching forward out of clay water surface, small clay splash, water surface only directly around character. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "ugoki_08",
+      "type": "image",
+      "purpose": "問題イラスト うごき: なげる",
+      "file_path": ".agent_flow/assets/asset_TASK-004_ugoki_08_nageru.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-004",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt, blue pants, white sneakers), throwing a red ball overhand (\"nageru\"). Full body dynamic pose, one arm raised back about to throw a bright red rubber ball, focused happy face. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "ugoki_09",
+      "type": "image",
+      "purpose": "問題イラスト うごき: ける",
+      "file_path": ".agent_flow/assets/asset_TASK-004_ugoki_09_keru.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-004",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt, blue pants, white sneakers), kicking a soccer ball (\"keru\"). Full body dynamic action pose, one leg swinging forward kicking a classic black and white patterned soccer ball, energetic happy expression. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "ugoki_10",
+      "type": "image",
+      "purpose": "問題イラスト うごき: かく",
+      "file_path": ".agent_flow/assets/asset_TASK-004_ugoki_10_kaku.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-004",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt, blue pants), drawing on paper with a crayon (\"kaku\"). Sitting or crouching, holding a red crayon, drawing abstract colorful strokes on a white sheet of drawing paper (no text or letters drawn on paper). Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "ugoki_11",
+      "type": "image",
+      "purpose": "問題イラスト うごき: よむ",
+      "file_path": ".agent_flow/assets/asset_TASK-004_ugoki_11_yomu.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-004",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt, blue pants), reading an open picture book (\"yomu\"). Sitting down holding an open picture book with both hands, book pages show only simple colorful abstract shape illustrations without any text or letters. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "ugoki_12",
+      "type": "image",
+      "purpose": "問題イラスト うごき: あらう",
+      "file_path": ".agent_flow/assets/asset_TASK-004_ugoki_12_arau.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-004",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt, blue pants), washing hands with soapy bubbles at a simple sink (\"arau\"). Standing in front of a small clay washbasin/sink, rubbing hands together covered in fluffy white soap bubbles. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "ugoki_13",
+      "type": "image",
+      "purpose": "問題イラスト うごき: すわる",
+      "file_path": ".agent_flow/assets/asset_TASK-004_ugoki_13_suwaru.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-004",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt, blue pants, white sneakers), sitting nicely on a simple wooden chair (\"suwaru\"). Full body 45 degree angle view, hands on knees, sitting straight with a happy smile. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "ugoki_14",
+      "type": "image",
+      "purpose": "問題イラスト うごき: たつ",
+      "file_path": ".agent_flow/assets/asset_TASK-004_ugoki_14_tatsu.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-004",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt, blue pants, white sneakers), standing straight with attention posture (\"tatsu\"). Full body front view, standing up straight with arms straight down at sides, good posture, smiling face. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "ugoki_15",
+      "type": "image",
+      "purpose": "問題イラスト うごき: うたう",
+      "file_path": ".agent_flow/assets/asset_TASK-004_ugoki_15_utau.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-004",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt, blue pants, white sneakers), singing joyfully with wide open mouth (\"utau\"). Full body front or 45 degree view, singing happily, a few colorful small clay musical note symbols floating nearby (no text or lyrics). Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "ugoki_16",
+      "type": "image",
+      "purpose": "問題イラスト うごき: おどる",
+      "file_path": ".agent_flow/assets/asset_TASK-004_ugoki_16_odoru.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-004",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt, blue pants, white sneakers), dancing happily (\"odoru\"). Full body dynamic dancing pose, one leg lifted, both arms spread wide cheerfully, joyous expression. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "ugoki_17",
+      "type": "image",
+      "purpose": "問題イラスト うごき: とぶ",
+      "file_path": ".agent_flow/assets/asset_TASK-004_ugoki_17_tobu.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-004",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt, blue pants, white sneakers), jumping high in the air with both feet off the ground (\"tobu\"). Full body dynamic jump pose, legs bent mid-air, arms raised in delight, floating above ground. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "ugoki_18",
+      "type": "image",
+      "purpose": "問題イラスト うごき: みがく",
+      "file_path": ".agent_flow/assets/asset_TASK-004_ugoki_18_migaku.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-004",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt, blue pants), brushing teeth with a toothbrush (\"migaku\"). Full body or upper body view, holding a blue toothbrush with toothpaste bubbles on teeth, smiling while brushing. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "ugoki_19",
+      "type": "image",
+      "purpose": "問題イラスト うごき: のぼる",
+      "file_path": ".agent_flow/assets/asset_TASK-004_ugoki_19_noboru.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-004",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt, blue pants, white sneakers), climbing up the ladder of a playground slide (\"noboru\"). Full body side profile view, climbing steps/ladder with hands holding the rails, energetic climbing motion. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "ugoki_20",
+      "type": "image",
+      "purpose": "問題イラスト うごき: きがえる",
+      "file_path": ".agent_flow/assets/asset_TASK-004_ugoki_20_kigaeru.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-004",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing blue pants), changing clothes (\"kigaeru\"). Pulling a yellow t-shirt over their head, head half-emerging playfully from the neck hole of the t-shirt, arms reaching through sleeves. Soft handmade clay texture, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "ui_icon",
+      "type": "image",
+      "purpose": "アプリアイコン元絵（キートップ無地）",
+      "file_path": ".agent_flow/assets/asset_TASK-005_icon.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-005",
+      "prompt": "Claymation style single keyboard keycap icon seen from 45 degree top-down angle, soft handmade clay texture, stop-motion puppet look, solid blank keytop without any letters, symbols or text, keycap is a bright friendly cream-white clay, vibrant warm orange background (#FFB84D) completely filling the full square frame edge-to-edge with no rounded corner masking, soft studio lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "ui_cat_mono",
+      "type": "image",
+      "purpose": "カテゴリボタン: もの",
+      "file_path": ".agent_flow/assets/asset_TASK-005_cat_mono.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-005",
+      "prompt": "Claymation style group illustration of three cute items clustered together: a red apple, a small blue car, and a brown puppy head, soft handmade clay texture, stop-motion puppet look, centered together filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "ui_cat_kimochi",
+      "type": "image",
+      "purpose": "カテゴリボタン: きもち",
+      "file_path": ".agent_flow/assets/asset_TASK-005_cat_kimochi.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-005",
+      "prompt": "Claymation style illustration showing two side-by-side face portraits of the same character (child with short black bob hair): one face smiling happily and the other face looking sad with a teardrop, soft handmade clay texture, stop-motion puppet look, centered filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "ui_cat_ugoki",
+      "type": "image",
+      "purpose": "カテゴリボタン: うごき",
+      "file_path": ".agent_flow/assets/asset_TASK-005_cat_ugoki.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-005",
+      "prompt": "Claymation style illustration of the same character (child with short black bob hair, wearing yellow t-shirt, blue pants, white sneakers), running energetically, full body action pose, soft handmade clay texture, stop-motion puppet look, centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear colors, soft front lighting, child-friendly, no text, no letters, no watermark"
+    },
+    {
+      "id": "ui_hanamaru",
+      "type": "image",
+      "purpose": "1問正解のごほうび: 花丸",
+      "file_path": ".agent_flow/assets/asset_TASK-005_hanamaru.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-005",
+      "prompt": "Claymation style illustration of a bright red Japanese hanamaru reward symbol (spiral circle with decorative flower petals around it), soft handmade clay texture, thick clear distinct outline, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear red color, soft front lighting, child-friendly, no text, no letters, no numbers, no watermark"
+    },
+    {
+      "id": "ui_stamp_star",
+      "type": "image",
+      "purpose": "おわり画面スタンプ: 星",
+      "file_path": ".agent_flow/assets/asset_TASK-005_stamp_star.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-005",
+      "prompt": "Claymation style illustration of a bright yellow five-pointed star stamp badge, soft handmade clay texture, distinct clear outline, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright warm yellow color, soft front lighting, child-friendly, no text, no letters, no numbers, no watermark"
+    },
+    {
+      "id": "ui_stamp_heart",
+      "type": "image",
+      "purpose": "おわり画面スタンプ: ハート",
+      "file_path": ".agent_flow/assets/asset_TASK-005_stamp_heart.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-005",
+      "prompt": "Claymation style illustration of a cute bright pink heart shape stamp badge, soft handmade clay texture, distinct clear outline, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright pastel pink color, soft front lighting, child-friendly, no text, no letters, no numbers, no watermark"
+    },
+    {
+      "id": "ui_stamp_flower",
+      "type": "image",
+      "purpose": "おわり画面スタンプ: 花",
+      "file_path": ".agent_flow/assets/asset_TASK-005_stamp_flower.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-005",
+      "prompt": "Claymation style illustration of a cheerful orange flower stamp badge with 5 rounded petals and yellow center, soft handmade clay texture, distinct clear outline, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright vivid orange and yellow colors, soft front lighting, child-friendly, no text, no letters, no numbers, no watermark"
+    },
+    {
+      "id": "ui_stamp_thumb",
+      "type": "image",
+      "purpose": "おわり画面スタンプ: グッドの手",
+      "file_path": ".agent_flow/assets/asset_TASK-005_stamp_thumb.png",
+      "dimensions": "1024x1024",
+      "created_by": "Antigravity",
+      "task_id": "TASK-005",
+      "prompt": "Claymation style illustration of a cute thumbs-up \"Good\" hand gesture stamp badge, soft handmade clay texture, distinct clear outline, stop-motion puppet look, single subject centered and large filling 70% of the frame, plain solid off-white background (#FFF7EC), bright clear warm skin and cuff colors, soft front lighting, child-friendly, no text, no letters, no numbers, no watermark"
+    },
+    {
+      "id": "ui_start_bg",
+      "type": "image",
+      "purpose": "スタート画面背景（1920x1080）",
+      "file_path": ".agent_flow/assets/asset_TASK-005_start_bg.png",
+      "dimensions": "1920x1080",
+      "created_by": "Antigravity",
+      "task_id": "TASK-005",
+      "prompt": "Claymation style background wallpaper for game title screen, 16:9 widescreen composition. Colorful handmade clay building blocks, wooden toy cubes, spheres, cylinders, and triangles gently scattered only along the left edge, right edge, and bottom margin of the frame. The upper-center 60% of the screen is kept completely clean, calm, and empty with plain soft warm cream background (#FFF7EC) to place game title and buttons. Soft studio lighting, bright playful pastel and primary toy colors, child-friendly, no text, no letters, no numbers, no logo, no watermark"
     }
   ]
 }

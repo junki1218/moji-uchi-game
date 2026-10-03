@@ -1,12 +1,12 @@
 {
-  "last_updated": "2026-10-02T09:17:47+09:00",
+  "last_updated": "2026-10-03T11:53:54+09:00",
   "project": "moji-uchi-game",
   "tasks": [
     {
       "id": "TASK-001",
       "title": "画風見本＋基準人物シート（4枚）",
       "owner": "Antigravity",
-      "status": "TODO",
+      "status": "VERIFIED",
       "retry_count": 0,
       "needs_asset": true,
       "needs_browser_check": false,
@@ -16,6 +16,22 @@
         {
           "at": "2026-09-30T15:26:30+09:00",
           "event": "created"
+        },
+        {
+          "at": "2026-10-03T11:53:32+09:00",
+          "event": "TODO → VERIFIED"
+        },
+        {
+          "at": "2026-10-03T11:53:32+09:00",
+          "event": "title を更新"
+        },
+        {
+          "at": "2026-10-03T11:53:54+09:00",
+          "event": "VERIFIED → VERIFIED"
+        },
+        {
+          "at": "2026-10-03T11:53:54+09:00",
+          "event": "title を更新"
         }
       ]
     },
@@ -23,7 +39,7 @@
       "id": "TASK-002",
       "title": "問題イラスト もの（19枚）",
       "owner": "Antigravity",
-      "status": "TODO",
+      "status": "VERIFIED",
       "retry_count": 0,
       "needs_asset": true,
       "needs_browser_check": false,
@@ -35,6 +51,22 @@
         {
           "at": "2026-09-30T15:26:30+09:00",
           "event": "created"
+        },
+        {
+          "at": "2026-10-03T11:53:32+09:00",
+          "event": "TODO → VERIFIED"
+        },
+        {
+          "at": "2026-10-03T11:53:32+09:00",
+          "event": "title を更新"
+        },
+        {
+          "at": "2026-10-03T11:53:54+09:00",
+          "event": "VERIFIED → VERIFIED"
+        },
+        {
+          "at": "2026-10-03T11:53:54+09:00",
+          "event": "title を更新"
         }
       ]
     },
@@ -42,7 +74,7 @@
       "id": "TASK-003",
       "title": "問題イラスト きもち（19枚）",
       "owner": "Antigravity",
-      "status": "TODO",
+      "status": "VERIFIED",
       "retry_count": 0,
       "needs_asset": true,
       "needs_browser_check": false,
@@ -54,6 +86,22 @@
         {
           "at": "2026-09-30T15:26:30+09:00",
           "event": "created"
+        },
+        {
+          "at": "2026-10-03T11:53:32+09:00",
+          "event": "TODO → VERIFIED"
+        },
+        {
+          "at": "2026-10-03T11:53:32+09:00",
+          "event": "title を更新"
+        },
+        {
+          "at": "2026-10-03T11:53:54+09:00",
+          "event": "VERIFIED → VERIFIED"
+        },
+        {
+          "at": "2026-10-03T11:53:54+09:00",
+          "event": "title を更新"
         }
       ]
     },
@@ -61,7 +109,7 @@
       "id": "TASK-004",
       "title": "問題イラスト うごき（19枚）",
       "owner": "Antigravity",
-      "status": "TODO",
+      "status": "VERIFIED",
       "retry_count": 0,
       "needs_asset": true,
       "needs_browser_check": false,
@@ -73,6 +121,22 @@
         {
           "at": "2026-09-30T15:26:30+09:00",
           "event": "created"
+        },
+        {
+          "at": "2026-10-03T11:53:33+09:00",
+          "event": "TODO → VERIFIED"
+        },
+        {
+          "at": "2026-10-03T11:53:33+09:00",
+          "event": "title を更新"
+        },
+        {
+          "at": "2026-10-03T11:53:54+09:00",
+          "event": "VERIFIED → VERIFIED"
+        },
+        {
+          "at": "2026-10-03T11:53:54+09:00",
+          "event": "title を更新"
         }
       ]
     },
