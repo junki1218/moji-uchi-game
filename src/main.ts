@@ -8,6 +8,7 @@ import { chars, DAKUON, inScript, SEION, SMALL } from './kana';
 import { loadSettings, saveSettings, VOLUME_LEVEL, type Settings } from './settings';
 import { duckBgm, playBgm, playJingle, setSound, stopBgm, unlockAudio } from './audio';
 import { speak, unlockSpeech } from './speech';
+import { GOAL, MINIGAMES, runMinigame, type MinigameKind } from './minigames';
 
 registerSW({ immediate: true });
 
@@ -164,6 +165,8 @@ function backButton(to: () => void, label = 'もどる'): HTMLElement {
 interface Round {
   questions: Question[];
   index: number;
+  /** 直前のミニゲーム（同じものが続かないように） */
+  lastMini?: MinigameKind;
 }
 
 function startRound(cat: Category): void {
@@ -198,14 +201,20 @@ function confirmQuit(): void {
         'div',
         { class: 'dialog-buttons' },
         h('button', { class: 'big-btn secondary', onclick: () => overlay.remove() }, 'つづける'),
-        h('button', { class: 'big-btn primary', onclick: startScreen }, 'やめる'),
+        h('button', { class: 'big-btn primary', onclick: () => { stopActiveMini(); startScreen(); } }, 'やめる'),
       ),
     ),
   );
   app.append(overlay);
 }
 
-function questionScreen(round: Round): void {
+function questionScreen(round: Round, afterMini = false): void {
+  // 問題の前に毎回ミニゲーム（設定で切れる）
+  const kinds = settings.minigameKinds.filter((k) => MINIGAMES.some((m) => m.id === k));
+  if (!afterMini && settings.minigame && kinds.length) {
+    minigameScreen(round, kinds, () => questionScreen(round, true));
+    return;
+  }
   playBgm('bgm2_question'); // 10問のあいだ流しっぱなし
   const q = round.questions[round.index];
   const answer = chars(q.hira);
@@ -262,6 +271,70 @@ function questionScreen(round: Round): void {
   );
 
   if (settings.prompt !== 'picture') window.setTimeout(say, 300);
+}
+
+// ------------------------------------------------------------ ミニゲーム（問題の前）
+
+/** やめる で途中で抜けたときにミニゲームを止める */
+let stopActiveMini: () => void = () => undefined;
+
+const MINI_SKIP_AFTER_MS = 20000; // これを過ぎたら「つぎへ」を出して、止まらないようにする
+const MINI_CLEAR_MS = 1100;
+
+function minigameScreen(round: Round, kinds: MinigameKind[], onDone: () => void): void {
+  playBgm('bgm2_question');
+  // 直前と同じものは避ける（1種類しかなければそれ）
+  const pool = kinds.length > 1 ? kinds.filter((k) => k !== round.lastMini) : kinds;
+  const kind = pool[Math.floor(Math.random() * pool.length)];
+  round.lastMini = kind;
+  const info = MINIGAMES.find((m) => m.id === kind)!;
+
+  let finished = false;
+  let stop: () => void = () => undefined;
+  const leave = () => {
+    if (finished) return;
+    finished = true;
+    clearTimeout(skipTimer);
+    stop();
+    onDone();
+  };
+
+  const stars = h('div', { class: 'mini-stars', 'aria-label': `0 / ${GOAL}` }, ...Array.from({ length: GOAL }, () => h('span', { class: 'mini-star' }, '☆')));
+  const skipBtn = h('button', { class: 'mid-btn secondary mini-skip', hidden: true, onclick: leave }, 'つぎへ ▶');
+  const canvas = h('canvas', { class: 'mini-canvas' });
+
+  const onProgress = (count: number) => {
+    Array.from(stars.children).forEach((s, i) => {
+      s.textContent = i < count ? '★' : '☆';
+      s.classList.toggle('on', i < count);
+    });
+    if (count >= GOAL && !finished) {
+      playJingle('correct');
+      app.append(h('div', { class: 'overlay clear' }, h('div', { class: 'mini-clear pop' }, 'できた！')));
+      setTimeout(() => {
+        document.querySelector('.overlay.clear')?.remove();
+        leave();
+      }, MINI_CLEAR_MS);
+    }
+  };
+
+  const say = () => speak(info.instruction, () => duckBgm(true), () => duckBgm(false));
+  show(
+    h(
+      'main',
+      { class: `screen game mini mini-${kind}` },
+      h('header', { class: 'game-header' }, quitButton(), progress(round)),
+      h('div', { class: 'mini-head' },
+        h('button', { class: 'speaker-btn', 'aria-label': 'よみあげ', onclick: say }, '🔊'),
+        h('p', { class: 'mini-instruction' }, info.instruction),
+        stars),
+      h('div', { class: 'mini-stage' }, canvas, skipBtn),
+    ),
+  );
+  stop = runMinigame(kind, canvas, onProgress);
+  stopActiveMini = () => { finished = true; clearTimeout(skipTimer); stop(); };
+  const skipTimer = setTimeout(() => { skipBtn.hidden = false; }, MINI_SKIP_AFTER_MS);
+  window.setTimeout(say, 300);
 }
 
 // ------------------------------------------------------------ キーボード入力
@@ -679,6 +752,8 @@ function settingsScreen(): void {
       choice('aColumn', 'あ行の位置', [['right', '右はし（50音表と同じ）'], ['left', '左はし']]),
       choice('sound', 'おと（BGM）', [[true, 'あり'], [false, 'なし']]),
       choice('volume', '音量', [['low', '小'], ['mid', '中'], ['high', '大']]),
+      choice('minigame', 'ミニゲーム', [[true, 'あり（問題の前に毎回）'], [false, 'なし']]),
+      minigameKindsRow(),
       h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'もんだい'),
         h('div', { class: 'seg' }, h('button', { class: 'seg-btn', onclick: () => questionsScreen('mono') }, '出題する問題を選ぶ・読み込む'))),
       h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'てがきのきろく'),
@@ -686,6 +761,27 @@ function settingsScreen(): void {
       h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, '暗証番号'), h('div', { class: 'seg' }, pinInput, pinSave, pinMsg)),
     ),
   );
+}
+
+/** ミニゲームの種類（複数選べる。0にはできない） */
+function minigameKindsRow(): HTMLElement {
+  const group = h('div', { class: 'seg' });
+  const paint = () =>
+    Array.from(group.children).forEach((b, i) => b.classList.toggle('on', settings.minigameKinds.includes(MINIGAMES[i].id)));
+  for (const m of MINIGAMES) {
+    group.append(h('button', {
+      class: 'seg-btn',
+      onclick: () => {
+        const has = settings.minigameKinds.includes(m.id);
+        if (has && settings.minigameKinds.length === 1) return; // 最後の1つは外せない（なしは上で選ぶ）
+        settings = { ...settings, minigameKinds: has ? settings.minigameKinds.filter((k) => k !== m.id) : [...settings.minigameKinds, m.id] };
+        saveSettings(settings);
+        paint();
+      },
+    }, m.label));
+  }
+  paint();
+  return h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'ミニゲームの種類'), group);
 }
 
 // ------------------------------------------------------------ 出題する問題（先生用）

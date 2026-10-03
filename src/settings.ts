@@ -6,6 +6,7 @@ export type InputMode = 'keyboard' | 'handwriting';
 export type PromptMode = 'look' | 'listen' | 'picture';
 export type AColumn = 'left' | 'right';
 export type Volume = 'low' | 'mid' | 'high';
+export type MinigameKind = 'bubble' | 'gummy' | 'feather';
 
 export const VOLUME_LEVEL: Record<Volume, number> = { low: 0.3, mid: 0.6, high: 0.9 };
 
@@ -16,6 +17,9 @@ export interface Settings {
   aColumn: AColumn;
   sound: boolean;
   volume: Volume;
+  /** 問題の前のミニゲーム */
+  minigame: boolean;
+  minigameKinds: MinigameKind[];
   pin: string;
 }
 
@@ -28,6 +32,8 @@ const DEFAULTS: Settings = {
   aColumn: 'right', // 教室の50音表と同じ（右上が「あ」）
   sound: true,
   volume: 'mid',
+  minigame: true,
+  minigameKinds: ['bubble', 'gummy', 'feather'],
   pin: DEFAULT_PIN,
 };
 
