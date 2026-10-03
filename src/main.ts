@@ -239,9 +239,12 @@ function questionScreen(round: Round): void {
   };
 
   // ヒント: 最初の1文字を薄く出す（キーボードはそのキーも光らせる）。どの出題モードでも出す
-  const hint: Hint = { show: () => undefined, enable: () => undefined };
-  const hintBtn: HTMLButtonElement = h('button', { class: 'hint-btn', onclick: () => { hint.show(); hintBtn.disabled = true; } }, '💡 ヒント');
-  hint.enable = () => { hintBtn.disabled = false; };
+  // 文は 1回目＝〇〇（名詞）、2回目＝●●（うごき）の1文字目
+  const hint: Hint = { show: () => false };
+  const hintBtn: HTMLButtonElement = h('button', {
+    class: 'hint-btn',
+    onclick: () => { if (!hint.show()) hintBtn.disabled = true; },
+  }, '💡 ヒント');
 
   const input =
     settings.input === 'handwriting'
@@ -263,10 +266,9 @@ function questionScreen(round: Round): void {
 
 // ------------------------------------------------------------ キーボード入力
 
-/** ヒントボタンと入力欄をつなぐ。show＝最初の1文字を出す、enable＝ボタンをもう一度押せるようにする */
+/** ヒントボタンと入力欄をつなぐ。show＝次のヒントを出し、まだ出せるヒントが残っていれば true */
 interface Hint {
-  show: () => void;
-  enable: () => void;
+  show: () => boolean;
 }
 
 /** 文なら 〇〇 と ●● の頭の位置、単語なら [0] */
@@ -287,16 +289,27 @@ function keyboardArea(answer: string[], fixed: Set<number>, side: HTMLElement, o
   const stageDone = (upTo: number) => {
     for (let i = 0; i < upTo; i++) cells[i].classList.add('stage-done');
     playJingle('correct');
-    hint.enable(); // ●●に進んだら、●●の1文字目のヒントをもう一度出せる
   };
   // いま打っている段（〇〇／●●）の1文字目を薄く出す。もう打ってあれば、いま打つ字を出す
+  // ヒントは段の頭（単語は1文字目、文は〇〇→●●の順）を1つずつ出す。
+  // キーを光らせるのはその字を打つ番になったとき（〇〇を打っている途中に●●のキーは光らせない）
+  const starts = partStarts(answer, fixed);
+  let step = 0;
+  const glowAt = new Set<number>();
+  const glowIfDue = () => { if (glowAt.has(pos)) keys.get(answer[pos])?.classList.add('hint'); };
+  const filled = (i: number) => cells[i].classList.contains('filled');
   hint.show = () => {
-    const start = Math.max(...partStarts(answer, fixed).filter((s) => s <= pos));
-    const i = cells[start].classList.contains('filled') ? pos : start;
-    if (i >= answer.length) return;
-    cells[i].dataset.ghost = inScript(answer[i], settings.script);
-    cells[i].classList.add('ghost');
-    keys.get(answer[i])?.classList.add('hint'); // どのキーかもわかるように光らせる
+    while (step < starts.length && filled(starts[step])) step++; // もう打った段は飛ばす
+    // 出す段が残っていなければ、いま打つ字を出す（単語で1文字目を打った後に押したとき）
+    const i = step < starts.length ? starts[step++] : pos;
+    if (i < answer.length) {
+      cells[i].dataset.ghost = inScript(answer[i], settings.script);
+      cells[i].classList.add('ghost');
+      glowAt.add(i);
+      glowIfDue();
+    }
+    while (step < starts.length && filled(starts[step])) step++;
+    return step < starts.length;
   };
   side.append(h('div', { class: 'answer' }, ...cells));
 
@@ -324,8 +337,10 @@ function keyboardArea(answer: string[], fixed: Set<number>, side: HTMLElement, o
       stageDone(pos);
       while (fixed.has(pos)) pos++;
     }
-    if (pos < answer.length) cells[pos].classList.add('current');
-    else onDone();
+    if (pos < answer.length) {
+      cells[pos].classList.add('current');
+      glowIfDue();
+    } else onDone();
   };
 
   const block = (cols: (string | null)[][], cls: string) => {
@@ -414,10 +429,14 @@ function handwritingArea(answer: string[], fixed: Set<number>, sample: HTMLEleme
     cells[i].classList.toggle('written', written[i]);
   };
 
-  // 〇〇（文なら ●● も）の1文字目を薄く出す。なぞって書ける
+  // 1回目＝〇〇の1文字目、2回目＝●●の1文字目を薄く出す（単語は1回）。なぞって書ける
+  const starts = partStarts(answer, fixed);
+  let step = 0;
   hint.show = () => {
-    for (const s of partStarts(answer, fixed)) ghost[s] = true;
-    cellCanvases.forEach((_, i) => paintCell(i));
+    const i = starts[step++];
+    ghost[i] = true;
+    paintCell(i);
+    return step < starts.length;
   };
 
   /** 次に書く字（固定のマスは飛ばす）。なければ -1 */
