@@ -143,3 +143,113 @@ export function playJingle(name: JingleName): void {
     osc.stop(t + d);
   });
 }
+
+// ------------------------------------------------------------ 効果音（ミニゲーム用）
+// 開発材料【質感】/demos/fx.js の音を移植（その場で合成。音声ファイル不要）。
+// 強さ i は 0..1 に正規化した物理量（大きさ・速さ）。master を通すので音量設定が効く。
+
+export type SfxName = 'pop' | 'boing' | 'squelch' | 'whoosh' | 'click';
+
+let noiseBuf: AudioBuffer | null = null;
+const c01 = (v: number) => Math.max(0, Math.min(1, v || 0));
+
+function noise(c: AudioContext): AudioBuffer {
+  if (!noiseBuf) {
+    noiseBuf = c.createBuffer(1, c.sampleRate * 0.4, c.sampleRate);
+    const d = noiseBuf.getChannelData(0);
+    for (let k = 0; k < d.length; k++) d[k] = Math.random() * 2 - 1;
+  }
+  return noiseBuf;
+}
+
+const SFX: Record<SfxName, (c: AudioContext, out: AudioNode, i: number, opt?: number) => void> = {
+  // プチッ/パン（破裂）: 強度→音量・低音成分・余韻
+  pop(c, out, i) {
+    const t = c.currentTime;
+    const s = c.createBufferSource(); s.buffer = noise(c);
+    const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.2;
+    bp.frequency.setValueAtTime(1900 - 1300 * i, t);
+    bp.frequency.exponentialRampToValueAtTime(300, t + 0.08 + 0.15 * i);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.25 + 0.5 * i, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.1 + 0.25 * i);
+    s.connect(bp).connect(g).connect(out);
+    s.start(t); s.stop(t + 0.45);
+    if (i > 0.5) {
+      const o = c.createOscillator(), og = c.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(120, t);
+      o.frequency.exponentialRampToValueAtTime(40, t + 0.25);
+      og.gain.setValueAtTime(0.4 * i, t);
+      og.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+      o.connect(og).connect(out); o.start(t); o.stop(t + 0.3);
+    }
+  },
+  // ボヨン（弾み）: base＝基準周波数
+  boing(c, out, i, base) {
+    const t = c.currentTime;
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = 'triangle';
+    const b = base || 140 + 160 * i;
+    o.frequency.setValueAtTime(b * 0.7, t);
+    o.frequency.exponentialRampToValueAtTime(b, t + 0.07);
+    g.gain.setValueAtTime(0.1 + 0.2 * i, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+    o.connect(g).connect(out); o.start(t); o.stop(t + 0.45);
+  },
+  // ニュチャ（ぷにぷに・粘り）
+  squelch(c, out, i) {
+    const t = c.currentTime;
+    const s = c.createBufferSource(); s.buffer = noise(c); s.playbackRate.value = 0.4;
+    const lp = c.createBiquadFilter(); lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(500, t);
+    lp.frequency.exponentialRampToValueAtTime(150, t + 0.15);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.05 + 0.15 * i, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+    s.connect(lp).connect(g).connect(out);
+    s.start(t); s.stop(t + 0.22);
+  },
+  // フワッ（風）
+  whoosh(c, out, i) {
+    const t = c.currentTime;
+    const s = c.createBufferSource(); s.buffer = noise(c);
+    const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 0.7;
+    bp.frequency.setValueAtTime(300 + 200 * i, t);
+    bp.frequency.linearRampToValueAtTime(700 + 500 * i, t + 0.12);
+    bp.frequency.linearRampToValueAtTime(250, t + 0.3);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.05 + 0.14 * i, t + 0.05);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+    s.connect(bp).connect(g).connect(out);
+    s.start(t); s.stop(t + 0.35);
+  },
+  // カチッ（ミシミシ）
+  click(c, out, i, freq) {
+    const t = c.currentTime;
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = 'square';
+    o.frequency.value = freq || 800 + 1600 * i;
+    g.gain.setValueAtTime(0.05 + 0.12 * i, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.015 + 0.02 * i);
+    o.connect(g).connect(out); o.start(t); o.stop(t + 0.05);
+  },
+};
+
+const lastPlayed: Record<string, number> = {};
+
+/** 効果音。throttleMs を渡すと、その間隔より短い連打は鳴らさない（なぞり等の連続イベント用） */
+export function sfx(name: SfxName, intensity: number, opt?: number, throttleMs = 0): void {
+  if (!ctx || ctx.state !== 'running' || !master) return;
+  if (throttleMs) {
+    const now = performance.now();
+    if (lastPlayed[name] && now - lastPlayed[name] < throttleMs) return;
+    lastPlayed[name] = now;
+  }
+  try {
+    SFX[name](ctx, master, c01(intensity), opt);
+  } catch {
+    // 音が出せなくても遊びは続ける
+  }
+}

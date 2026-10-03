@@ -514,3 +514,35 @@ button {
   pointer-events: none;
 }
 .pad-canvas { position: relative; }
+
+/* ---------- ミニゲーム ---------- */
+
+.mini { gap: 1vh; }
+.mini-head { display: flex; align-items: center; gap: 2vw; }
+.mini-instruction { margin: 0; font-size: min(3.4vw, 4.6vh); font-weight: 700; }
+.mini-stars { display: flex; gap: 0.6vw; font-size: min(4.4vw, 6vh); color: #e0c35a; }
+.mini-star.on { color: #ffb400; animation: pop 0.4s cubic-bezier(0.3, 1.6, 0.5, 1); }
+.mini-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  border-radius: 28px;
+  overflow: hidden;
+  border: 3px solid var(--line);
+}
+.mini-bubble .mini-stage { background: linear-gradient(#dff1ff, #f5fbff); }
+.mini-gummy .mini-stage { background: radial-gradient(circle at 50% 45%, #fff, #ffe9ee); }
+.mini-feather .mini-stage { background: linear-gradient(#bfe3ff, #eaf6ff 70%); }
+.mini-canvas { width: 100%; height: 100%; display: block; touch-action: none; }
+.mini-skip { position: absolute; right: 16px; bottom: 16px; }
+.mini-skip[hidden] { display: none; }
+.mini-clear {
+  font-size: min(9vw, 12vh);
+  font-weight: 700;
+  color: var(--primary);
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.2em 0.8em;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
