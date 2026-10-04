@@ -136,8 +136,9 @@ export function parseImport(text: string): ImportPlan {
       return;
     }
 
-    // 文「〇〇が●●」: カテゴリは「ぶん」に決まる
+    // 文「〇〇が●●」: カテゴリは「ぶん」（category に「ぶん・きもち」と書けば、ぶん・きもち）
     if (type === 'sentence') {
+      const scat: Category = CATEGORY_ALIASES[String(r.category ?? '').trim()] === 'bunkimochi' ? 'bunkimochi' : 'bun';
       const subject = normalizeKana(String(r.subject ?? ''));
       const predicate = normalizeKana(String(r.predicate ?? ''));
       const label = `「${subject}が${predicate}」`;
@@ -147,15 +148,15 @@ export function parseImport(text: string): ImportPlan {
       if (e2) return errors.push(`${n}${label}: ●●（predicate）… ${e2}`);
       const total = Array.from(subject + predicate).length;
       if (total > MAX_SENTENCE_CHARS) return errors.push(`${n}${label}: 〇〇と●●を合わせて${MAX_SENTENCE_CHARS}文字までです（${total}文字）`);
-      const sid = id || `c_bun_${subject}_${predicate}`;
-      items.push({ id: sid, image, question: sentence(sid, subject, predicate, emoji, false) });
+      const sid = id || `c_${scat}_${subject}_${predicate}`;
+      items.push({ id: sid, image, question: sentence(sid, subject, predicate, emoji, false, scat) });
       return;
     }
 
     const word = normalizeKana(String(r.word ?? r.hira ?? ''));
     const cat = CATEGORY_ALIASES[String(r.category ?? '').trim()];
     if (!word) return errors.push(`${n}: 単語（word）がありません`);
-    if (!cat || cat === 'bun') return errors.push(`${n}「${word}」: category は もの／きもち／うごき のどれかにしてください（文は type: "sentence"）`);
+    if (!cat || cat === 'bun' || cat === 'bunkimochi') return errors.push(`${n}「${word}」: category は もの／きもち／うごき のどれかにしてください（文は type: "sentence"）`);
     const err = checkWord(word);
     if (err) return errors.push(`${n}「${word}」: ${err}`);
 

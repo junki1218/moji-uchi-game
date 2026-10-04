@@ -25,7 +25,7 @@ IMAGES = ROOT / "src" / "images"  # Vite が版ごとの印付きの名前で出
 # Windows の端末(cp932)でも日本語が化けないように
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-QUESTION_RE = re.compile(r"^asset_(TASK-\d+)_((?:mono|kimochi|ugoki|bun)_\d{2})_[a-z_]+\.png$")
+QUESTION_RE = re.compile(r"^asset_(TASK-\d+)_((?:mono|kimochi|ugoki|bunkimochi|bun)_\d{2})_[a-z_]+\.png$")
 
 
 

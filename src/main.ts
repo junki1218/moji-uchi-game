@@ -265,7 +265,8 @@ function questionScreen(round: Round, afterMini = false): void {
     h('button', { class: 'speaker-btn', 'aria-label': 'よみあげ', onclick: say }, '🔊'),
     sample,
   );
-  const top = h('div', { class: `q-top ${q.type === 'sentence' ? 'sentence' : ''}` }, questionPicture(q, 'q-pic'), side);
+  const pic = questionPicture(q, 'q-pic');
+  const top = h('div', { class: `q-top ${q.type === 'sentence' ? 'sentence' : ''}` }, pic, side);
 
   const next = () => {
     const overlay = h('div', { class: 'overlay clear' }, hanamaru('pop'));
@@ -281,6 +282,14 @@ function questionScreen(round: Round, afterMini = false): void {
   // ヒント: 最初の1文字を薄く出す（キーボードはそのキーも光らせる）。どの出題モードでも出す
   // 文は 1回目＝〇〇（名詞）、2回目＝●●（うごき）の1文字目
   const hint: Hint = { show: () => false };
+  // ぶん・きもち: ●● のヒントを出したとき、そのきもちの絵（きもちカテゴリの同じ言葉の絵）を浮かび上がらせる
+  const feeling = feelingQuestion(q);
+  if (feeling) {
+    hint.onReveal = (part) => {
+      if (part !== 1 || pic.querySelector('.feeling-pop')) return;
+      pic.append(h('div', { class: 'feeling-pop' }, questionPicture(feeling, 'feeling-pic')));
+    };
+  }
   const hintBtn: HTMLButtonElement = h('button', {
     class: 'hint-btn',
     onclick: () => { if (!hint.show()) hintBtn.disabled = true; },
@@ -402,6 +411,15 @@ function miniQuestion(q: Question): MiniQuestion {
 /** ヒントボタンと入力欄をつなぐ。show＝次のヒントを出し、まだ出せるヒントが残っていれば true */
 interface Hint {
   show: () => boolean;
+  /** ヒントで段の頭を出したときに呼ぶ（0＝〇〇、1＝●●） */
+  onReveal?: (part: number) => void;
+}
+
+/** ぶん・きもちの ●● に当たる、きもちカテゴリの問題（絵をヒントに使う）。なければ null */
+function feelingQuestion(q: Question): Question | null {
+  if (q.category !== 'bunkimochi' || !q.parts) return null;
+  const word = q.parts[1];
+  return allQuestions('kimochi').find((k) => k.hira === word) ?? null;
 }
 
 /** 文なら 〇〇 と ●● の頭の位置、単語なら [0] */
@@ -444,13 +462,15 @@ function keyboardArea(answer: string[], fixed: Set<number>, pIdx: number | null,
   hint.show = () => {
     while (step < starts.length && filled(starts[step])) step++; // もう打った段は飛ばす
     // 出す段が残っていなければ、いま打つ字を出す（単語で1文字目を打った後に押したとき）
-    const i = step < starts.length ? starts[step++] : pos;
+    const part = step < starts.length ? step : -1;
+    const i = part >= 0 ? starts[step++] : pos;
     if (i < answer.length) {
       cells[i].dataset.ghost = inScript(answer[i], settings.script);
       cells[i].classList.add('ghost');
       glowAt.add(i);
       glowIfDue();
     }
+    if (part >= 0) hint.onReveal?.(part);
     while (step < starts.length && filled(starts[step])) step++;
     return step < starts.length;
   };
@@ -576,9 +596,11 @@ function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | nu
   const starts = partStarts(answer, pIdx);
   let step = 0;
   hint.show = () => {
+    const part = step;
     const i = starts[step++];
     ghost[i] = true;
     paintCell(i);
+    hint.onReveal?.(part);
     return step < starts.length;
   };
 
