@@ -14,5 +14,3 @@ desktop.ini
 # Antigravity の作業用スクリプト（手元のパスを含む）はリポジトリに入れない
 scratch_*.py
 
-# 配布用ワークシートの確認画像
-public/worksheets/_preview_*.png
