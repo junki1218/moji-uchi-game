@@ -10,8 +10,8 @@ export default defineConfig(({ command }) => ({
       registerType: 'prompt',
       includeAssets: ['icons/*.png'],
       manifest: {
-        name: 'もじうちゲーム',
-        short_name: 'もじうち',
+        name: 'がっくんのこくご',
+        short_name: 'がっくんのこくご',
         lang: 'ja',
         display: 'standalone',
         orientation: 'landscape',

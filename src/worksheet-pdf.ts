@@ -58,7 +58,7 @@ async function drawPage(items: SheetItem[], pageNo: number, pages: number): Prom
   const headY = MARGIN_Y + 8;
   g.font = `bold 5.5px ${GOTHIC}`;
   g.textAlign = 'left';
-  g.fillText('もじうち ワークシート', MARGIN_X, headY);
+  g.fillText('がっくんの こくご ワークシート', MARGIN_X, headY);
   // 右から: 「＿＿がつ＿＿にち」「なまえ＿＿＿＿」
   g.font = `4.2px ${GOTHIC}`;
   let x = PAGE_W - MARGIN_X;
@@ -174,7 +174,7 @@ export async function worksheetPdf(items: SheetItem[]): Promise<Blob> {
   const allChars = [...new Set(items.flatMap((it) => it.chars).concat([...'みてかこう']))].join('');
   await Promise.all([
     document.fonts.load(`600 40px "Klee One"`, allChars),
-    document.fonts.load(`40px ${GOTHIC}`, 'もじうちワークシートなまえがつにち'),
+    document.fonts.load(`40px ${GOTHIC}`, 'がっくんのこくごワークシートなまえがつにち'),
   ]).catch(() => undefined);
 
   const { jsPDF } = await import('jspdf');

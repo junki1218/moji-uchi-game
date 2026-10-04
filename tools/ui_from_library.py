@@ -42,7 +42,8 @@ STAMPS = {
     "stamp_4": (ANIMAL / "キリン_5_肩組み.png", 1.9, 0.42),
 }
 ICON = CLAY / "clay_emoji_happy.png"
-START_BG = CLAY / "clay_park_children.jpg"
+# スタート画面はがっくん（2026-10-05 ユーザー提供の画像。アプリ名「がっくんのこくご」）
+START_BG = Path(__file__).resolve().parent.parent / ".agent_flow" / "assets" / "gakkun_start_original.jpg"
 
 
 def square(src: Path, zoom: float, cy: float) -> Image.Image:
@@ -76,12 +77,8 @@ def main() -> None:
         circle(square(src, zoom, cy), 320).save(IMAGES / f"{name}.webp", "WEBP", quality=85, method=6)
 
     bg = Image.open(START_BG).convert("RGB")
-    w, h = bg.size
-    hh = int(w * 9 / 16)
-    top = (h - hh) // 2
-    bg.crop((0, top, w, top + hh)).resize((1600, 900), Image.LANCZOS).save(
-        IMAGES / "start_bg.webp", "WEBP", quality=78, method=6
-    )
+    w, h = bg.size  # 切り抜かずに横 1600px にする（画面は cover で中央に合わせる）
+    bg.resize((1600, round(h * 1600 / w)), Image.LANCZOS).save(IMAGES / "start_bg.webp", "WEBP", quality=80, method=6)
 
     icon = square(ICON, 1.0, 0.5).resize((1024, 1024), Image.LANCZOS)
     for size, name in ((512, "icon-512.png"), (192, "icon-192.png"), (180, "apple-touch-icon.png")):
