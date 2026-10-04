@@ -40,10 +40,18 @@ const DEFAULTS: Settings = {
 
 const KEY = 'moji-uchi-game/settings';
 
+const MINIGAME_KINDS: MinigameKind[] = ['bubble', 'lock', 'hockey'];
+
 export function loadSettings(): Settings {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) return { ...DEFAULTS, ...JSON.parse(raw) };
+    if (raw) {
+      const s: Settings = { ...DEFAULTS, ...JSON.parse(raw) };
+      // 前の版のミニゲーム（グミ・羽根）は取り除く。1つも残らなければ全種類
+      const kinds = (s.minigameKinds ?? []).filter((k) => MINIGAME_KINDS.includes(k));
+      s.minigameKinds = kinds.length ? kinds : [...MINIGAME_KINDS];
+      return s;
+    }
   } catch {
     // プライベートブラウズ等で読めないときは既定値
   }
