@@ -16,7 +16,14 @@ import { MINIGAMES, runMinigame, type MiniQuestion, type MinigameKind } from './
 let updateReady = false;
 const updateSW = registerSW({
   immediate: true,
-  onNeedRefresh() { updateReady = true; },
+  onNeedRefresh() {
+    updateReady = true;
+    // いまスタート画面なら、その場で切り替える（開いた直後に届いたとき、古い版のまま遊び始めないように）
+    if (document.querySelector('.screen.start')) {
+      updateReady = false;
+      void updateSW(true);
+    }
+  },
   onRegisteredSW(_url, reg) {
     // ホーム画面のアプリは開きっぱなしになりやすいので、1時間ごとに新しい版を確かめる
     if (reg) setInterval(() => void reg.update(), 60 * 60 * 1000);
