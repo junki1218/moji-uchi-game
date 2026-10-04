@@ -157,7 +157,7 @@ def main() -> None:
         out = OUT / f"worksheet_{cat}.pdf"
         imgs[0].save(out, "PDF", resolution=DPI, save_all=True, append_images=imgs[1:])
         # 確認用に1枚目を PNG でも出す（リポジトリには入れない）
-        imgs[0].resize((imgs[0].width // 4, imgs[0].height // 4)).save(OUT / f"_preview_{cat}.png")
+        imgs[0].resize((imgs[0].width // 4, imgs[0].height // 4)).save(ROOT / ".agent_flow" / "artifacts" / f"worksheet_preview_{cat}.png")
         print(f"{out.relative_to(ROOT).as_posix()}  {label} {len(items)}問  A4 {len(pages)}枚  {out.stat().st_size // 1024}KB")
 
 
