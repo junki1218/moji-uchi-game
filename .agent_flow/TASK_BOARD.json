@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-10-03T11:53:54+09:00",
+  "last_updated": "2026-10-04T09:15:00+09:00",
   "project": "moji-uchi-game",
   "tasks": [
     {
@@ -163,7 +163,7 @@
       "id": "TASK-006",
       "title": "文（〇〇が●●）の絵 20枚",
       "owner": "Antigravity",
-      "status": "TODO",
+      "status": "IN_PROGRESS",
       "retry_count": 0,
       "needs_asset": true,
       "needs_browser_check": false,
@@ -173,6 +173,10 @@
         {
           "at": "2026-10-02T09:17:47+09:00",
           "event": "created"
+        },
+        {
+          "at": "2026-10-04T09:15:00+09:00",
+          "event": "TODO → IN_PROGRESS"
         }
       ]
     }
