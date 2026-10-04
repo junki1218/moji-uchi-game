@@ -14,6 +14,11 @@ if ('speechSynthesis' in window) {
   speechSynthesis.addEventListener?.('voiceschanged', pickVoice);
 }
 
+/** 読み上げを止める（やめて画面を離れたときなど） */
+export function stopSpeech(): void {
+  if ('speechSynthesis' in window) speechSynthesis.cancel();
+}
+
 export function unlockSpeech(): void {
   if (!('speechSynthesis' in window)) return;
   const u = new SpeechSynthesisUtterance('');

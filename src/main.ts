@@ -7,7 +7,7 @@ import { clearWritings, deleteWriting, exportWritings, listWritings, MAX_WRITING
 import { chars, DAKUON, inScript, SEION, SMALL } from './kana';
 import { loadSettings, saveSettings, VOLUME_LEVEL, type Settings } from './settings';
 import { duckBgm, playBgm, playJingle, setSound, stopBgm, unlockAudio } from './audio';
-import { speak, unlockSpeech } from './speech';
+import { speak, stopSpeech, unlockSpeech } from './speech';
 import { MINIGAMES, runMinigame, type MiniQuestion, type MinigameKind } from './minigames';
 
 // 新しい版が届いたら、ゲームの途中ではなくスタート画面に戻ったときに読み込み直す
@@ -127,10 +127,7 @@ function hanamaru(cls = ''): HTMLElement {
 // ------------------------------------------------------------ スタート
 
 function startScreen(): void {
-  if (updateReady) {
-    void updateSW(true); // 新しい版に切り替えて読み込み直す
-    return;
-  }
+  stopSpeech();
   const screen = h(
       'main',
       { class: 'screen start' },
@@ -148,6 +145,11 @@ function startScreen(): void {
   if (bg) screen.style.backgroundImage = `linear-gradient(rgba(255, 247, 236, 0.55), rgba(255, 247, 236, 0.55)), url(${bg})`;
   show(screen);
   playBgm('bgm1_start');
+  // 新しい版が届いていたら切り替えて読み込み直す（画面は先に描いておくので、切り替わらなくても真っ白にならない）
+  if (updateReady) {
+    updateReady = false;
+    void updateSW(true);
+  }
 }
 
 // ------------------------------------------------------------ カテゴリ
@@ -669,7 +671,7 @@ function handwritingArea(answer: string[], fixed: Set<number>, sample: HTMLEleme
   const doneBtn = h('button', {
     class: 'mid-btn primary',
     onclick: () => {
-      if (written.some(Boolean)) void saveWriting(glyphs, answer.join('')).catch(() => undefined);
+      if (written.some(Boolean)) void saveWriting(glyphs, inScript(answer.join(''), settings.script)).catch(() => undefined);
       onDone();
     },
   }, 'できた');
