@@ -10,7 +10,22 @@ import { duckBgm, playBgm, playJingle, setSound, stopBgm, unlockAudio } from './
 import { speak, unlockSpeech } from './speech';
 import { MINIGAMES, runMinigame, type MiniQuestion, type MinigameKind } from './minigames';
 
-registerSW({ immediate: true });
+// 新しい版が届いたら、ゲームの途中ではなくスタート画面に戻ったときに読み込み直す
+// （古いプログラムと新しい絵が混ざって、絵と問題が食い違うのを防ぐ）
+let updateReady = false;
+const updateSW = registerSW({
+  immediate: true,
+  onNeedRefresh() { updateReady = true; },
+  onRegisteredSW(_url, reg) {
+    // ホーム画面のアプリは開きっぱなしになりやすいので、1時間ごとに新しい版を確かめる
+    if (reg) setInterval(() => void reg.update(), 60 * 60 * 1000);
+  },
+});
+
+// 絵は src/images/ に置き、Vite が版ごとの印付きの名前（例 bun_14-AbC123.webp）にする。
+// 古いプログラムが新しい絵を取りにいくことがなくなる
+const IMAGE_URLS = import.meta.glob('./images/*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+const imageUrl = (name: string): string | null => IMAGE_URLS[`./images/${name}.webp`] ?? null;
 
 // iOS は最初のタップまで音を出せない。どこをタップしても解錠する
 document.addEventListener('pointerdown', unlockAudio, { once: true, capture: true });
@@ -22,7 +37,6 @@ const HINT_AFTER_MISSES = 2;
 const app = document.getElementById('app')!;
 let settings = loadSettings();
 setSound(settings.sound, VOLUME_LEVEL[settings.volume]);
-const base = import.meta.env.BASE_URL;
 
 // ------------------------------------------------------------ 小さな道具
 
@@ -58,7 +72,9 @@ function show(screen: HTMLElement): void {
 /** 画像があれば画像、なければ仮表示（絵文字など）。画像を置けばコードを変えずに差し替わる。 */
 function picture(name: string, fallback: () => Node, cls = ''): HTMLElement {
   const box = h('div', { class: `picture ${cls}` });
-  const img = h('img', { src: `${base}images/${name}.webp`, alt: '', draggable: 'false' });
+  const url = imageUrl(name);
+  if (!url) return h('div', { class: `picture ${cls}` }, fallback());
+  const img = h('img', { src: url, alt: '', draggable: 'false' });
   img.addEventListener('error', () => box.replaceChildren(fallback()));
   box.append(img);
   return box;
@@ -66,7 +82,7 @@ function picture(name: string, fallback: () => Node, cls = ''): HTMLElement {
 
 const emoji = (e: string) => () => h('span', { class: 'emoji' }, e);
 
-/** 問題の絵。先生が付けた写真 → 最初からの絵（images/{id}.webp）→ 絵文字 の順に使う */
+/** 問題の絵。先生が付けた写真 → 最初からの絵（src/images/{id}.webp）→ 絵文字 の順に使う */
 function questionPicture(q: Question, cls = ''): HTMLElement {
   if (hasPhoto(q.id)) {
     const box = h('div', { class: `picture ${cls}` });
@@ -111,6 +127,10 @@ function hanamaru(cls = ''): HTMLElement {
 // ------------------------------------------------------------ スタート
 
 function startScreen(): void {
+  if (updateReady) {
+    void updateSW(true); // 新しい版に切り替えて読み込み直す
+    return;
+  }
   const screen = h(
       'main',
       { class: 'screen start' },
@@ -124,7 +144,8 @@ function startScreen(): void {
       ),
   );
   // 背景画像はあれば使う（なければ無地）。タイトルとボタンが読めるよう淡い地色を重ねる
-  screen.style.backgroundImage = `linear-gradient(rgba(255, 247, 236, 0.55), rgba(255, 247, 236, 0.55)), url(${base}images/start_bg.webp)`;
+  const bg = imageUrl('start_bg');
+  if (bg) screen.style.backgroundImage = `linear-gradient(rgba(255, 247, 236, 0.55), rgba(255, 247, 236, 0.55)), url(${bg})`;
   show(screen);
   playBgm('bgm1_start');
 }
@@ -352,7 +373,7 @@ function miniQuestion(q: Question): MiniQuestion {
   ).map(disp);
   const pictureUrl = async () => {
     if (hasPhoto(q.id)) return photoUrl(q.id);
-    return q.builtin ? `${base}images/${q.id}.webp` : null;
+    return q.builtin ? imageUrl(q.id) : null;
   };
   return {
     answer: disp(q.hira),
@@ -503,7 +524,8 @@ function handwritingArea(answer: string[], fixed: Set<number>, sample: HTMLEleme
   const written = new Array<boolean>(count).fill(false);
   // ヒントで薄く出す字（記録の画像には入れない）
   const ghost = new Array<boolean>(count).fill(false);
-  const ghostFont = (px: number) => `bold ${px * 0.62}px "Hiragino Maru Gothic ProN", "BIZ UDPGothic", sans-serif`;
+  // ヒントの薄い字は、見本と同じ教科書体で（なぞって書くので字形をそろえる）
+  const ghostFont = (px: number) => `600 ${px * 0.62}px "UD Digi Kyokasho NK-B", "UD Digi Kyokasho N-B", "Klee One", "Hiragino Maru Gothic ProN", sans-serif`;
 
   const cellCanvases: HTMLCanvasElement[] = [];
   const cells = Array.from({ length: count }, (_, i) => {

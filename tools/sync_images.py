@@ -2,7 +2,7 @@
 
     python tools/sync_images.py
 
-- asset_TASK-00N_{id}_{romaji}.png  → public/images/{id}.webp   （問題イラスト 512px。文は bun_01_inu_hashiru など）
+- asset_TASK-00N_{id}_{romaji}.png  → src/images/{id}.webp   （問題イラスト 512px。文は bun_01_inu_hashiru など）
 UI 画像（アイコン・カテゴリ・スタンプ・背景）は tools/ui_from_library.py が素材ライブラリから作る
 （2026-09-30 方針変更。TASK-005 の生成は行わない）。
 
@@ -20,7 +20,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / ".agent_flow" / "assets"
-IMAGES = ROOT / "public" / "images"
+IMAGES = ROOT / "src" / "images"  # Vite が版ごとの印付きの名前で出力する
 
 # Windows の端末(cp932)でも日本語が化けないように
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")

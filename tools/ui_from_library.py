@@ -7,7 +7,7 @@
 - G:/マイドライブ/04_素材ライブラリ/画像材料/animal school/
 文字が描き込まれていない絵だけを選んでいる。元の画像は読むだけで変更しない。
 
-出力は public/images/*.webp と public/icons/*.png（アプリはこの名前で読む）。
+出力は src/images/*.webp と public/icons/*.png（アプリはこの名前で読む）。
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ CLAY = LIB / "ClayAnimation"
 ANIMAL = LIB / "animal school"
 
 ROOT = Path(__file__).resolve().parent.parent
-IMAGES = ROOT / "public" / "images"
+IMAGES = ROOT / "src" / "images"
 ICONS = ROOT / "public" / "icons"
 
 # 出力名: (元画像, 拡大率, 縦の切り抜き位置 0=上 0.5=中央)
