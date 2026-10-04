@@ -18,7 +18,7 @@
 ```
 npm install
 npm run dev      # http://localhost:5173
-npm run images   # .agent_flow/assets/ の生成画像を public/images/ に変換（未着の絵は絵文字で仮表示）
+npm run images   # .agent_flow/assets/ の生成画像を src/images/ に変換（未着の絵は絵文字で仮表示）
 npm run build
 ```
 

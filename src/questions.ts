@@ -1,5 +1,5 @@
 // 最初から入っている問題。単語60問（IMAGE_SPEC.md 4章）＋文20問（IMAGE_SPEC_SENTENCE.md）。表記はすべてひらがな。
-// emoji は画像が届くまでの仮表示。画像は public/images/{id}.webp（tools/sync_images.py が作る）。
+// emoji は画像が届くまでの仮表示。画像は src/images/{id}.webp（tools/sync_images.py が作る）。
 // 先生が JSON で足す問題は bank.ts が扱う。
 
 export type Category = 'mono' | 'kimochi' | 'ugoki' | 'bun';
@@ -29,7 +29,7 @@ export interface Question {
   /** 文のときだけ: [〇〇, ●●] */
   parts?: [string, string];
   emoji: string;
-  /** 最初から入っている問題（削除できない。画像は public/images/{id}.webp） */
+  /** 最初から入っている問題（削除できない。画像は src/images/{id}.webp） */
   builtin: boolean;
 }
 
