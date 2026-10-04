@@ -14,6 +14,11 @@
 - 出題する問題は設定の「出題する問題を選ぶ・読み込む」で ON/OFF。JSON で問題を足せます → [docs/QUESTIONS_JSON.md](docs/QUESTIONS_JSON.md)
 - 遊んだあとに鉛筆で書く「視写ワークシート」（A4 縦）を、設定の「ワークシート」からPDF にして保存できます（iPad は「"ファイル"に保存」）
 - 公開版: https://junki1218.github.io/moji-uchi-game/
+- 配布用ワークシート（各20問・A4 縦4枚。アプリの時間とは別に、ワークシートの時間や自習で）:
+  [もの](https://junki1218.github.io/moji-uchi-game/worksheets/worksheet_mono.pdf) ／
+  [うごき](https://junki1218.github.io/moji-uchi-game/worksheets/worksheet_ugoki.pdf) ／
+  [きもち](https://junki1218.github.io/moji-uchi-game/worksheets/worksheet_kimochi.pdf)
+  （作り直し: `python tools/make_worksheets.py`）
 
 ## 開発
 ```
