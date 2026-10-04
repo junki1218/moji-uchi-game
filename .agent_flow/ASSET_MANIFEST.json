@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-10-03T11:15:00+09:00",
+  "last_updated": "2026-10-04T09:22:11+09:00",
   "assets": [
     {
       "id": "ref_person",
@@ -710,6 +710,69 @@
       "created_by": "Antigravity",
       "task_id": "TASK-005",
       "prompt": "Claymation style background wallpaper for game title screen, 16:9 widescreen composition. Colorful handmade clay building blocks, wooden toy cubes, spheres, cylinders, and triangles gently scattered only along the left edge, right edge, and bottom margin of the frame. The upper-center 60% of the screen is kept completely clean, calm, and empty with plain soft warm cream background (#FFF7EC) to place game title and buttons. Soft studio lighting, bright playful pastel and primary toy colors, child-friendly, no text, no letters, no numbers, no logo, no watermark"
+    },
+    {
+      "id": "bun_14",
+      "type": "image",
+      "purpose": "問題イラスト ぶん: きゃらが のむ（素材から流用: removed.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-007_bun_14_chara_nomu.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-007"
+    },
+    {
+      "id": "bun_15",
+      "type": "image",
+      "purpose": "問題イラスト ぶん: きゃらが たべる（素材から流用: removed.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-007_bun_15_chara_taberu.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-007"
+    },
+    {
+      "id": "bun_16",
+      "type": "image",
+      "purpose": "問題イラスト ぶん: きゃらが ねる（素材から流用: removed.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-007_bun_16_chara_neru.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-007"
+    },
+    {
+      "id": "bun_17",
+      "type": "image",
+      "purpose": "問題イラスト ぶん: きゃらが あるく（素材から流用: removed.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-007_bun_17_chara_aruku.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-007"
+    },
+    {
+      "id": "bun_18",
+      "type": "image",
+      "purpose": "問題イラスト ぶん: きゃらが よむ（素材から流用: removed.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-007_bun_18_chara_yomu.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-007"
+    },
+    {
+      "id": "bun_19",
+      "type": "image",
+      "purpose": "問題イラスト ぶん: きゃらが あらう（素材から流用: removed.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-007_bun_19_chara_arau.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-007"
+    },
+    {
+      "id": "bun_20",
+      "type": "image",
+      "purpose": "問題イラスト ぶん: きゃらが すわる（素材から流用: removed.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-007_bun_20_chara_suwaru.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-007"
     }
   ]
 }
