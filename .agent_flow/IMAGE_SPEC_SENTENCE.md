@@ -1,5 +1,8 @@
 # 画像生成指示書：文（〇〇が●●）20枚
 
+> **2026-10-04 変更：bun_14〜20 は作らなくてよい。** 修学旅行カドタンの絵で代用する（`tools/kadotan_from_library.py`、TASK-007）。
+> TASK-006 は **bun_01〜13 の13枚で完了** とする。届いている13枚を `ASSET_MANIFEST.json` に登録し、完了通知を出すこと。
+
 - 宛先: Antigravity（AGY）
 - 発行: クロコ 2026-10-02
 - 対象タスク: TASK-006（`handoffs/to_antigravity_TASK-006.md` から参照される）

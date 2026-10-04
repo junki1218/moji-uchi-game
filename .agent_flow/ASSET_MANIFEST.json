@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-10-03T11:15:00+09:00",
+  "last_updated": "2026-10-04T09:22:11+09:00",
   "assets": [
     {
       "id": "ref_person",
@@ -710,6 +710,69 @@
       "created_by": "Antigravity",
       "task_id": "TASK-005",
       "prompt": "Claymation style background wallpaper for game title screen, 16:9 widescreen composition. Colorful handmade clay building blocks, wooden toy cubes, spheres, cylinders, and triangles gently scattered only along the left edge, right edge, and bottom margin of the frame. The upper-center 60% of the screen is kept completely clean, calm, and empty with plain soft warm cream background (#FFF7EC) to place game title and buttons. Soft studio lighting, bright playful pastel and primary toy colors, child-friendly, no text, no letters, no numbers, no logo, no watermark"
+    },
+    {
+      "id": "bun_14",
+      "type": "image",
+      "purpose": "問題イラスト ぶん: かどたんが のむ（修学旅行カドタンから流用: No102-DrinkTeaBottle-KD.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-007_bun_14_kadotan_nomu.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-007"
+    },
+    {
+      "id": "bun_15",
+      "type": "image",
+      "purpose": "問題イラスト ぶん: かどたんが たべる（修学旅行カドタンから流用: No25-EatingHamburg-KD.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-007_bun_15_kadotan_taberu.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-007"
+    },
+    {
+      "id": "bun_16",
+      "type": "image",
+      "purpose": "問題イラスト ぶん: かどたんが ねる（修学旅行カドタンから流用: No26-SleepingFuton-KD.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-007_bun_16_kadotan_neru.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-007"
+    },
+    {
+      "id": "bun_17",
+      "type": "image",
+      "purpose": "問題イラスト ぶん: かどたんが あるく（修学旅行カドタンから流用: No170-WalkingAwayAlone-KD【QUIZ】.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-007_bun_17_kadotan_aruku.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-007"
+    },
+    {
+      "id": "bun_18",
+      "type": "image",
+      "purpose": "問題イラスト ぶん: かどたんが よむ（修学旅行カドタンから流用: No89-ReadingHandbookSkytree-KD.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-007_bun_18_kadotan_yomu.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-007"
+    },
+    {
+      "id": "bun_19",
+      "type": "image",
+      "purpose": "問題イラスト ぶん: かどたんが あらう（修学旅行カドタンから流用: No162-ToiletFlushWashHands-KD【QUIZ】.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-007_bun_19_kadotan_arau.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-007"
+    },
+    {
+      "id": "bun_20",
+      "type": "image",
+      "purpose": "問題イラスト ぶん: かどたんが すわる（修学旅行カドタンから流用: No159-SeatSittingQuiet-KD【QUIZ】.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-007_bun_20_kadotan_suwaru.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-007"
     }
   ]
 }

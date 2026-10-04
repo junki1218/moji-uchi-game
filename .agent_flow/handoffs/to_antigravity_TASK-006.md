@@ -1,5 +1,8 @@
 # 作業指示書 TASK-006
 
+> **2026-10-04 変更：bun_14〜20 は作らなくてよい。** 修学旅行カドタンの絵で代用する（`tools/kadotan_from_library.py`、TASK-007）。
+> TASK-006 は **bun_01〜13 の13枚で完了** とする。届いている13枚を `ASSET_MANIFEST.json` に登録し、完了通知を出すこと。
+
 - 宛先: Antigravity (AGY)
 - 発行: Claude Code (クロコ) 2026-10-02T09:17:47+09:00
 - 周回: r1
