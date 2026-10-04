@@ -8,7 +8,7 @@ import { chars, DAKUON, inScript, SEION, SMALL } from './kana';
 import { loadSettings, saveSettings, VOLUME_LEVEL, type Settings } from './settings';
 import { duckBgm, playBgm, playJingle, setSound, stopBgm, unlockAudio } from './audio';
 import { speak, unlockSpeech } from './speech';
-import { GOAL, MINIGAMES, runMinigame, type MinigameKind } from './minigames';
+import { MINIGAMES, runMinigame, type MiniQuestion, type MinigameKind } from './minigames';
 
 registerSW({ immediate: true });
 
@@ -210,7 +210,8 @@ function confirmQuit(): void {
 
 function questionScreen(round: Round, afterMini = false): void {
   // 問題の前に毎回ミニゲーム（設定で切れる）
-  const kinds = settings.minigameKinds.filter((k) => MINIGAMES.some((m) => m.id === k));
+  const valid = settings.minigameKinds.filter((k) => MINIGAMES.some((m) => m.id === k));
+  const kinds = valid.length ? valid : MINIGAMES.map((m) => m.id);
   if (!afterMini && settings.minigame && kinds.length) {
     minigameScreen(round, kinds, () => questionScreen(round, true));
     return;
@@ -299,16 +300,18 @@ function minigameScreen(round: Round, kinds: MinigameKind[], onDone: () => void)
     onDone();
   };
 
-  const stars = h('div', { class: 'mini-stars', 'aria-label': `0 / ${GOAL}` }, ...Array.from({ length: GOAL }, () => h('span', { class: 'mini-star' }, '☆')));
+  const goal = info.goal;
+  const stars = h('div', { class: 'mini-stars', 'aria-label': `0 / ${goal}` }, ...Array.from({ length: goal }, () => h('span', { class: 'mini-star' }, '☆')));
   const skipBtn = h('button', { class: 'mid-btn secondary mini-skip', hidden: true, onclick: leave }, 'つぎへ ▶');
-  const canvas = h('canvas', { class: 'mini-canvas' });
+  const stage = h('div', { class: 'mini-stage' }, skipBtn);
+  const mq = miniQuestion(round.questions[round.index]);
 
   const onProgress = (count: number) => {
     Array.from(stars.children).forEach((s, i) => {
       s.textContent = i < count ? '★' : '☆';
       s.classList.toggle('on', i < count);
     });
-    if (count >= GOAL && !finished) {
+    if (count >= goal && !finished) {
       playJingle('correct');
       app.append(h('div', { class: 'overlay clear' }, h('div', { class: 'mini-clear pop' }, 'できた！')));
       setTimeout(() => {
@@ -319,22 +322,49 @@ function minigameScreen(round: Round, kinds: MinigameKind[], onDone: () => void)
   };
 
   const say = () => speak(info.instruction, () => duckBgm(true), () => duckBgm(false));
+  // 🔊 は正解の言葉を読む（やることは最初に1回読む）
+  const sayWord = () => speak(round.questions[round.index].hira, () => duckBgm(true), () => duckBgm(false));
   show(
     h(
       'main',
       { class: `screen game mini mini-${kind}` },
       h('header', { class: 'game-header' }, quitButton(), progress(round)),
       h('div', { class: 'mini-head' },
-        h('button', { class: 'speaker-btn', 'aria-label': 'よみあげ', onclick: say }, '🔊'),
+        h('button', { class: 'speaker-btn', 'aria-label': 'ことばを よみあげ', onclick: sayWord }, '🔊'),
         h('p', { class: 'mini-instruction' }, info.instruction),
         stars),
-      h('div', { class: 'mini-stage' }, canvas, skipBtn),
+      stage,
     ),
   );
-  stop = runMinigame(kind, canvas, onProgress);
+  stop = runMinigame(kind, stage, mq, onProgress);
   stopActiveMini = () => { finished = true; clearTimeout(skipTimer); stop(); };
   const skipTimer = setTimeout(() => { skipBtn.hidden = false; }, MINI_SKIP_AFTER_MS);
   window.setTimeout(say, 300);
+}
+
+/** 次の問題から、ミニゲームに渡す情報を作る（まちがいの言葉は同じカテゴリのほかの問題から） */
+function miniQuestion(q: Question): MiniQuestion {
+  const disp = (s: string) => inScript(s, settings.script);
+  const answer = chars(q.hira);
+  const fixed = new Set<number>(q.type === 'sentence' && q.parts ? [chars(q.parts[0]).length] : []);
+  const others = shuffle(
+    [...new Set(allQuestions(q.category).map((x) => x.hira).filter((w) => w !== q.hira))],
+  ).map(disp);
+  const pictureUrl = async () => {
+    if (hasPhoto(q.id)) return photoUrl(q.id);
+    return q.builtin ? `${base}images/${q.id}.webp` : null;
+  };
+  return {
+    answer: disp(q.hira),
+    chars: answer.map(disp),
+    fixed,
+    others,
+    picture: () => questionPicture(q, 'mini-q-pic'),
+    pictureUrl,
+    emoji: q.emoji,
+    showSample: settings.prompt === 'look',
+    toScript: disp,
+  };
 }
 
 // ------------------------------------------------------------ キーボード入力

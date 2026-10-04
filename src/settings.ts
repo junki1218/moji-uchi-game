@@ -6,7 +6,8 @@ export type InputMode = 'keyboard' | 'handwriting';
 export type PromptMode = 'look' | 'listen' | 'picture';
 export type AColumn = 'left' | 'right';
 export type Volume = 'low' | 'mid' | 'high';
-export type MinigameKind = 'bubble' | 'gummy' | 'feather';
+/** グミ・羽根は 2026-10-04 に廃止し、錠前・エアホッケーに置き換え */
+export type MinigameKind = 'bubble' | 'lock' | 'hockey';
 
 export const VOLUME_LEVEL: Record<Volume, number> = { low: 0.3, mid: 0.6, high: 0.9 };
 
@@ -33,7 +34,7 @@ const DEFAULTS: Settings = {
   sound: true,
   volume: 'mid',
   minigame: true,
-  minigameKinds: ['bubble', 'gummy', 'feather'],
+  minigameKinds: ['bubble', 'lock', 'hockey'],
   pin: DEFAULT_PIN,
 };
 

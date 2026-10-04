@@ -531,10 +531,62 @@ button {
   overflow: hidden;
   border: 3px solid var(--line);
 }
+.mini-stage { display: flex; flex-direction: column; }
 .mini-bubble .mini-stage { background: linear-gradient(#dff1ff, #f5fbff); }
-.mini-gummy .mini-stage { background: radial-gradient(circle at 50% 45%, #fff, #ffe9ee); }
-.mini-feather .mini-stage { background: linear-gradient(#bfe3ff, #eaf6ff 70%); }
-.mini-canvas { width: 100%; height: 100%; display: block; touch-action: none; }
+.mini-hockey .mini-stage { background: linear-gradient(#e8f3ff, #f7fbff); }
+.mini-lock .mini-stage { background: radial-gradient(circle at 50% 40%, #fffaf0, #f3e7d6); }
+.mini-canvas { width: 100%; flex: 1; min-height: 0; display: block; touch-action: none; }
+.mini-pic { display: flex; justify-content: center; padding-top: 1.5vh; }
+.mini-q-pic {
+  width: min(22vw, 24vh); height: min(22vw, 24vh);
+  background: #fff; border-radius: 20px; border: 3px solid var(--line);
+  font-size: min(15vw, 17vh);
+}
+
+/* 錠前 */
+.lock-stage { flex-direction: row; align-items: center; justify-content: center; gap: 4vw; padding: 2vh 3vw; }
+.lock-pic { padding: 0; }
+.lock-stage .mini-q-pic { width: min(26vw, 40vh); height: min(26vw, 40vh); }
+.lock { display: flex; flex-direction: column; align-items: center; }
+.lock-shackle {
+  width: 46%; height: min(9vw, 13vh);
+  border: min(2.2vw, 3vh) solid #9aa4ae; border-bottom: none;
+  border-radius: 999px 999px 0 0;
+  transition: transform 0.45s cubic-bezier(0.3, 1.6, 0.5, 1);
+  transform-origin: 85% 100%;
+}
+.lock.open .lock-shackle { transform: translateY(-28%) rotate(-18deg); }
+.lock-body {
+  background: linear-gradient(#ffc94d, #e8a21e);
+  border-radius: 28px;
+  padding: 2vh 2vw 2.5vh;
+  box-shadow: 0 10px 0 #b97c0c, 0 14px 30px rgba(0, 0, 0, 0.18);
+  display: flex; flex-direction: column; align-items: center; gap: 1vh;
+}
+.lock.open .lock-body { animation: pop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1); }
+.lock-sample { min-height: 1.2em; font-size: min(3vw, 4vh); font-weight: 700; color: rgba(90, 60, 0, 0.45); letter-spacing: 0.3em; }
+.lock-wheels { display: flex; gap: min(0.8vw, 1vh); }
+.dial { display: flex; flex-direction: column; align-items: center; gap: 0.6vh; }
+.dial-btn {
+  width: min(6.4vw, 8.6vh); height: min(4.4vw, 6vh);
+  border-radius: 12px; background: #fff7e0; border: 2px solid #c98b12; color: #9a6400;
+  font-size: min(2.4vw, 3.2vh);
+}
+.dial-face {
+  width: min(6.4vw, 8.6vh); height: min(8.4vw, 11.5vh);
+  display: grid; place-items: center;
+  background: #fff; border: 4px solid #c98b12; border-radius: 14px;
+  font-size: min(5vw, 6.8vh); font-weight: 700;
+  touch-action: none;
+}
+.dial.ok .dial-face { border-color: var(--done); background: #effaef; }
+.dial.fixed .dial-face { background: transparent; border-color: transparent; color: #7a5200; }
+.lock-wheels:has(.dial:nth-child(7)) .dial-face, .lock-wheels:has(.dial:nth-child(7)) .dial-btn { width: min(4.6vw, 6.2vh); }
+.lock-wheels:has(.dial:nth-child(7)) .dial-face { font-size: min(3.6vw, 4.8vh); }
+.tick-up { animation: tickUp 0.12s; }
+.tick-down { animation: tickDown 0.12s; }
+@keyframes tickUp { from { transform: translateY(18%); } to { transform: none; } }
+@keyframes tickDown { from { transform: translateY(-18%); } to { transform: none; } }
 .mini-skip { position: absolute; right: 16px; bottom: 16px; }
 .mini-skip[hidden] { display: none; }
 .mini-clear {
