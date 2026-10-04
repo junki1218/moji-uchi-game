@@ -662,3 +662,14 @@ button {
   .ws-page:last-child { page-break-after: auto; break-after: auto; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* ---------- 文の「が」（見本は黒い丸に白い字） ---------- */
+.sample-cell.particle { background: transparent; position: relative; isolation: isolate; color: #fff; }
+.sample-cell.particle::before {
+  content: ''; position: absolute; inset: 9%; border-radius: 50%; background: #222; z-index: -1;
+}
+.pad-sample.particle { background: #222; color: #fff; border-radius: 50%; }
+.ws-particle {
+  width: 80%; height: 80%; border-radius: 50%; background: #222; color: #fff;
+  display: grid; place-items: center; font-size: 0.78em;
+}
