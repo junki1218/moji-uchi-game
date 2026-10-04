@@ -143,8 +143,10 @@ function startScreen(): void {
       h(
         'div',
         { class: 'start-buttons' },
-        h('button', { class: 'big-btn primary', onclick: () => { unlockSpeech(); categoryScreen(); } },
-          'はじめる'),
+        h('div', { class: 'start-col' },
+          h('button', { class: 'big-btn primary', onclick: () => { unlockSpeech(); categoryScreen(); } },
+            'はじめる'),
+          h('button', { class: 'big-btn ehon', onclick: ehonScreen }, 'えほん')),
         h('button', { class: 'big-btn secondary', onclick: pinScreen }, 'せってい'),
       ),
   );
@@ -158,6 +160,23 @@ function startScreen(): void {
     updateReady = false;
     void updateSW(true);
   }
+}
+
+// ------------------------------------------------------------ えほん（くろまる がっくん）
+// Google スライドの絵本を、アプリの中でそのままスライドショーで見せる（2026-10-05）。
+// 発表用の埋め込みプレーヤー（/embed）を全画面で出す。ネットが必要。
+// スライドは「リンクを知っている全員が閲覧可」にしておく（iPad は Google にログインしていないため）。
+
+const EHON_SLIDES_ID = '1HCh2Wph8ASZyXvOPRZkWTAEZGIR5-iPDqGPenowOpWs';
+const EHON_URL = `https://docs.google.com/presentation/d/${EHON_SLIDES_ID}/embed?start=false&loop=false&delayms=60000`;
+
+function ehonScreen(): void {
+  stopBgm();
+  stopSpeech();
+  const body = navigator.onLine
+    ? h('iframe', { class: 'ehon-frame', src: EHON_URL, allowfullscreen: 'true', title: 'くろまる がっくん' })
+    : h('p', { class: 'ehon-offline' }, 'えほんは インターネットに つないで みてね');
+  show(h('main', { class: 'screen ehon-screen' }, backButton(startScreen), body));
 }
 
 // ------------------------------------------------------------ カテゴリ
