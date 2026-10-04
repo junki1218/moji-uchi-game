@@ -195,6 +195,11 @@ interface Round {
 function startRound(cat: Category): void {
   const pool = enabledQuestions(cat);
   const round: Round = { questions: shuffle(pool).slice(0, ROUND_SIZE), index: 0 };
+  try {
+    localStorage.setItem(LAST_ROUND_KEY, JSON.stringify(round.questions.map((q) => q.id)));
+  } catch {
+    // 覚えられなくても遊べる
+  }
   questionScreen(round);
 }
 
@@ -812,6 +817,8 @@ function settingsScreen(): void {
         h('div', { class: 'seg' }, h('button', { class: 'seg-btn', onclick: () => questionsScreen('mono') }, '出題する問題を選ぶ・読み込む'))),
       h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'てがきのきろく'),
         h('div', { class: 'seg' }, h('button', { class: 'seg-btn', onclick: () => void writingsScreen() }, '見る・書き出す'))),
+      h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'ワークシート'),
+        h('div', { class: 'seg' }, h('button', { class: 'seg-btn', onclick: () => worksheetScreen() }, '作る・印刷する'))),
       h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, '暗証番号'), h('div', { class: 'seg' }, pinInput, pinSave, pinMsg)),
     ),
   );
@@ -1025,6 +1032,112 @@ async function writingsScreen(message = ''): Promise<void> {
         message || `てがきモードで「できた」を押した問題を、新しい順に最大${MAX_WRITINGS}件まで残します（古いものから消えます）。iPad では共有から「画像を保存」「ファイルに保存」ができます。`),
       ws.length === 0 && h('p', { class: 'q-note' }, 'まだ記録がありません'),
       h('div', { class: 'w-grid' }, ...cards),
+    ),
+  );
+}
+
+// ------------------------------------------------------------ 視写ワークシート（先生用・印刷）
+// iPad で遊んだあとに鉛筆で書く用。A4 縦に5問。1問＝絵＋見本の行（教科書体）＋書く行（十字の補助線）。
+
+const LAST_ROUND_KEY = 'moji-uchi-game/last-round';
+const WS_PER_PAGE = 5;
+
+function lastRoundIds(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(LAST_ROUND_KEY) || '[]') as string[];
+  } catch {
+    return [];
+  }
+}
+
+function worksheetScreen(selected: string[] = lastRoundIds(), cat?: Category): void {
+  stopBgm();
+  const all = allQuestions();
+  const sel = selected.filter((id) => all.some((q) => q.id === id));
+  // カテゴリの指定がなければ、選んでいる問題（＝さいごに遊んだ問題）のカテゴリを開く
+  const showCat: Category = cat ?? all.find((q) => q.id === sel[0])?.category ?? 'mono';
+  const rerender = (next: string[]) => worksheetScreen(next, showCat);
+
+  const tabs = h('div', { class: 'seg' }, ...CATEGORIES.map((c) =>
+    h('button', { class: `seg-btn ${c.id === showCat ? 'on' : ''}`, onclick: () => worksheetScreen(sel, c.id) }, c.label)));
+
+  const cards = allQuestions(showCat).map((q) => {
+    const on = sel.includes(q.id);
+    return h('div', {
+      class: `q-card ${on ? 'on' : 'off'}`,
+      role: 'button',
+      'aria-pressed': String(on),
+      onclick: () => rerender(on ? sel.filter((x) => x !== q.id) : [...sel, q.id]),
+    },
+    h('span', { class: 'q-card-mark' }, on ? String(sel.indexOf(q.id) + 1) : ''),
+    questionPicture(q, 'q-card-pic'),
+    h('span', { class: 'q-card-word' }, inScript(q.hira, settings.script)));
+  });
+
+  const pages = Math.ceil(sel.length / WS_PER_PAGE);
+  show(
+    h(
+      'main',
+      { class: 'screen questions worksheet-pick' },
+      backButton(settingsScreen, '設定へ'),
+      h('h2', {}, 'ワークシート（視写）'),
+      h('div', { class: 'seg toolbar' },
+        h('button', { class: 'seg-btn', onclick: () => rerender(lastRoundIds()) }, 'さいごに遊んだ問題'),
+        h('button', { class: 'seg-btn', onclick: () => rerender([]) }, 'えらび直す（ぜんぶ外す）'),
+        h('button', { class: 'seg-btn on', disabled: sel.length === 0, onclick: () => worksheetPrint(sel) }, `印刷する（${sel.length}問・A4 ${pages}枚）`)),
+      h('p', { class: 'q-note' }, `タップで選ぶ／外す（番号の順に並びます）。A4 縦1枚に${WS_PER_PAGE}問。見本は教科書体、文字は設定の「${settings.script === 'kata' ? 'カタカナ' : 'ひらがな'}」。`),
+      tabs,
+      h('div', { class: 'q-grid' }, ...cards),
+    ),
+  );
+}
+
+/** 印刷用のページを組む。iPad は共有 → プリントで AirPrint、パソコンは印刷ダイアログ */
+function worksheetPrint(ids: string[]): void {
+  const all = allQuestions();
+  const qs = ids.map((id) => all.find((q) => q.id === id)).filter((q): q is Question => !!q);
+  const pages: Question[][] = [];
+  for (let i = 0; i < qs.length; i += WS_PER_PAGE) pages.push(qs.slice(i, i + WS_PER_PAGE));
+
+  const sheet = (items: Question[], pageNo: number) => {
+    // マスの大きさは、そのページでいちばん長い言葉に合わせる（最大 16mm）。
+    // 書ける幅 = A4 210mm − 左右の余白 28mm − 絵 34mm − すき間 6mm = 142mm
+    const longest = Math.max(...items.map((q) => chars(q.hira).length));
+    const cell = Math.min(16, Math.floor((142 / longest) * 10) / 10);
+    const rows = items.map((q) => {
+      const cs = chars(inScript(q.hira, settings.script));
+      return h(
+        'section',
+        { class: 'ws-item' },
+        h('div', { class: 'ws-pic' }, questionPicture(q, 'ws-pic-inner')),
+        h('div', { class: 'ws-lines', style: `--ws-cell:${cell}mm` },
+          h('div', { class: 'ws-row ws-sample' }, ...cs.map((c) => h('span', { class: 'ws-cell' }, c))),
+          h('div', { class: 'ws-row ws-write' }, ...cs.map(() => h('span', { class: 'ws-cell' })))),
+      );
+    });
+    return h(
+      'div',
+      { class: 'ws-page' },
+      h('header', { class: 'ws-head' },
+        h('div', { class: 'ws-title' }, 'もじうち ワークシート'),
+        h('div', { class: 'ws-name' }, 'なまえ', h('span', { class: 'ws-blank' })),
+        h('div', { class: 'ws-date' }, h('span', { class: 'ws-blank short' }), 'がつ', h('span', { class: 'ws-blank short' }), 'にち')),
+      h('p', { class: 'ws-lead' }, 'みて かこう'),
+      ...rows,
+      pages.length > 1 && h('footer', { class: 'ws-foot' }, `${pageNo} / ${pages.length}`),
+    );
+  };
+
+  const doPrint = h('button', { class: 'mid-btn primary', onclick: () => window.print() }, '印刷する');
+  show(
+    h(
+      'main',
+      { class: 'screen ws-preview' },
+      h('div', { class: 'ws-bar no-print' },
+        h('button', { class: 'mid-btn secondary', onclick: () => worksheetScreen(ids) }, 'もどる'),
+        h('span', { class: 'ws-bar-note' }, `A4 縦 ${pages.length}枚。iPad は「印刷する」→ プリンタを選ぶ`),
+        doPrint),
+      h('div', { class: 'ws-pages' }, ...pages.map((p, i) => sheet(p, i + 1))),
     ),
   );
 }

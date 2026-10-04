@@ -603,3 +603,62 @@ button {
 
 /* ---------- 見本の文字は教科書体 ---------- */
 .sample-cell, .lock-sample, .pad-sample, .pad-ghost, .answer-cell.ghost::after { font-family: var(--kyokasho); }
+
+/* ---------- 視写ワークシート（A4 縦・印刷用） ---------- */
+
+.ws-preview { overflow-y: auto; background: #e9e4dc; padding: 0 0 6vh; justify-content: flex-start; }
+.ws-bar {
+  position: sticky; top: 0; z-index: 3; width: 100%;
+  display: flex; align-items: center; justify-content: space-between; gap: 2vw;
+  padding: 12px 20px; background: var(--bg); border-bottom: 2px solid var(--line);
+}
+.ws-bar-note { color: var(--sub); font-size: 15px; }
+.ws-pages { display: flex; flex-direction: column; align-items: center; gap: 8mm; padding-top: 8mm; }
+.ws-page {
+  width: 210mm; height: 297mm; box-sizing: border-box; padding: 12mm 14mm;
+  background: #fff; color: #222; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  display: flex; flex-direction: column; gap: 3mm; position: relative;
+  font-family: 'Hiragino Maru Gothic ProN', 'BIZ UDPGothic', sans-serif;
+}
+.ws-head { display: flex; align-items: flex-end; gap: 6mm; border-bottom: 0.6mm solid #444; padding-bottom: 2mm; }
+.ws-title { font-size: 5.5mm; font-weight: 700; flex: 1; }
+.ws-name, .ws-date { font-size: 4.2mm; display: flex; align-items: flex-end; gap: 1.5mm; }
+.ws-blank { display: inline-block; width: 45mm; border-bottom: 0.3mm solid #444; height: 6mm; }
+.ws-blank.short { width: 10mm; }
+.ws-lead { margin: 0; font-size: 5mm; font-weight: 700; font-family: var(--kyokasho); }
+.ws-item {
+  flex: 1; display: flex; align-items: center; gap: 6mm;
+  border-bottom: 0.3mm dashed #bbb; padding: 1mm 0;
+}
+.ws-item:last-of-type { border-bottom: none; }
+.ws-pic { width: 34mm; height: 34mm; flex: 0 0 34mm; border: 0.3mm solid #ccc; border-radius: 3mm; overflow: hidden; }
+.ws-pic-inner { width: 100%; height: 100%; font-size: 24mm; }
+.ws-lines { display: flex; flex-direction: column; gap: 2.5mm; }
+.ws-row { display: flex; }
+.ws-cell {
+  width: var(--ws-cell); height: var(--ws-cell); box-sizing: border-box;
+  border: 0.35mm solid #555; margin-left: -0.35mm;
+  display: grid; place-items: center;
+}
+.ws-row .ws-cell:first-child { margin-left: 0; }
+.ws-sample .ws-cell {
+  font-family: var(--kyokasho); font-weight: 600;
+  font-size: calc(var(--ws-cell) * 0.72); line-height: 1; color: #222;
+}
+.ws-write .ws-cell {
+  background:
+    linear-gradient(to right, transparent calc(50% - 0.15mm), #c9c9c9 calc(50% - 0.15mm), #c9c9c9 calc(50% + 0.15mm), transparent calc(50% + 0.15mm)),
+    linear-gradient(to bottom, transparent calc(50% - 0.15mm), #c9c9c9 calc(50% - 0.15mm), #c9c9c9 calc(50% + 0.15mm), transparent calc(50% + 0.15mm));
+}
+.ws-foot { position: absolute; bottom: 6mm; right: 14mm; font-size: 3.5mm; color: #888; }
+
+@page { size: A4 portrait; margin: 0; }
+@media print {
+  html, body, #app { height: auto; overflow: visible; background: #fff; }
+  .no-print { display: none !important; }
+  .ws-preview { display: block; padding: 0; background: #fff; overflow: visible; height: auto; }
+  .ws-pages { display: block; padding: 0; }
+  .ws-page { box-shadow: none; margin: 0; page-break-after: always; break-after: page; }
+  .ws-page:last-child { page-break-after: auto; break-after: auto; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
