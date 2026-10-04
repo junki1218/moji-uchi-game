@@ -483,9 +483,12 @@ button {
 .q-side:has(.answer-cell:nth-child(11)) { --cell: min(4.2vw, 6vh); }
 .handwriting:has(.hw-cell:nth-child(11)) { --cell: min(6.8vw, 12vh); }
 
-/* カテゴリが4つ: 上に3つ、下に「ぶん」 */
-.category-grid:has(.category-btn:nth-child(4)) { display: grid; grid-template-columns: repeat(3, auto); row-gap: 3vh; }
-.category-grid:has(.category-btn:nth-child(4)) .category-btn:nth-child(4) { grid-column: 2; }
+/* カテゴリが4つ以上: 上に3つ（もの・きもち・うごき）、下に「ぶん」「ぶん・きもち」を並べる */
+.category-grid:has(.category-btn:nth-child(4)) { display: grid; grid-template-columns: repeat(6, auto); row-gap: 3vh; justify-content: center; }
+.category-grid:has(.category-btn:nth-child(4)) .category-btn { grid-column: span 2; }
+.category-grid:has(.category-btn:nth-child(4)) .category-btn:nth-child(4) { grid-column: 3 / span 2; }
+.category-grid:has(.category-btn:nth-child(5)) .category-btn:nth-child(4) { grid-column: 2 / span 2; }
+.category-grid:has(.category-btn:nth-child(5)) .category-btn:nth-child(5) { grid-column: 4 / span 2; }
 .category-grid:has(.category-btn:nth-child(4)) .category-pic { width: min(17vw, 26vh); height: min(17vw, 26vh); font-size: min(12vw, 18vh); }
 
 /* ---------- ヒント（最初の1文字） ---------- */
@@ -672,4 +675,18 @@ button {
 .ws-particle {
   width: 80%; height: 80%; border-radius: 50%; background: #222; color: #fff;
   display: grid; place-items: center; font-size: 0.78em;
+}
+
+/* ---------- ぶん・きもち: ヒントで浮かび上がる、きもちの絵 ---------- */
+.q-pic { position: relative; }
+.feeling-pop {
+  position: absolute; right: 4%; bottom: 4%; width: 50%; aspect-ratio: 1;
+  border-radius: 18px; border: 4px solid #e0c35a; background: #fff;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18); overflow: hidden;
+  animation: feeling-up 0.8s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.feeling-pic { width: 100%; height: 100%; font-size: 300%; }
+@keyframes feeling-up {
+  from { opacity: 0; transform: translateY(40%) scale(0.4); }
+  to { opacity: 1; transform: none; }
 }

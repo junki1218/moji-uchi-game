@@ -33,6 +33,7 @@ CATEGORIES = {
     "cat_kimochi": (CLAY / "clay_emoji_joyful.png", 1.0, 0.5),
     "cat_ugoki": (ANIMAL / "ゾウ_1_走る.png", 1.15, 0.5),
     "cat_bun": (ANIMAL / "キリン_7_バス.png", 1.3, 0.55),  # 右上の小さな看板が入らないよう中央を拡大
+    "cat_bunkimochi": (CLAY / "smile_both_happy (1).png", 1.15, 0.45),
 }
 STAMPS = {
     "stamp_1": (ANIMAL / "ウサギ_1_走る.png", 1.9, 0.42),

@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-10-04T09:22:11+09:00",
+  "last_updated": "2026-10-05T05:56:28+09:00",
   "assets": [
     {
       "id": "ref_person",
@@ -773,6 +773,186 @@
       "dimensions": "1024x1024",
       "created_by": "library",
       "task_id": "TASK-007"
+    },
+    {
+      "id": "bunkimochi_01",
+      "type": "image",
+      "purpose": "問題イラスト ぶん・きもち: うさぎが うれしい（素材ライブラリから流用: animal school/ウサギ_3_給食.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-008_bunkimochi_01_ureshii.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-008"
+    },
+    {
+      "id": "bunkimochi_02",
+      "type": "image",
+      "purpose": "問題イラスト ぶん・きもち: ぞうが うれしい（素材ライブラリから流用: animal school/ゾウ_5_肩組み.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-008_bunkimochi_02_ureshii.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-008"
+    },
+    {
+      "id": "bunkimochi_03",
+      "type": "image",
+      "purpose": "問題イラスト ぶん・きもち: かどたんが うれしい（素材ライブラリから流用: 修学旅行カドタン/No38-HarajukuCrepe-KD.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-008_bunkimochi_03_ureshii.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-008"
+    },
+    {
+      "id": "bunkimochi_04",
+      "type": "image",
+      "purpose": "問題イラスト ぶん・きもち: おんなのこが うれしい（素材ライブラリから流用: ClayAnimation/idea_girl_light.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-008_bunkimochi_04_ureshii.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-008"
+    },
+    {
+      "id": "bunkimochi_05",
+      "type": "image",
+      "purpose": "問題イラスト ぶん・きもち: おとこのこが かなしい（素材ライブラリから流用: ClayAnimation/clay_sad_child.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-008_bunkimochi_05_kanashii.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-008"
+    },
+    {
+      "id": "bunkimochi_06",
+      "type": "image",
+      "purpose": "問題イラスト ぶん・きもち: おんなのこが おこる（素材ライブラリから流用: ClayAnimation/vacuum_boy_touch.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-008_bunkimochi_06_okoru.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-008"
+    },
+    {
+      "id": "bunkimochi_07",
+      "type": "image",
+      "purpose": "問題イラスト ぶん・きもち: ともだちが おこる（素材ライブラリから流用: ClayAnimation/fan_clean_ng_plugged.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-008_bunkimochi_07_okoru.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-008"
+    },
+    {
+      "id": "bunkimochi_08",
+      "type": "image",
+      "purpose": "問題イラスト ぶん・きもち: らいおんが こまる（素材ライブラリから流用: animal school/ライオン_2_勉強.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-008_bunkimochi_08_komaru.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-008"
+    },
+    {
+      "id": "bunkimochi_09",
+      "type": "image",
+      "purpose": "問題イラスト ぶん・きもち: おとこのこが こまる（素材ライブラリから流用: ClayAnimation/cord_boy_tangle.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-008_bunkimochi_09_komaru.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-008"
+    },
+    {
+      "id": "bunkimochi_10",
+      "type": "image",
+      "purpose": "問題イラスト ぶん・きもち: おんなのこが こまる（素材ライブラリから流用: ClayAnimation/cord_girl_tangle.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-008_bunkimochi_10_komaru.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-008"
+    },
+    {
+      "id": "bunkimochi_11",
+      "type": "image",
+      "purpose": "問題イラスト ぶん・きもち: かどたんが こまる（素材ライブラリから流用: 修学旅行カドタン/No97-HelpToiletUrgent-KD.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-008_bunkimochi_11_komaru.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-008"
+    },
+    {
+      "id": "bunkimochi_12",
+      "type": "image",
+      "purpose": "問題イラスト ぶん・きもち: おとこのこが びっくり（素材ライブラリから流用: ClayAnimation/shock_boy_face.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-008_bunkimochi_12_bikkuri.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-008"
+    },
+    {
+      "id": "bunkimochi_13",
+      "type": "image",
+      "purpose": "問題イラスト ぶん・きもち: おんなのこが びっくり（素材ライブラリから流用: ClayAnimation/shock_girl_face (1).png）",
+      "file_path": ".agent_flow/assets/asset_TASK-008_bunkimochi_13_bikkuri.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-008"
+    },
+    {
+      "id": "bunkimochi_14",
+      "type": "image",
+      "purpose": "問題イラスト ぶん・きもち: ごりらが たのしい（素材ライブラリから流用: animal school/ゴリラ_6_歌う.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-008_bunkimochi_14_tanoshii.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-008"
+    },
+    {
+      "id": "bunkimochi_15",
+      "type": "image",
+      "purpose": "問題イラスト ぶん・きもち: うさぎが たのしい（素材ライブラリから流用: animal school/ウサギ_6_歌う.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-008_bunkimochi_15_tanoshii.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-008"
+    },
+    {
+      "id": "bunkimochi_16",
+      "type": "image",
+      "purpose": "問題イラスト ぶん・きもち: らいおんが たのしい（素材ライブラリから流用: animal school/ライオン_6_歌う.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-008_bunkimochi_16_tanoshii.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-008"
+    },
+    {
+      "id": "bunkimochi_17",
+      "type": "image",
+      "purpose": "問題イラスト ぶん・きもち: かどたんが たのしい（素材ライブラリから流用: 修学旅行カドタン/No46-RyokanTrump-KD.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-008_bunkimochi_17_tanoshii.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-008"
+    },
+    {
+      "id": "bunkimochi_18",
+      "type": "image",
+      "purpose": "問題イラスト ぶん・きもち: ごりらが ねむい（素材ライブラリから流用: animal school/ゴリラ_2_勉強.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-008_bunkimochi_18_nemui.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-008"
+    },
+    {
+      "id": "bunkimochi_19",
+      "type": "image",
+      "purpose": "問題イラスト ぶん・きもち: みみが いたい（素材ライブラリから流用: 修学旅行カドタン/No96-HelpEarPain-KD.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-008_bunkimochi_19_itai.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-008"
+    },
+    {
+      "id": "bunkimochi_20",
+      "type": "image",
+      "purpose": "問題イラスト ぶん・きもち: おなかが いたい（素材ライブラリから流用: 修学旅行カドタン/No165-SeatHoldingItIn-KD【QUIZ】.png）",
+      "file_path": ".agent_flow/assets/asset_TASK-008_bunkimochi_20_itai.png",
+      "dimensions": "1024x1024",
+      "created_by": "library",
+      "task_id": "TASK-008"
     }
   ]
 }
