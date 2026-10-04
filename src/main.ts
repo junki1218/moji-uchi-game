@@ -132,7 +132,7 @@ function startScreen(): void {
   const screen = h(
       'main',
       { class: 'screen start' },
-      h('h1', { class: 'title' }, 'もじうちげーむ'),
+      h('h1', { class: 'title' }, 'がっくんの こくご'),
       h(
         'div',
         { class: 'start-buttons' },
@@ -141,9 +141,9 @@ function startScreen(): void {
         h('button', { class: 'big-btn secondary', onclick: pinScreen }, 'せってい'),
       ),
   );
-  // 背景画像はあれば使う（なければ無地）。タイトルとボタンが読めるよう淡い地色を重ねる
+  // 背景はがっくんの絵（なければ無地）。まんなかのがっくんを隠さないよう、題名は上・ボタンは下の左右に置く
   const bg = imageUrl('start_bg');
-  if (bg) screen.style.backgroundImage = `linear-gradient(rgba(255, 247, 236, 0.55), rgba(255, 247, 236, 0.55)), url(${bg})`;
+  if (bg) screen.style.backgroundImage = `url(${bg})`;
   show(screen);
   playBgm('bgm1_start');
   // 新しい版が届いていたら切り替えて読み込み直す（画面は先に描いておくので、切り替わらなくても真っ白にならない）
@@ -1156,7 +1156,7 @@ function worksheetPrint(ids: string[]): void {
       'div',
       { class: 'ws-page' },
       h('header', { class: 'ws-head' },
-        h('div', { class: 'ws-title' }, 'もじうち ワークシート'),
+        h('div', { class: 'ws-title' }, 'がっくんの こくご ワークシート'),
         h('div', { class: 'ws-name' }, 'なまえ', h('span', { class: 'ws-blank' })),
         h('div', { class: 'ws-date' }, h('span', { class: 'ws-blank short' }), 'がつ', h('span', { class: 'ws-blank short' }), 'にち')),
       h('p', { class: 'ws-lead' }, 'みて かこう'),
