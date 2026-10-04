@@ -21,6 +21,8 @@ export interface Settings {
   /** 問題の前のミニゲーム */
   minigame: boolean;
   minigameKinds: MinigameKind[];
+  /** 文の「が」を子どもが打つ・書くか（false＝最初から入れておく） */
+  particleInput: boolean;
   pin: string;
 }
 
@@ -37,6 +39,7 @@ const DEFAULTS: Settings = {
   volume: 'mid',
   minigame: true,
   minigameKinds: ['bubble', 'lock', 'hockey'],
+  particleInput: false,
   pin: DEFAULT_PIN,
 };
 

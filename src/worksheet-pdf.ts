@@ -9,6 +9,8 @@ export interface SheetItem {
   /** 絵の URL（なければ絵文字） */
   imageUrl: string | null;
   emoji: string;
+  /** 文の「が」の位置（見本で黒丸に白字にする）。単語なら null */
+  particle?: number | null;
 }
 
 const PAGE_W = 210;
@@ -132,9 +134,14 @@ async function drawPage(items: SheetItem[], pageNo: number, pages: number): Prom
       g.lineWidth = 0.35;
       g.strokeRect(cx, sy, cell, cell);
       g.strokeRect(cx, wy, cell, cell);
-      // 見本の字（教科書体）
-      g.fillStyle = '#222';
-      g.font = `600 ${cell * 0.72}px ${KYOKASHO}`;
+      // 見本の字（教科書体）。文の「が」は黒い丸に白い字
+      const isParticle = k === it.particle;
+      if (isParticle) {
+        g.fillStyle = '#222';
+        g.beginPath(); g.arc(cx + cell / 2, sy + cell / 2, cell * 0.4, 0, Math.PI * 2); g.fill();
+      }
+      g.fillStyle = isParticle ? '#fff' : '#222';
+      g.font = `600 ${cell * (isParticle ? 0.56 : 0.72)}px ${KYOKASHO}`;
       g.textAlign = 'center';
       g.textBaseline = 'middle';
       g.fillText(ch, cx + cell / 2, sy + cell / 2 + cell * 0.04);

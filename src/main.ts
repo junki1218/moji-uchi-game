@@ -248,14 +248,15 @@ function questionScreen(round: Round, afterMini = false): void {
   playBgm('bgm2_question'); // 10問のあいだ流しっぱなし
   const q = round.questions[round.index];
   const answer = chars(q.hira);
-  // 文（〇〇が●●）は「が」を最初から入れておき、打たせない
-  const fixed = new Set<number>(q.type === 'sentence' && q.parts ? [chars(q.parts[0]).length] : []);
+  // 文（〇〇が●●）の「が」の位置。設定で「最初から入れておく」なら打たせない
+  const pIdx = particleIndex(q);
+  const fixed = particleFixed(pIdx);
   const shown = (c: string) => inScript(c, settings.script);
   const say = () => speak(q.hira, () => duckBgm(true), () => duckBgm(false));
 
   const sample =
     settings.prompt === 'look'
-      ? h('div', { class: 'sample' }, ...answer.map((c, i) => h('span', { class: `sample-cell ${fixed.has(i) ? 'fixed' : ''}` }, shown(c))))
+      ? h('div', { class: 'sample' }, ...answer.map((c, i) => h('span', { class: `sample-cell ${i === pIdx ? 'particle' : ''}` }, shown(c))))
       : null;
 
   const side = h(
@@ -287,8 +288,8 @@ function questionScreen(round: Round, afterMini = false): void {
 
   const input =
     settings.input === 'handwriting'
-      ? handwritingArea(answer, fixed, sample, next, hint)
-      : keyboardArea(answer, fixed, side, next, hint);
+      ? handwritingArea(answer, fixed, pIdx, sample, next, hint)
+      : keyboardArea(answer, fixed, pIdx, side, next, hint);
 
   show(
     h(
@@ -375,7 +376,7 @@ function minigameScreen(round: Round, kinds: MinigameKind[], onDone: () => void)
 function miniQuestion(q: Question): MiniQuestion {
   const disp = (s: string) => inScript(s, settings.script);
   const answer = chars(q.hira);
-  const fixed = new Set<number>(q.type === 'sentence' && q.parts ? [chars(q.parts[0]).length] : []);
+  const fixed = particleFixed(particleIndex(q));
   const others = shuffle(
     [...new Set(allQuestions(q.category).map((x) => x.hira).filter((w) => w !== q.hira))],
   ).map(disp);
@@ -404,13 +405,23 @@ interface Hint {
 }
 
 /** 文なら 〇〇 と ●● の頭の位置、単語なら [0] */
-function partStarts(answer: string[], fixed: Set<number>): number[] {
+/** 文の「が」が何文字目か（単語なら null） */
+function particleIndex(q: Question): number | null {
+  return q.type === 'sentence' && q.parts ? chars(q.parts[0]).length : null;
+}
+
+/** 「が」を打たせないマス（設定で「最初から入れておく」のとき） */
+function particleFixed(pIdx: number | null): Set<number> {
+  return new Set<number>(pIdx !== null && !settings.particleInput ? [pIdx] : []);
+}
+
+function partStarts(answer: string[], pIdx: number | null): number[] {
   const starts = [0];
-  for (const i of fixed) if (i + 1 < answer.length) starts.push(i + 1);
+  if (pIdx !== null && pIdx + 1 < answer.length) starts.push(pIdx + 1);
   return starts;
 }
 
-function keyboardArea(answer: string[], fixed: Set<number>, side: HTMLElement, onDone: () => void, hint: Hint): HTMLElement {
+function keyboardArea(answer: string[], fixed: Set<number>, pIdx: number | null, side: HTMLElement, onDone: () => void, hint: Hint): HTMLElement {
   let pos = 0;
   let misses = 0;
   const cells = answer.map((c, i) =>
@@ -425,7 +436,7 @@ function keyboardArea(answer: string[], fixed: Set<number>, side: HTMLElement, o
   // いま打っている段（〇〇／●●）の1文字目を薄く出す。もう打ってあれば、いま打つ字を出す
   // ヒントは段の頭（単語は1文字目、文は〇〇→●●の順）を1つずつ出す。
   // キーを光らせるのはその字を打つ番になったとき（〇〇を打っている途中に●●のキーは光らせない）
-  const starts = partStarts(answer, fixed);
+  const starts = partStarts(answer, pIdx);
   let step = 0;
   const glowAt = new Set<number>();
   const glowIfDue = () => { if (glowAt.has(pos)) keys.get(answer[pos])?.classList.add('hint'); };
@@ -465,10 +476,9 @@ function keyboardArea(answer: string[], fixed: Set<number>, side: HTMLElement, o
     clearHint();
     misses = 0;
     pos++;
-    if (fixed.has(pos)) {
-      stageDone(pos);
-      while (fixed.has(pos)) pos++;
-    }
+    // 〇〇を打ち終えたら1段目の正解（「が」を打つ設定でも、〇〇の終わりで鳴らす）
+    if (pos === pIdx) stageDone(pos);
+    while (fixed.has(pos)) pos++;
     if (pos < answer.length) {
       cells[pos].classList.add('current');
       glowIfDue();
@@ -511,7 +521,7 @@ function keyboardArea(answer: string[], fixed: Set<number>, side: HTMLElement, o
 
 const PAD_PX = 600;
 
-function handwritingArea(answer: string[], fixed: Set<number>, sample: HTMLElement | null, onDone: () => void, hint: Hint): HTMLElement {
+function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | null, sample: HTMLElement | null, onDone: () => void, hint: Hint): HTMLElement {
   const count = answer.length;
   // 1文字ぶんの字。パッドと同じ解像度で持っておき、マスには縮小して写す
   const glyphs = Array.from({ length: count }, (_, i) => {
@@ -563,7 +573,7 @@ function handwritingArea(answer: string[], fixed: Set<number>, sample: HTMLEleme
   };
 
   // 1回目＝〇〇の1文字目、2回目＝●●の1文字目を薄く出す（単語は1回）。なぞって書ける
-  const starts = partStarts(answer, fixed);
+  const starts = partStarts(answer, pIdx);
   let step = 0;
   hint.show = () => {
     const i = starts[step++];
@@ -600,6 +610,7 @@ function handwritingArea(answer: string[], fixed: Set<number>, sample: HTMLEleme
       // 見本あり のときだけ、書く字の見本を横に出す
       guide.textContent = settings.prompt === 'look' ? inScript(answer[i], settings.script) : '';
       guide.hidden = settings.prompt !== 'look';
+      guide.classList.toggle('particle', i === pIdx);
       nextBtn.hidden = nextIndex(i) < 0;
       cells.forEach((c, k) => c.classList.toggle('selected', k === i));
     };
@@ -812,6 +823,7 @@ function settingsScreen(): void {
       choice('aColumn', 'あ行の位置', [['right', '右はし（50音表と同じ）'], ['left', '左はし']]),
       choice('sound', 'おと（BGM）', [[true, 'あり'], [false, 'なし']]),
       choice('volume', '音量', [['low', '小'], ['mid', '中'], ['high', '大']]),
+      choice('particleInput', '文の「が」', [[false, '最初から入れておく'], [true, '子どもが打つ・書く']]),
       choice('minigame', 'ミニゲーム', [[true, 'あり（問題の前に毎回）'], [false, 'なし']]),
       minigameKindsRow(),
       h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'もんだい'),
@@ -1107,12 +1119,14 @@ function worksheetPrint(ids: string[]): void {
     const cell = Math.min(16, Math.floor((142 / longest) * 10) / 10);
     const rows = items.map((q) => {
       const cs = chars(inScript(q.hira, settings.script));
+      const pi = particleIndex(q);
       return h(
         'section',
         { class: 'ws-item' },
         h('div', { class: 'ws-pic' }, questionPicture(q, 'ws-pic-inner')),
         h('div', { class: 'ws-lines', style: `--ws-cell:${cell}mm` },
-          h('div', { class: 'ws-row ws-sample' }, ...cs.map((c) => h('span', { class: 'ws-cell' }, c))),
+          h('div', { class: 'ws-row ws-sample' }, ...cs.map((c, k) =>
+            k === pi ? h('span', { class: 'ws-cell' }, h('span', { class: 'ws-particle' }, c)) : h('span', { class: 'ws-cell' }, c))),
           h('div', { class: 'ws-row ws-write' }, ...cs.map(() => h('span', { class: 'ws-cell' })))),
       );
     });
@@ -1138,6 +1152,7 @@ function worksheetPrint(ids: string[]): void {
       try {
         const items = qs.map((q) => ({
           chars: chars(inScript(q.hira, settings.script)),
+          particle: particleIndex(q),
           imageUrl: hasPhoto(q.id) ? null : q.builtin ? imageUrl(q.id) : null,
           photoId: hasPhoto(q.id) ? q.id : null,
           emoji: q.emoji,
