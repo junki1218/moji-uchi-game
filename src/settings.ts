@@ -24,7 +24,9 @@ export interface Settings {
   pin: string;
 }
 
-export const DEFAULT_PIN = '1024';
+export const DEFAULT_PIN = '1094';
+/** 前の版の初期値。保存されていたら新しい初期値に置き換える（2026-10-04） */
+const OLD_DEFAULT_PIN = '1024';
 
 const DEFAULTS: Settings = {
   script: 'hira',
@@ -50,6 +52,7 @@ export function loadSettings(): Settings {
       // 前の版のミニゲーム（グミ・羽根）は取り除く。1つも残らなければ全種類
       const kinds = (s.minigameKinds ?? []).filter((k) => MINIGAME_KINDS.includes(k));
       s.minigameKinds = kinds.length ? kinds : [...MINIGAME_KINDS];
+      if (s.pin === OLD_DEFAULT_PIN) s.pin = DEFAULT_PIN;
       return s;
     }
   } catch {

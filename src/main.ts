@@ -3,6 +3,7 @@ import { registerSW } from 'virtual:pwa-register';
 import { CATEGORIES, MAX_CHARS, type Category, type Question } from './questions';
 import { allQuestions, applyImport, attachPhoto, deleteCustom, enabledQuestions, exportJson, isEnabled, parseImport, setEnabled, type ImportPlan } from './bank';
 import { hasPhoto, loadPhotoIndex, photoUrl, removePhoto } from './photos';
+import { savePdf, worksheetPdf } from './worksheet-pdf';
 import { clearWritings, deleteWriting, exportWritings, listWritings, MAX_WRITINGS, saveWriting } from './writings';
 import { chars, DAKUON, inScript, SEION, SMALL } from './kana';
 import { loadSettings, saveSettings, VOLUME_LEVEL, type Settings } from './settings';
@@ -1084,7 +1085,7 @@ function worksheetScreen(selected: string[] = lastRoundIds(), cat?: Category): v
       h('div', { class: 'seg toolbar' },
         h('button', { class: 'seg-btn', onclick: () => rerender(lastRoundIds()) }, 'さいごに遊んだ問題'),
         h('button', { class: 'seg-btn', onclick: () => rerender([]) }, 'えらび直す（ぜんぶ外す）'),
-        h('button', { class: 'seg-btn on', disabled: sel.length === 0, onclick: () => worksheetPrint(sel) }, `印刷する（${sel.length}問・A4 ${pages}枚）`)),
+        h('button', { class: 'seg-btn on', disabled: sel.length === 0, onclick: () => worksheetPrint(sel) }, `PDFを作る（${sel.length}問・A4 ${pages}枚）`)),
       h('p', { class: 'q-note' }, `タップで選ぶ／外す（番号の順に並びます）。A4 縦1枚に${WS_PER_PAGE}問。見本は教科書体、文字は設定の「${settings.script === 'kata' ? 'カタカナ' : 'ひらがな'}」。`),
       tabs,
       h('div', { class: 'q-grid' }, ...cards),
@@ -1092,7 +1093,7 @@ function worksheetScreen(selected: string[] = lastRoundIds(), cat?: Category): v
   );
 }
 
-/** 印刷用のページを組む。iPad は共有 → プリントで AirPrint、パソコンは印刷ダイアログ */
+/** 見た目の確認と PDF の保存。iPad は共有シートの「"ファイル"に保存」、パソコンはダウンロード */
 function worksheetPrint(ids: string[]): void {
   const all = allQuestions();
   const qs = ids.map((id) => all.find((q) => q.id === id)).filter((q): q is Question => !!q);
@@ -1128,15 +1129,41 @@ function worksheetPrint(ids: string[]): void {
     );
   };
 
-  const doPrint = h('button', { class: 'mid-btn primary', onclick: () => window.print() }, '印刷する');
+  const note = h('span', { class: 'ws-bar-note' }, `A4 縦 ${pages.length}枚。「PDFを保存」→ 「"ファイル"に保存」で iPad に保存`);
+  const doPdf: HTMLButtonElement = h('button', {
+    class: 'mid-btn primary',
+    onclick: async () => {
+      doPdf.disabled = true;
+      note.textContent = 'PDFを作っています…';
+      try {
+        const items = qs.map((q) => ({
+          chars: chars(inScript(q.hira, settings.script)),
+          imageUrl: hasPhoto(q.id) ? null : q.builtin ? imageUrl(q.id) : null,
+          photoId: hasPhoto(q.id) ? q.id : null,
+          emoji: q.emoji,
+        }));
+        // 先生が付けた写真はその URL を使う
+        for (const it of items) if (it.photoId) it.imageUrl = await photoUrl(it.photoId);
+        const blob = await worksheetPdf(items);
+        const d = new Date();
+        const name = `moji-worksheet-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}.pdf`;
+        const how = await savePdf(blob, name);
+        note.textContent = how === 'cancelled' ? '保存をやめました' : how === 'shared' ? 'PDFを渡しました（「"ファイル"に保存」を選ぶと iPad に残ります）' : `PDFを保存しました（${name}）`;
+      } catch {
+        note.textContent = 'PDFを作れませんでした。もう一度ためしてください';
+      } finally {
+        doPdf.disabled = false;
+      }
+    },
+  }, 'PDFを保存');
   show(
     h(
       'main',
       { class: 'screen ws-preview' },
       h('div', { class: 'ws-bar no-print' },
         h('button', { class: 'mid-btn secondary', onclick: () => worksheetScreen(ids) }, 'もどる'),
-        h('span', { class: 'ws-bar-note' }, `A4 縦 ${pages.length}枚。iPad は「印刷する」→ プリンタを選ぶ`),
-        doPrint),
+        note,
+        doPdf),
       h('div', { class: 'ws-pages' }, ...pages.map((p, i) => sheet(p, i + 1))),
     ),
   );
