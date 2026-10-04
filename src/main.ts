@@ -147,7 +147,9 @@ function startScreen(): void {
           h('button', { class: 'big-btn primary', onclick: () => { unlockSpeech(); categoryScreen(); } },
             'はじめる'),
           h('button', { class: 'big-btn ehon', onclick: ehonScreen }, 'えほん')),
-        h('button', { class: 'big-btn secondary', onclick: pinScreen }, 'せってい'),
+        h('div', { class: 'start-col' },
+          h('button', { class: 'big-btn print', onclick: printScreen }, 'プリント'),
+          h('button', { class: 'big-btn secondary', onclick: pinScreen }, 'せってい')),
       ),
   );
   // 背景はがっくんの絵（なければ無地）。まんなかのがっくんを隠さないよう、題名は上・ボタンは下の左右に置く
@@ -933,7 +935,7 @@ function settingsScreen(): void {
       h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'てがきのきろく'),
         h('div', { class: 'seg' }, h('button', { class: 'seg-btn', onclick: () => void writingsScreen() }, '見る・書き出す'))),
       h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'ワークシート'),
-        h('div', { class: 'seg' }, h('button', { class: 'seg-btn', onclick: () => worksheetScreen() }, '作る・印刷する'))),
+        h('div', { class: 'seg' }, h('button', { class: 'seg-btn', onclick: () => { worksheetBack = settingsScreen; worksheetScreen(); } }, '作る・印刷する'))),
       h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, '暗証番号'), h('div', { class: 'seg' }, pinInput, pinSave, pinMsg)),
     ),
   );
@@ -1157,6 +1159,64 @@ async function writingsScreen(message = ''): Promise<void> {
 const LAST_ROUND_KEY = 'moji-uchi-game/last-round';
 const WS_PER_PAGE = 5;
 
+/** ワークシート画面の「もどる」の行き先（設定から来たか、プリントから来たか） */
+let worksheetBack: () => void = settingsScreen;
+
+// ------------------------------------------------------------ プリント（スタート画面から）
+// ストック＝配布用の PDF（tools/make_worksheets.py で作って public/worksheets/ に置いたもの）
+// オリジナル＝さいごに遊んだ問題で作るワークシート（設定の「ワークシート」と同じ画面）
+
+const STOCK_CATEGORIES: [string, string][] = [
+  ['mono', 'もの'], ['kimochi', 'きもち'], ['ugoki', 'うごき'], ['bun', 'ぶん'], ['bunkimochi', 'ぶん・きもち'],
+];
+
+function printScreen(): void {
+  stopBgm();
+  show(
+    h(
+      'main',
+      { class: 'screen print-menu' },
+      backButton(startScreen),
+      h('h2', {}, 'プリント'),
+      h('div', { class: 'print-choices' },
+        h('button', { class: 'print-choice', onclick: stockScreen },
+          h('span', { class: 'print-choice-title' }, 'ストック'),
+          h('span', { class: 'print-choice-note' }, 'いつでも つかえる プリント')),
+        h('button', { class: 'print-choice', onclick: () => { worksheetBack = printScreen; worksheetScreen(); } },
+          h('span', { class: 'print-choice-title' }, 'オリジナル'),
+          h('span', { class: 'print-choice-note' }, 'さいごに あそんだ もんだいで'))),
+    ),
+  );
+}
+
+function stockScreen(): void {
+  const base = import.meta.env.BASE_URL;
+  const link = (cat: string, label: string, kata: boolean) =>
+    h('a', {
+      class: 'mid-btn stock-link',
+      href: `${base}worksheets/worksheet_${cat}${kata ? '_kata' : ''}.pdf`,
+      download: `ワークシート_${label}${kata ? '_カタカナ' : ''}.pdf`,
+      target: '_blank',
+      rel: 'noopener',
+    }, kata ? 'カタカナ' : 'ひらがな');
+  show(
+    h(
+      'main',
+      { class: 'screen print-menu' },
+      backButton(printScreen),
+      h('h2', {}, 'ストック'),
+      h('p', { class: 'q-note' }, '各20問・A4 縦4枚。おしたら PDF が ひらきます（iPad は 共有 から「"ファイル"に保存」・プリント）。インターネットが いります。'),
+      h('div', { class: 'stock-list' },
+        ...STOCK_CATEGORIES.map(([cat, label]) =>
+          h('div', { class: 'stock-row' },
+            picture(`cat_${cat}`, () => h('span'), 'stock-pic'),
+            h('span', { class: 'stock-label' }, label),
+            link(cat, label, false),
+            link(cat, label, true)))),
+    ),
+  );
+}
+
 function lastRoundIds(): string[] {
   try {
     return JSON.parse(localStorage.getItem(LAST_ROUND_KEY) || '[]') as string[];
@@ -1194,7 +1254,7 @@ function worksheetScreen(selected: string[] = lastRoundIds(), cat?: Category): v
     h(
       'main',
       { class: 'screen questions worksheet-pick' },
-      backButton(settingsScreen, '設定へ'),
+      backButton(worksheetBack, worksheetBack === settingsScreen ? '設定へ' : 'もどる'),
       h('h2', {}, 'ワークシート（視写）'),
       h('div', { class: 'seg toolbar' },
         h('button', { class: 'seg-btn', onclick: () => rerender(lastRoundIds()) }, 'さいごに遊んだ問題'),
