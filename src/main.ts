@@ -237,6 +237,50 @@ function confirmQuit(): void {
   app.append(overlay);
 }
 
+const READ_PAUSE_MS = 250; // 読み終えてから元の大きさに戻すまで
+const READ_GAP_MS = 200; // 次の字に移るまで
+const READ_MAX_MS = 2500; // 読み上げが終わらない（声がない）ときの打ち切り
+
+const SMALL_TO_BIG: Record<string, string> = { ゃ: 'や', ゅ: 'ゆ', ょ: 'よ', っ: 'つ', ャ: 'や', ュ: 'ゆ', ョ: 'よ', ッ: 'つ' };
+
+/** 1文字だけを読むときの読み方（小さい字・のばす棒は、そのままだと伝わりにくい） */
+function charReading(c: string): string {
+  if (c === 'ー') return 'のばすぼう';
+  if (SMALL_TO_BIG[c]) return `ちいさい ${SMALL_TO_BIG[c]}`;
+  return c;
+}
+
+const wait = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms));
+
+function speakAndWait(text: string): Promise<void> {
+  return new Promise((resolve) => {
+    let done = false;
+    const end = () => { if (!done) { done = true; resolve(); } };
+    const timer = window.setTimeout(end, READ_MAX_MS);
+    if ('speechSynthesis' in window) speak(text, undefined, () => { clearTimeout(timer); end(); });
+    else { clearTimeout(timer); setTimeout(end, 600); } // 声が出ない環境でも、間をおいて次の字へ
+  });
+}
+
+/** 答えのマスを1つずつ大きくして読み上げ、元に戻す。途中で画面を離れたら false */
+async function readOut(cells: HTMLElement[], answer: string[]): Promise<boolean> {
+  duckBgm(true);
+  try {
+    for (let i = 0; i < cells.length; i++) {
+      const cell = cells[i];
+      if (!cell.isConnected) return false;
+      cell.classList.add('readout');
+      await speakAndWait(charReading(answer[i]));
+      await wait(READ_PAUSE_MS);
+      cell.classList.remove('readout');
+      await wait(READ_GAP_MS);
+    }
+    return cells.every((c) => c.isConnected) || cells.length === 0;
+  } finally {
+    duckBgm(false);
+  }
+}
+
 function questionScreen(round: Round, afterMini = false): void {
   // 問題の前に毎回ミニゲーム（設定で切れる）
   const valid = settings.minigameKinds.filter((k) => MINIGAMES.some((m) => m.id === k));
@@ -268,7 +312,17 @@ function questionScreen(round: Round, afterMini = false): void {
   const pic = questionPicture(q, 'q-pic');
   const top = h('div', { class: `q-top ${q.type === 'sentence' ? 'sentence' : ''}` }, pic, side);
 
+  // 答えができたら、まず1文字ずつ大きくして読み上げる（字と音を結びつける）→ 花丸
+  let finishing = false;
   const next = () => {
+    if (finishing) return;
+    finishing = true;
+    const screen = app.querySelector<HTMLElement>('.screen.game');
+    screen?.classList.add('reading'); // 読み上げ中は入力を受け付けない（やめる は押せる）
+    const cells = [...(screen?.querySelectorAll<HTMLElement>('.answer .answer-cell, .hw-cells .hw-cell') ?? [])];
+    void readOut(cells, answer).then((ok) => { if (ok) celebrate(); });
+  };
+  const celebrate = () => {
     const overlay = h('div', { class: 'overlay clear' }, hanamaru('pop'));
     app.append(overlay);
     playJingle('correct');
