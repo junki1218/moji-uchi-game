@@ -1002,3 +1002,10 @@ canvas.pad-ghost { width: 100%; height: 100%; }
 @media (prefers-reduced-motion: reduce) {
   .trace-star { animation: fade-in 0.2s reverse both; }
 }
+
+/* ---------- 文の「が」の見本: 丸と字はキャンバス（particleBadge）で描く（2026-10-17）---------- */
+.particle-badge { display: block; width: 100%; height: 100%; }
+.sample-cell.particle { padding: 0; }
+.sample-cell.particle::before { display: none; }
+.pad-sample.particle { background: transparent; padding: 0; border-radius: 0; }
+.ws-particle-badge { width: 100%; height: 100%; }

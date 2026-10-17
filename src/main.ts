@@ -11,6 +11,7 @@ import { duckBgm, playBgm, playJingle, setSound, sfx, stopBgm, unlockAudio } fro
 import { speak, stopSpeech, unlockSpeech } from './speech';
 import { MINIGAMES, runMinigame, type MiniQuestion, type MinigameKind } from './minigames';
 import { letters } from './kinetic';
+import { fillCentered } from './glyph';
 
 // 新しい版が届いたら、ゲームの途中ではなくスタート画面に戻ったときに読み込み直す
 // （古いプログラムと新しい絵が混ざって、絵と問題が食い違うのを防ぐ）
@@ -330,7 +331,8 @@ function questionScreen(round: Round, afterMini = false): void {
   const trace = settings.input === 'trace';
   const sample =
     settings.prompt === 'look' && !trace
-      ? h('div', { class: 'sample' }, ...answer.map((c, i) => h('span', { class: `sample-cell ${i === pIdx ? 'particle' : ''}` }, shown(c))))
+      ? h('div', { class: 'sample' }, ...answer.map((c, i) =>
+        i === pIdx ? h('span', { class: 'sample-cell particle' }, particleBadge(shown(c))) : h('span', { class: 'sample-cell' }, shown(c))))
       : null;
 
   const side = h(
@@ -704,14 +706,31 @@ const PAD_PX = 600;
  * 字を、字の形（インクの部分）がマスの上下左右の真ん中に来るように描く。
  * textBaseline: middle だとフォントによって少し下にずれるので、実際の字の形を測ってそろえる
  */
-function fillCentered(g: CanvasRenderingContext2D, ch: string, w: number, h: number): [number, number] {
-  g.textAlign = 'center';
-  g.textBaseline = 'alphabetic';
-  const m = g.measureText(ch);
-  const x = w / 2 - (m.actualBoundingBoxRight - m.actualBoundingBoxLeft) / 2;
-  const y = h / 2 + (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2;
-  g.fillText(ch, x, y);
-  return [x, y];
+// 字をマスの真ん中に描く fillCentered は glyph.ts（ワークシートの PDF と共通）
+
+/**
+ * 文の「が」の見本（黒い丸に白い字）。丸と字を同じキャンバスに描いて、字を丸の真ん中にそろえる
+ * （CSS の丸と文字を重ねると、フォントによって字がずれていた）
+ */
+function particleBadge(ch: string, cls = 'particle-badge'): HTMLCanvasElement {
+  const S = 240;
+  const c = h('canvas', { class: cls, width: String(S), height: String(S), 'aria-label': ch, role: 'img' });
+  const font = () => `600 ${S * 0.56}px ${getComputedStyle(document.documentElement).getPropertyValue('--kyokasho').trim() || 'sans-serif'}`;
+  const draw = () => {
+    const g = c.getContext('2d')!;
+    g.clearRect(0, 0, S, S);
+    g.fillStyle = '#222';
+    g.beginPath();
+    g.arc(S / 2, S / 2, S * 0.41, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = '#fff';
+    g.font = font();
+    fillCentered(g, ch, S, S);
+  };
+  draw();
+  // 教科書体が読み込まれたら描き直す
+  void document.fonts?.load(font(), ch).then(draw).catch(() => undefined);
+  return c;
 }
 
 const TRACE_TOLERANCE = PAD_PX / 14; // 字のふちから、これくらいまでは「なぞれている」とみなす
@@ -891,7 +910,8 @@ function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | nu
       }
       // 見本あり のときだけ、書く字の見本を横に出す（なぞりはパッドの中に字があるので出さない）
       const showGuide = settings.prompt === 'look' && !trace;
-      guide.textContent = showGuide ? inScript(answer[i], settings.script) : '';
+      if (showGuide && i === pIdx) guide.replaceChildren(particleBadge(inScript(answer[i], settings.script)));
+      else guide.textContent = showGuide ? inScript(answer[i], settings.script) : '';
       guide.hidden = !showGuide;
       guide.classList.toggle('particle', i === pIdx);
       nextBtn.hidden = nextIndex(i) < 0;
@@ -1517,7 +1537,7 @@ function worksheetPrint(ids: string[]): void {
         h('div', { class: 'ws-pic' }, questionPicture(q, 'ws-pic-inner')),
         h('div', { class: 'ws-lines', style: `--ws-cell:${cell}mm` },
           h('div', { class: 'ws-row ws-sample' }, ...cs.map((c, k) =>
-            k === pi ? h('span', { class: 'ws-cell' }, h('span', { class: 'ws-particle' }, c)) : h('span', { class: 'ws-cell' }, c))),
+            k === pi ? h('span', { class: 'ws-cell' }, particleBadge(c, 'particle-badge ws-particle-badge')) : h('span', { class: 'ws-cell' }, c))),
           h('div', { class: 'ws-row ws-write' }, ...cs.map(() => h('span', { class: 'ws-cell' })))),
       );
     });

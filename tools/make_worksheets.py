@@ -51,6 +51,29 @@ def px(v: float) -> int:
     return round(v * S)
 
 
+# 字をマスの上下の真ん中に（2026-10-17）。anchor "mm" はフォントによって字が少し下に出るので、
+# 代表的なかなの字の形の真ん中を測ってそろえる（1文字ずつはそろえない: ゃ・っ・ー の位置はフォントのまま）
+REF_CHARS = "あいうえおかきくけこさしすせそたなにぬねのはまやらわ"
+_mid_cache: dict[tuple, float] = {}
+
+
+def ref_mid(f: ImageFont.FreeTypeFont) -> float:
+    """ベースラインから、代表的な字の形の真ん中までの距離（px、下がプラス）"""
+    key = (f.path, f.size)
+    if key not in _mid_cache:
+        mids = []
+        for c in REF_CHARS:
+            l, top, r, bottom = f.getbbox(c, anchor="ls")
+            mids.append((top + bottom) / 2)
+        _mid_cache[key] = sum(mids) / len(mids)
+    return _mid_cache[key]
+
+
+def text_centered(d: ImageDraw.ImageDraw, cx: int, cy: int, ch: str, f: ImageFont.FreeTypeFont, fill: str) -> None:
+    """(cx, cy) を真ん中にして字を書く（左右は字の送り幅の真ん中、上下は代表の字の形の真ん中）"""
+    d.text((cx, round(cy - ref_mid(f))), ch, font=f, fill=fill, anchor="ms")
+
+
 def font(path: str, size_mm: float) -> ImageFont.FreeTypeFont:
     return ImageFont.truetype(path, px(size_mm))
 
@@ -160,9 +183,9 @@ def draw_page(items: list[Item], label: str, page_no: int, pages: int) -> Image.
                 # 文の「が」は黒い丸に白い字
                 r = cell * 0.4
                 d.ellipse((px(cx + cell / 2 - r), px(sy + cell / 2 - r), px(cx + cell / 2 + r), px(sy + cell / 2 + r)), fill=ink)
-                d.text((px(cx + cell / 2), px(sy + cell / 2)), ch, font=f_particle, fill="white", anchor="mm")
+                text_centered(d, px(cx + cell / 2), px(sy + cell / 2), ch, f_particle, "white")
             else:
-                d.text((px(cx + cell / 2), px(sy + cell / 2)), ch, font=f_cell, fill=ink, anchor="mm")
+                text_centered(d, px(cx + cell / 2), px(sy + cell / 2), ch, f_cell, ink)
 
         if i < len(items) - 1:
             dashed_h(d, MARGIN_X, PAGE_W - MARGIN_X, top + slot * (i + 1), "#bbbbbb")

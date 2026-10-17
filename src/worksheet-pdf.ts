@@ -13,6 +13,8 @@ export interface SheetItem {
   particle?: number | null;
 }
 
+import { fillCenteredAt } from './glyph';
+
 const PAGE_W = 210;
 const PAGE_H = 297;
 const DPI = 200;
@@ -138,13 +140,12 @@ async function drawPage(items: SheetItem[], pageNo: number, pages: number): Prom
       const isParticle = k === it.particle;
       if (isParticle) {
         g.fillStyle = '#222';
-        g.beginPath(); g.arc(cx + cell / 2, sy + cell / 2, cell * 0.4, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.arc(cx + cell / 2, sy + cell / 2, cell * 0.41, 0, Math.PI * 2); g.fill();
       }
       g.fillStyle = isParticle ? '#fff' : '#222';
       g.font = `600 ${cell * (isParticle ? 0.56 : 0.72)}px ${KYOKASHO}`;
-      g.textAlign = 'center';
-      g.textBaseline = 'middle';
-      g.fillText(ch, cx + cell / 2, sy + cell / 2 + cell * 0.04);
+      // 字をマス（「が」は丸）の上下の真ん中に（glyph.ts）
+      fillCenteredAt(g, ch, cx + cell / 2, sy + cell / 2);
     });
     g.textBaseline = 'alphabetic';
 
