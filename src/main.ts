@@ -388,7 +388,7 @@ function questionScreen(round: Round, afterMini = false): void {
       'main',
       { class: 'screen game' },
       h('header', { class: 'game-header' },
-        h('div', { class: 'header-left' }, quitButton(), h('button', { class: 'gear-btn', 'aria-label': 'せってい', onclick: () => openSettingsModal(round) }, '⚙')),
+        headerLeft(round, false),
         progress(round), hintBtn),
       top,
       input,
@@ -398,8 +398,18 @@ function questionScreen(round: Round, afterMini = false): void {
   if (settings.prompt !== 'picture') window.setTimeout(say, 300);
 }
 
-/** 問題の途中で設定を変える（暗証番号 → 設定）。変えたら、いまの問題を新しい設定で出し直す */
-function openSettingsModal(round: Round): void {
+/** 左上の「やめる」と ⚙（問題・ミニゲームの両方に出す） */
+function headerLeft(round: Round, inMini: boolean): HTMLElement {
+  return h('div', { class: 'header-left' },
+    quitButton(),
+    h('button', { class: 'gear-btn', 'aria-label': 'せってい', onclick: () => openSettingsModal(round, inMini) }, '⚙'));
+}
+
+/**
+ * 問題の途中で設定を変える（暗証番号 → 設定）。変えたら、いまの問題を新しい設定で出し直す。
+ * ミニゲーム中に変えたときは、ミニゲームからやり直す（ミニゲームの あり／なし・種類も反映）
+ */
+function openSettingsModal(round: Round, inMini = false): void {
   const before = JSON.stringify(settings);
   const box = h('div', { class: 'modal-box' });
   const overlay = h('div', { class: 'overlay settings-modal' }, box);
@@ -407,7 +417,12 @@ function openSettingsModal(round: Round): void {
     overlay.remove();
     if (JSON.stringify(settings) !== before) {
       stopSpeech();
-      questionScreen(round, true); // ミニゲームはとばして、同じ問題を出し直す
+      if (inMini) {
+        stopActiveMini();
+        questionScreen(round); // ミニゲームから出し直す
+      } else {
+        questionScreen(round, true); // ミニゲームはとばして、同じ問題を出し直す
+      }
     }
   };
   const closeBtn = h('button', { class: 'mid-btn secondary modal-close', onclick: close }, 'とじる');
@@ -472,7 +487,7 @@ function minigameScreen(round: Round, kinds: MinigameKind[], onDone: () => void)
     h(
       'main',
       { class: `screen game mini mini-${kind}` },
-      h('header', { class: 'game-header' }, quitButton(), progress(round)),
+      h('header', { class: 'game-header' }, headerLeft(round, true), progress(round)),
       h('div', { class: 'mini-head' },
         h('button', { class: 'speaker-btn', 'aria-label': 'ことばを よみあげ', onclick: sayWord }, '🔊'),
         h('p', { class: 'mini-instruction' }, letters(info.instruction, 'kt-drop')),
