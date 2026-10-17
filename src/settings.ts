@@ -8,6 +8,8 @@ export type AColumn = 'left' | 'right';
 export type Volume = 'low' | 'mid' | 'high';
 /** グミ・羽根は 2026-10-04 に廃止し、錠前・エアホッケーに置き換え */
 export type MinigameKind = 'bubble' | 'lock' | 'hockey';
+/** キーボードに出す字の数（2026-10-17）。all＝50音ぜんぶ、k25／k10＝答えの字＋ほかの字で25／10個、answer＝答えの字だけ */
+export type KeySet = 'all' | 'k25' | 'k10' | 'answer';
 
 export const VOLUME_LEVEL: Record<Volume, number> = { low: 0.3, mid: 0.6, high: 0.9 };
 
@@ -23,6 +25,8 @@ export interface Settings {
   minigameKinds: MinigameKind[];
   /** 文の「が」を子どもが打つ・書くか（false＝最初から入れておく） */
   particleInput: boolean;
+  /** キーボードの字の数。変えるまで同じ難しさが続く */
+  keySet: KeySet;
   pin: string;
 }
 
@@ -40,12 +44,14 @@ const DEFAULTS: Settings = {
   minigame: true,
   minigameKinds: ['bubble', 'lock', 'hockey'],
   particleInput: false,
+  keySet: 'all',
   pin: DEFAULT_PIN,
 };
 
 const KEY = 'moji-uchi-game/settings';
 
 const MINIGAME_KINDS: MinigameKind[] = ['bubble', 'lock', 'hockey'];
+const KEY_SETS: KeySet[] = ['all', 'k25', 'k10', 'answer'];
 
 export function loadSettings(): Settings {
   try {
@@ -56,6 +62,7 @@ export function loadSettings(): Settings {
       const kinds = (s.minigameKinds ?? []).filter((k) => MINIGAME_KINDS.includes(k));
       s.minigameKinds = kinds.length ? kinds : [...MINIGAME_KINDS];
       if (s.pin === OLD_DEFAULT_PIN) s.pin = DEFAULT_PIN;
+      if (!KEY_SETS.includes(s.keySet)) s.keySet = 'all';
       return s;
     }
   } catch {

@@ -6,7 +6,7 @@ import { hasPhoto, loadPhotoIndex, photoUrl, removePhoto } from './photos';
 import { savePdf, worksheetPdf } from './worksheet-pdf';
 import { clearWritings, deleteWriting, exportWritings, listWritings, MAX_WRITINGS, saveWriting } from './writings';
 import { chars, DAKUON, inScript, SEION, SMALL } from './kana';
-import { loadSettings, saveSettings, VOLUME_LEVEL, type Settings } from './settings';
+import { loadSettings, saveSettings, VOLUME_LEVEL, type KeySet, type Settings } from './settings';
 import { duckBgm, playBgm, playJingle, setSound, stopBgm, unlockAudio } from './audio';
 import { speak, stopSpeech, unlockSpeech } from './speech';
 import { MINIGAMES, runMinigame, type MiniQuestion, type MinigameKind } from './minigames';
@@ -521,6 +521,29 @@ function partStarts(answer: string[], pIdx: number | null): number[] {
   return starts;
 }
 
+// キーボードの字の数（設定に保存し、変えるまで同じ難しさが続く）
+const KEY_SET_COUNT: Record<KeySet, number> = { all: Infinity, k25: 25, k10: 10, answer: 0 };
+const KEY_SET_STARS: Record<KeySet, string> = { all: '★★★★', k25: '★★★', k10: '★★', answer: '★' };
+const KEY_SET_LABEL: Record<KeySet, string> = { all: '50おん', k25: '25おん', k10: '10おん', answer: 'こたえの もじだけ' };
+
+function openKeySetMenu(onChange: () => void): void {
+  const close = () => overlay.remove();
+  const overlay: HTMLElement = h('div', { class: 'overlay keyset-overlay', onclick: (e: Event) => { if (e.target === overlay) close(); } },
+    h('div', { class: 'keyset-menu' },
+      ...(['all', 'k25', 'k10', 'answer'] as KeySet[]).map((k) =>
+        h('button', {
+          class: `keyset-item ${settings.keySet === k ? 'on' : ''}`,
+          onclick: () => {
+            settings = { ...settings, keySet: k };
+            saveSettings(settings);
+            onChange();
+            close();
+          },
+        }, h('span', { class: 'keyset-stars' }, KEY_SET_STARS[k]), h('span', {}, KEY_SET_LABEL[k]))),
+      h('button', { class: 'mid-btn secondary', onclick: close }, 'とじる')));
+  app.append(overlay);
+}
+
 function keyboardArea(answer: string[], fixed: Set<number>, pIdx: number | null, side: HTMLElement, onDone: () => void, hint: Hint): HTMLElement {
   let pos = 0;
   let misses = 0;
@@ -614,7 +637,22 @@ function keyboardArea(answer: string[], fixed: Set<number>, pIdx: number | null,
   const blocks = [block(SEION, 'seion'), block(DAKUON, 'dakuon'), block(SMALL, 'small')];
   if (settings.aColumn === 'right') blocks.reverse();
 
-  return h('div', { class: 'input-area' }, h('div', { class: 'keyboard' }, ...blocks));
+  // 字の数（★ と ☰ で選ぶ）。出さないキーは場所を空けたまま隠す（50音表の並びを崩さない）
+  const needed = new Set(answer.filter((_, i) => !fixed.has(i)));
+  const others = shuffle([...keys.keys()].filter((c) => !needed.has(c))); // この問題の間は同じ顔ぶれ
+  const starBtn = h('button', { class: 'kb-tool kb-star', 'aria-label': 'もじの かず', onclick: () => openKeySetMenu(applyKeySet) });
+  const menuBtn = h('button', { class: 'kb-tool kb-menu', 'aria-label': 'メニュー', onclick: () => openKeySetMenu(applyKeySet) }, '☰');
+  function applyKeySet(): void {
+    const total = KEY_SET_COUNT[settings.keySet];
+    const shown = new Set([...needed, ...others.slice(0, Math.max(0, total - needed.size))]);
+    keys.forEach((k, c) => k.classList.toggle('off', !shown.has(c)));
+    starBtn.textContent = KEY_SET_STARS[settings.keySet];
+  }
+  applyKeySet();
+
+  return h('div', { class: 'input-area' },
+    h('div', { class: 'kb-toolbar' }, starBtn, menuBtn),
+    h('div', { class: 'keyboard' }, ...blocks));
 }
 
 // ------------------------------------------------------------ 手書き入力（判定なし）
@@ -664,7 +702,7 @@ function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | nu
     const ctx = c.getContext('2d')!;
     ctx.clearRect(0, 0, c.width, c.height);
     if (ghost[i]) {
-      ctx.fillStyle = '#e2d6c6';
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.16)';
       ctx.font = ghostFont(c.width);
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -811,8 +849,8 @@ function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | nu
   return h(
     'div',
     { class: 'input-area handwriting' },
-    // 見本はマスの真上に置いて、1文字ずつ見比べられるようにする
-    sample,
+    // 見本はマスの真上に置いて、1文字ずつ見比べられるようにする（見本もカラーマス）
+    sample && (sample.classList.add('masu-row'), sample),
     h('div', { class: 'hw-cells' }, ...cells),
     h('p', { class: 'hw-help' }, 'ますを タップして かこう'),
     h('div', { class: 'hw-buttons' }, doneBtn),
@@ -928,6 +966,7 @@ function settingsScreen(): void {
       choice('sound', 'おと（BGM）', [[true, 'あり'], [false, 'なし']]),
       choice('volume', '音量', [['low', '小'], ['mid', '中'], ['high', '大']]),
       choice('particleInput', '文の「が」', [[false, '最初から入れておく'], [true, '子どもが打つ・書く']]),
+      choice('keySet', 'キーボードの字', [['all', '50音'], ['k25', '25音'], ['k10', '10音'], ['answer', '答えの字だけ']]),
       choice('minigame', 'ミニゲーム', [[true, 'あり（問題の前に毎回）'], [false, 'なし']]),
       minigameKindsRow(),
       h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'もんだい'),
