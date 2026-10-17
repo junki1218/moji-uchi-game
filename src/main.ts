@@ -637,21 +637,19 @@ function keyboardArea(answer: string[], fixed: Set<number>, pIdx: number | null,
   const blocks = [block(SEION, 'seion'), block(DAKUON, 'dakuon'), block(SMALL, 'small')];
   if (settings.aColumn === 'right') blocks.reverse();
 
-  // 字の数（★ と ☰ で選ぶ）。出さないキーは場所を空けたまま隠す（50音表の並びを崩さない）
+  // 字の数（☰ で選ぶ）。出さないキーは場所を空けたまま隠す（50音表の並びを崩さない）
   const needed = new Set(answer.filter((_, i) => !fixed.has(i)));
   const others = shuffle([...keys.keys()].filter((c) => !needed.has(c))); // この問題の間は同じ顔ぶれ
-  const starBtn = h('button', { class: 'kb-tool kb-star', 'aria-label': 'もじの かず', onclick: () => openKeySetMenu(applyKeySet) });
   const menuBtn = h('button', { class: 'kb-tool kb-menu', 'aria-label': 'メニュー', onclick: () => openKeySetMenu(applyKeySet) }, '☰');
   function applyKeySet(): void {
     const total = KEY_SET_COUNT[settings.keySet];
     const shown = new Set([...needed, ...others.slice(0, Math.max(0, total - needed.size))]);
     keys.forEach((k, c) => k.classList.toggle('off', !shown.has(c)));
-    starBtn.textContent = KEY_SET_STARS[settings.keySet];
   }
   applyKeySet();
 
   return h('div', { class: 'input-area' },
-    h('div', { class: 'kb-toolbar' }, starBtn, menuBtn),
+    h('div', { class: 'kb-toolbar' }, menuBtn),
     h('div', { class: 'keyboard' }, ...blocks));
 }
 

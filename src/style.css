@@ -769,7 +769,6 @@ button {
   background: var(--card); border: 2px solid var(--line); border-radius: 999px;
   font-size: min(2.2vw, 3vh); padding: 0.15em 0.9em; color: var(--sub);
 }
-.kb-star { color: #e0a800; letter-spacing: 0.05em; }
 .key.off { visibility: hidden; }
 .keyset-menu {
   background: var(--bg); border-radius: 24px; padding: 3vh 3vw;
