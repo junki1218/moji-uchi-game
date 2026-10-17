@@ -5,6 +5,7 @@
 //   hockey … 17_エアホッケー（Lv3 大理石）: 絵のパックをはじいて正解の言葉のゴールへ      ゴール: 入れる
 // 数値は docs/06_5段階レベル対応表.md の値を基準にしている。
 
+import { burstAt, burstOnCanvas, type KineticKind } from './kinetic';
 import { sfx } from './audio';
 import { DAKUON, SEION } from './kana';
 import type { MinigameKind } from './settings';
@@ -71,13 +72,17 @@ export function runMinigame(
     const pic = el('div', 'mini-pic');
     pic.append(q.picture());
     stage.append(pic, canvas);
-    return canvasLoop(canvas, bubbleGame(q, onProgress));
+    return canvasLoop(canvas, bubbleGame(q, onProgress, fxOn(canvas)));
   }
   stage.append(canvas);
-  return canvasLoop(canvas, hockeyGame(q, onProgress));
+  return canvasLoop(canvas, hockeyGame(q, onProgress, fxOn(canvas)));
 }
 
 // ------------------------------------------------------------ canvas の土台
+
+/** canvas の上に、字が動く演出（キネティックタイポグラフィ）を出す */
+type Fx = (text: string, x: number, y: number, kind: KineticKind, size?: number) => void;
+const fxOn = (canvas: HTMLCanvasElement): Fx => (text, x, y, kind, size) => burstOnCanvas(canvas, text, x, y, kind, size);
 
 interface Game {
   resize(w: number, h: number): void;
@@ -163,7 +168,7 @@ function fitText(g: CanvasRenderingContext2D, text: string, x: number, y: number
 
 // ------------------------------------------------------------ シャボン玉（正解の言葉だけ割れる）
 
-function bubbleGame(q: MiniQuestion, onProgress: (n: number) => void): Game {
+function bubbleGame(q: MiniQuestion, onProgress: (n: number) => void, fx: Fx): Game {
   let W = 0;
   let H = 0;
   let t = 0;
@@ -253,6 +258,7 @@ function bubbleGame(q: MiniQuestion, onProgress: (n: number) => void): Game {
           b.vx += Math.cos(a) * 2.5;
           b.y += Math.sin(a) * 6;
           sfx('boing', 0.15, 340 + b.r);
+          fx('ぽよん', b.x, b.y - b.r * 0.9, 'wobble', 0.8);
           return;
         }
         bubbles.splice(i, 1);
@@ -262,6 +268,9 @@ function bubbleGame(q: MiniQuestion, onProgress: (n: number) => void): Game {
           drops.push({ x: b.x + Math.cos(a) * b.r * 0.6, y: b.y + Math.sin(a) * b.r * 0.6, vx: Math.cos(a) * 3, vy: Math.sin(a) * 3 - 1, life: 30 });
         }
         sfx('pop', 0.35);
+        // 玉の中のことばが、字ごとにばらばらに弾け飛ぶ ＋「ぱちん！」
+        fx(b.word, b.x, b.y, 'scatter', 1);
+        fx('ぱちん！', b.x, b.y - b.r * 0.4, 'pop', 1.1);
         count++;
         onProgress(count);
         return;
@@ -274,7 +283,7 @@ function bubbleGame(q: MiniQuestion, onProgress: (n: number) => void): Game {
 
 // ------------------------------------------------------------ エアホッケー（絵のパックを正解のゴールへ）
 
-function hockeyGame(q: MiniQuestion, onProgress: (n: number) => void): Game {
+function hockeyGame(q: MiniQuestion, onProgress: (n: number) => void, fx: Fx): Game {
   // 17_エアホッケー Lv3（大理石）。子ども向けにパックを大きく
   const C = { friction: 0.988, wallBounce: 0.92, stopSpeed: 0.04 };
   let W = 0;
@@ -335,10 +344,12 @@ function hockeyGame(q: MiniQuestion, onProgress: (n: number) => void): Game {
         if (g?.ok) {
           done = true;
           sfx('pop', 0.5);
+          fx(g.word, g.x + g.w / 2, goalH() / 2, 'scatter', 1);
+          fx('ゴール！', W / 2, H * 0.5, 'drop', 1.6);
           onProgress(1);
         } else {
           // まちがいのゴール（またはすき間）: 跳ね返るだけ
-          if (g) { g.flash = 1; sfx('boing', 0.3, 260); } else hit(Math.abs(puck.vy));
+          if (g) { g.flash = 1; sfx('boing', 0.3, 260); fx('ぽよん', g.x + g.w / 2, goalH() + R * 0.4, 'wobble', 0.8); } else hit(Math.abs(puck.vy));
           puck.y = goalH() + R;
           puck.vy = Math.abs(puck.vy) * C.wallBounce + 1;
         }
@@ -460,7 +471,14 @@ function lockGame(stage: HTMLElement, q: MiniQuestion, onProgress: (n: number) =
     const down = el('button', 'dial-btn', '▼');
     const paint = () => {
       face.textContent = options[idx];
-      wheel.classList.toggle('ok', options[idx] === ch);
+      const ok = options[idx] === ch;
+      // そろった字はぴょんと跳ねる
+      if (ok && !wheel.classList.contains('ok')) {
+        wheel.classList.remove('just-ok');
+        void wheel.offsetWidth;
+        wheel.classList.add('just-ok');
+      }
+      wheel.classList.toggle('ok', ok);
     };
     const turn = (d: number) => {
       if (opened) return;
@@ -496,6 +514,9 @@ function lockGame(stage: HTMLElement, q: MiniQuestion, onProgress: (n: number) =
     opened = true;
     lock.classList.add('open');
     sfx('click', 0.9, 2000);
+    const lr = lock.getBoundingClientRect();
+    const sr = stage.getBoundingClientRect();
+    burstAt(stage, 'かちゃっ！', lr.left - sr.left + lr.width / 2, lr.top - sr.top + lr.height * 0.25, 'pop', 1.5);
     setTimeout(() => sfx('boing', 0.4, 520), 120);
     setTimeout(() => onProgress(1), 500);
   };

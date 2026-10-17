@@ -10,6 +10,7 @@ import { loadSettings, saveSettings, VOLUME_LEVEL, type KeySet, type Settings } 
 import { duckBgm, playBgm, playJingle, setSound, stopBgm, unlockAudio } from './audio';
 import { speak, stopSpeech, unlockSpeech } from './speech';
 import { MINIGAMES, runMinigame, type MiniQuestion, type MinigameKind } from './minigames';
+import { letters } from './kinetic';
 
 // 新しい版が届いたら、ゲームの途中ではなくスタート画面に戻ったときに読み込み直す
 // （古いプログラムと新しい絵が混ざって、絵と問題が食い違うのを防ぐ）
@@ -139,7 +140,7 @@ function startScreen(): void {
   const screen = h(
       'main',
       { class: 'screen start' },
-      h('h1', { class: 'title' }, 'がっくんの こくご'),
+      h('h1', { class: 'title' }, letters('がっくんの こくご', 'kt-wave')),
       h(
         'div',
         { class: 'start-buttons' },
@@ -200,7 +201,7 @@ function categoryScreen(): void {
             'button',
             { class: `category-btn ${empty ? 'disabled' : ''}`, disabled: empty, onclick: () => startRound(c.id) },
             picture(`cat_${c.id}`, emoji(c.emoji), 'category-pic'),
-            h('span', { class: 'category-label' }, c.label),
+            h('span', { class: 'category-label' }, letters(c.label, 'kt-pop')),
           );
         }),
       ),
@@ -456,7 +457,7 @@ function minigameScreen(round: Round, kinds: MinigameKind[], onDone: () => void)
     });
     if (count >= goal && !finished) {
       playJingle('correct');
-      app.append(h('div', { class: 'overlay clear' }, h('div', { class: 'mini-clear pop' }, 'できた！')));
+      app.append(h('div', { class: 'overlay clear' }, h('div', { class: 'mini-clear pop' }, letters('できた！', 'kt-jump'))));
       setTimeout(() => {
         document.querySelector('.overlay.clear')?.remove();
         leave();
@@ -474,7 +475,7 @@ function minigameScreen(round: Round, kinds: MinigameKind[], onDone: () => void)
       h('header', { class: 'game-header' }, quitButton(), progress(round)),
       h('div', { class: 'mini-head' },
         h('button', { class: 'speaker-btn', 'aria-label': 'ことばを よみあげ', onclick: sayWord }, '🔊'),
-        h('p', { class: 'mini-instruction' }, info.instruction),
+        h('p', { class: 'mini-instruction' }, letters(info.instruction, 'kt-drop')),
         stars),
       stage,
     ),
@@ -889,7 +890,9 @@ function finishScreen(): void {
     h(
       'main',
       { class: 'screen finish' },
+      confetti(),
       hanamaru('finish-hanamaru pop'),
+      h('p', { class: 'finish-msg' }, letters('よく がんばったね！', 'kt-jump')),
       h(
         'div',
         { class: 'stamps' },
@@ -902,6 +905,22 @@ function finishScreen(): void {
       h('button', { class: 'big-btn primary', onclick: startScreen }, 'おわり'),
     ),
   );
+}
+
+/** おわりの画面の紙ふぶき（CSS で降らせる） */
+function confetti(): HTMLElement {
+  const colors = ['#ff9f1c', '#4aa3df', '#5cb85c', '#f06292', '#ffd54f', '#9575cd'];
+  return h('div', { class: 'confetti', 'aria-hidden': 'true' },
+    ...Array.from({ length: 36 }, (_, i) => {
+      const s = h('span', { class: 'confetti-piece' });
+      s.style.left = `${Math.random() * 100}%`;
+      s.style.background = colors[i % colors.length];
+      s.style.animationDelay = `${Math.random() * 1.2}s`;
+      s.style.animationDuration = `${2.4 + Math.random() * 1.6}s`;
+      s.style.setProperty('--sway', `${(Math.random() - 0.5) * 120}px`);
+      s.style.setProperty('--spin', `${(Math.random() < 0.5 ? -1 : 1) * (360 + Math.random() * 540)}deg`);
+      return s;
+    }));
 }
 
 // ------------------------------------------------------------ 暗証番号

@@ -801,3 +801,172 @@ button {
 .modal-box h2 { margin: 0; font-size: min(3.2vw, 4.4vh); }
 .modal-box .setting-row { width: 100%; }
 .modal-close { position: absolute; top: 2vh; right: 2vw; }
+
+/* =====================================================================
+   アニメーション（2026-10-17）: 画面の出入り・ボタン・マス・紙ふぶき、
+   ミニゲームのキネティックタイポグラフィ。動きを減らす設定では止める。
+   ※ 入場の動きは fill-mode: backwards（終わったあとに transform を上書きしない。
+     読み上げの拡大など、あとから付ける transform を邪魔しないため）
+   ===================================================================== */
+
+/* キネティックタイポグラフィの土台（字を1つずつ動かす） */
+.kt { display: inline-block; }
+.kt-char { display: inline-block; white-space: pre; }
+.kt-burst {
+  position: absolute; transform: translate(-50%, -50%);
+  display: flex; white-space: nowrap; pointer-events: none; z-index: 6;
+  font-weight: 900; line-height: 1;
+  font-size: calc(min(4.6vw, 6.6vh) * var(--size, 1));
+}
+.kt-bchar { display: inline-block; }
+.kt-pop .kt-bchar { color: #ff5c8a; text-shadow: 0 3px 0 #fff, 0 0 14px #fff; }
+.kt-scatter .kt-bchar { color: #2b4a6f; text-shadow: 0 0 8px #fff, 0 0 2px #fff; }
+.kt-drop .kt-bchar { color: #ff9f1c; text-shadow: 0 4px 0 #fff, 0 0 18px #fff; }
+.kt-wobble .kt-bchar { color: #5b8fd6; text-shadow: 0 0 8px #fff; font-size: 0.8em; }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* ---- 画面の出入り ---- */
+  .screen { animation: screen-in 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.15) backwards; }
+  .overlay { animation: fade-in 0.25s ease-out backwards; }
+  .overlay.clear { animation: none; }
+  .dialog, .modal-box, .keyset-menu, .pad-dialog { animation: dialog-in 0.4s cubic-bezier(0.3, 1.5, 0.5, 1) backwards; }
+
+  /* ---- ボタン: 押すとむにゅっ ---- */
+  .big-btn, .mid-btn, .seg-btn, .category-btn, .print-choice, .gear-btn, .back-btn, .kb-tool, .speaker-btn, .hint-btn {
+    transition: transform 0.12s cubic-bezier(0.3, 1.6, 0.5, 1), box-shadow 0.12s;
+  }
+  .big-btn:active, .mid-btn:active, .print-choice:active, .category-btn:active { transform: scale(0.94) translateY(3px); }
+  .seg-btn:active, .gear-btn:active, .back-btn:active, .kb-tool:active, .speaker-btn:active, .hint-btn:active { transform: scale(0.9); }
+
+  /* ---- スタート ---- */
+  .title .kt-wave .kt-char {
+    animation:
+      letter-drop 0.7s cubic-bezier(0.3, 1.6, 0.5, 1) backwards,
+      letter-wave 2.6s ease-in-out infinite;
+    animation-delay: calc(var(--i) * 0.07s), calc(1.2s + var(--i) * 0.12s);
+  }
+  .start-buttons .big-btn { animation: btn-in 0.55s cubic-bezier(0.3, 1.6, 0.5, 1) backwards; }
+  .start-col:first-child .big-btn:nth-child(1) { animation-delay: 0.45s; }
+  .start-col:first-child .big-btn:nth-child(2) { animation-delay: 0.55s; }
+  .start-col:last-child .big-btn:nth-child(1) { animation-delay: 0.65s; }
+  .start-col:last-child .big-btn:nth-child(2) { animation-delay: 0.75s; }
+  .start-buttons .big-btn.primary {
+    animation: btn-in 0.55s cubic-bezier(0.3, 1.6, 0.5, 1) 0.45s backwards, breathe 2.2s ease-in-out 1.4s infinite;
+  }
+
+  /* ---- カテゴリ: ぽんぽん出てきて、ふわふわ ---- */
+  .category-btn { animation: card-in 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) backwards; }
+  .category-btn .category-pic { animation: float 3.2s ease-in-out infinite; }
+  .category-btn:nth-child(1) { animation-delay: 0.08s; }
+  .category-btn:nth-child(1) .category-pic { animation-delay: 1.40s; }
+  .category-btn:nth-child(2) { animation-delay: 0.16s; }
+  .category-btn:nth-child(2) .category-pic { animation-delay: 1.80s; }
+  .category-btn:nth-child(3) { animation-delay: 0.24s; }
+  .category-btn:nth-child(3) .category-pic { animation-delay: 2.20s; }
+  .category-btn:nth-child(4) { animation-delay: 0.32s; }
+  .category-btn:nth-child(4) .category-pic { animation-delay: 2.60s; }
+  .category-btn:nth-child(5) { animation-delay: 0.40s; }
+  .category-btn:nth-child(5) .category-pic { animation-delay: 3.00s; }
+  .category-label .kt-char { animation: letter-pop 0.5s cubic-bezier(0.3, 1.8, 0.5, 1) backwards; animation-delay: calc(0.35s + var(--i) * 0.06s); }
+  .print-choice { animation: card-in 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) backwards; }
+  .print-choice:nth-child(2) { animation-delay: 0.1s; }
+  .stock-row { animation: row-in 0.4s ease-out backwards; }
+  .stock-row:nth-child(2) { animation-delay: 0.06s; } .stock-row:nth-child(3) { animation-delay: 0.12s; }
+  .stock-row:nth-child(4) { animation-delay: 0.18s; } .stock-row:nth-child(5) { animation-delay: 0.24s; }
+
+  /* ---- 問題: 絵がぽん、マスが順に落ちてくる、キーボードが下から ---- */
+  .q-pic { animation: card-in 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) backwards; }
+  .speaker-btn { animation: card-in 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) 0.15s backwards; }
+  .answer-cell, .sample-cell, .hw-cell { animation: cell-drop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1) backwards; }
+  .answer .answer-cell:nth-child(1), .sample .sample-cell:nth-child(1), .hw-cells .hw-cell:nth-child(1) { animation-delay: 0.20s; }
+  .answer .answer-cell:nth-child(2), .sample .sample-cell:nth-child(2), .hw-cells .hw-cell:nth-child(2) { animation-delay: 0.25s; }
+  .answer .answer-cell:nth-child(3), .sample .sample-cell:nth-child(3), .hw-cells .hw-cell:nth-child(3) { animation-delay: 0.30s; }
+  .answer .answer-cell:nth-child(4), .sample .sample-cell:nth-child(4), .hw-cells .hw-cell:nth-child(4) { animation-delay: 0.35s; }
+  .answer .answer-cell:nth-child(5), .sample .sample-cell:nth-child(5), .hw-cells .hw-cell:nth-child(5) { animation-delay: 0.40s; }
+  .answer .answer-cell:nth-child(6), .sample .sample-cell:nth-child(6), .hw-cells .hw-cell:nth-child(6) { animation-delay: 0.45s; }
+  .answer .answer-cell:nth-child(7), .sample .sample-cell:nth-child(7), .hw-cells .hw-cell:nth-child(7) { animation-delay: 0.50s; }
+  .answer .answer-cell:nth-child(8), .sample .sample-cell:nth-child(8), .hw-cells .hw-cell:nth-child(8) { animation-delay: 0.55s; }
+  .answer .answer-cell:nth-child(9), .sample .sample-cell:nth-child(9), .hw-cells .hw-cell:nth-child(9) { animation-delay: 0.60s; }
+  .answer .answer-cell:nth-child(10), .sample .sample-cell:nth-child(10), .hw-cells .hw-cell:nth-child(10) { animation-delay: 0.65s; }
+  .answer .answer-cell:nth-child(11), .sample .sample-cell:nth-child(11), .hw-cells .hw-cell:nth-child(11) { animation-delay: 0.70s; }
+  .answer .answer-cell:nth-child(12), .sample .sample-cell:nth-child(12), .hw-cells .hw-cell:nth-child(12) { animation-delay: 0.75s; }
+  .keyboard { animation: rise-in 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.1) 0.2s backwards; }
+  .answer-cell.filled { animation: cell-fill 0.4s cubic-bezier(0.3, 1.8, 0.5, 1); }
+  .answer-cell.stage-done { animation: cell-hop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1); }
+  .dot.now { animation: dot-pulse 1.6s ease-in-out infinite; }
+  .hint-btn:not(:disabled) { animation: nudge 5s ease-in-out 6s infinite; }
+  .key.hint { animation: key-glow 1s ease-in-out infinite; }
+
+  /* ---- ミニゲーム: 字が1つずつ ---- */
+  .mini-instruction .kt-drop .kt-char { animation: letter-drop 0.55s cubic-bezier(0.3, 1.6, 0.5, 1) backwards; animation-delay: calc(var(--i) * 0.035s); }
+  .mini-clear .kt-jump .kt-char { animation: letter-jump 0.9s cubic-bezier(0.3, 1.6, 0.5, 1) infinite; animation-delay: calc(var(--i) * 0.08s); }
+  .dial.just-ok .dial-face { animation: dial-ok 0.5s cubic-bezier(0.3, 1.8, 0.5, 1); }
+  .kt-pop .kt-bchar { animation: kt-pop 1.15s cubic-bezier(0.3, 1.5, 0.5, 1) both; animation-delay: calc(var(--i) * 0.06s); }
+  .kt-scatter .kt-bchar { animation: kt-scatter 0.95s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+  .kt-drop .kt-bchar { animation: kt-drop 1.5s cubic-bezier(0.3, 1.5, 0.5, 1) both; animation-delay: calc(var(--i) * 0.08s); }
+  .kt-wobble .kt-bchar { animation: kt-wobble 0.85s ease-out both; animation-delay: calc(var(--i) * 0.04s); }
+
+  /* ---- おわり: 紙ふぶき ---- */
+  .finish-msg .kt-char { animation: letter-drop 0.6s cubic-bezier(0.3, 1.6, 0.5, 1) backwards, letter-jump 1.6s ease-in-out infinite; animation-delay: calc(0.4s + var(--i) * 0.07s), calc(1.6s + var(--i) * 0.1s); }
+  .confetti-piece { animation-name: confetti-fall; animation-timing-function: linear; animation-iteration-count: infinite; animation-fill-mode: backwards; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kt-burst, .confetti { display: none; }
+}
+
+.finish { position: relative; overflow: hidden; }
+.finish-msg { margin: 0; font-size: min(5vw, 7vh); font-weight: 700; color: var(--primary); z-index: 1; }
+.confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.confetti-piece { position: absolute; top: -4vh; width: 1.4vh; height: 2.2vh; border-radius: 3px; opacity: 0.9; }
+.answer-cell, .sample-cell, .hw-cell { will-change: auto; }
+
+@keyframes screen-in { from { opacity: 0; transform: translateY(14px) scale(0.985); } to { opacity: 1; transform: none; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes dialog-in { from { opacity: 0; transform: scale(0.85) translateY(20px); } to { opacity: 1; transform: none; } }
+@keyframes btn-in { from { opacity: 0; transform: translateY(30px) scale(0.6); } to { opacity: 1; transform: none; } }
+@keyframes card-in { from { opacity: 0; transform: scale(0.5) rotate(-6deg); } to { opacity: 1; transform: none; } }
+@keyframes row-in { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: none; } }
+@keyframes rise-in { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
+@keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes letter-drop { from { opacity: 0; transform: translateY(-0.9em) scale(0.4) rotate(-15deg); } to { opacity: 1; transform: none; } }
+@keyframes letter-pop { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: none; } }
+@keyframes letter-wave { 0%, 100% { transform: translateY(0); } 20% { transform: translateY(-0.18em) rotate(-4deg); } 40% { transform: translateY(0); } }
+@keyframes letter-jump { 0%, 100% { transform: translateY(0) scale(1); } 30% { transform: translateY(-0.35em) scale(1.12); } 55% { transform: translateY(0) scale(0.95, 1.05); } }
+@keyframes cell-drop { from { opacity: 0; transform: translateY(-40px) scale(0.6); } to { opacity: 1; transform: none; } }
+@keyframes cell-fill { 0% { transform: scale(0.7); } 60% { transform: scale(1.18); } 100% { transform: scale(1); } }
+@keyframes cell-hop { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-14px); } }
+@keyframes dot-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.3); } }
+@keyframes nudge { 0%, 90%, 100% { transform: rotate(0); } 92% { transform: rotate(-8deg); } 94% { transform: rotate(8deg); } 96% { transform: rotate(-5deg); } 98% { transform: rotate(4deg); } }
+@keyframes key-glow { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+@keyframes dial-ok { 0% { transform: translateY(0); } 40% { transform: translateY(-22%) scale(1.15); } 100% { transform: none; } }
+@keyframes kt-pop {
+  0% { opacity: 0; transform: scale(0) rotate(var(--rot)); }
+  22% { opacity: 1; transform: scale(1.45) rotate(var(--rot)); }
+  40% { transform: scale(1) rotate(0); }
+  70% { opacity: 1; transform: translateY(-12px); }
+  100% { opacity: 0; transform: translateY(-60px) scale(0.85); }
+}
+@keyframes kt-scatter {
+  0% { opacity: 1; transform: scale(1.3); }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(0.5); }
+}
+@keyframes kt-drop {
+  0% { opacity: 0; transform: translateY(-160px) rotate(var(--rot)); }
+  30% { opacity: 1; transform: translateY(0) scale(1.25, 0.8); }
+  42% { transform: translateY(-24px) scale(0.95, 1.08); }
+  55% { transform: translateY(0) scale(1); }
+  82% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(0) scale(1.6); }
+}
+@keyframes kt-wobble {
+  0% { opacity: 0; transform: scale(0.4); }
+  25% { opacity: 1; transform: scale(1.1) rotate(-10deg); }
+  45% { transform: rotate(8deg); }
+  65% { opacity: 1; transform: rotate(-4deg); }
+  100% { opacity: 0; transform: translateY(-20px) rotate(0); }
+}
+@keyframes confetti-fall {
+  0% { transform: translate(0, 0) rotate(0); }
+  100% { transform: translate(var(--sway), 110vh) rotate(var(--spin)); }
+}
