@@ -7,7 +7,7 @@ import { savePdf, worksheetPdf } from './worksheet-pdf';
 import { clearWritings, deleteWriting, exportWritings, listWritings, MAX_WRITINGS, saveWriting } from './writings';
 import { chars, DAKUON, inScript, SEION, SMALL } from './kana';
 import { loadSettings, saveSettings, VOLUME_LEVEL, type KeySet, type Settings } from './settings';
-import { duckBgm, playBgm, playJingle, setSound, stopBgm, unlockAudio } from './audio';
+import { duckBgm, playBgm, playJingle, setSound, sfx, stopBgm, unlockAudio } from './audio';
 import { speak, stopSpeech, unlockSpeech } from './speech';
 import { MINIGAMES, runMinigame, type MiniQuestion, type MinigameKind } from './minigames';
 import { letters } from './kinetic';
@@ -704,13 +704,57 @@ const PAD_PX = 600;
  * 字を、字の形（インクの部分）がマスの上下左右の真ん中に来るように描く。
  * textBaseline: middle だとフォントによって少し下にずれるので、実際の字の形を測ってそろえる
  */
-function fillCentered(g: CanvasRenderingContext2D, ch: string, w: number, h: number): void {
+function fillCentered(g: CanvasRenderingContext2D, ch: string, w: number, h: number): [number, number] {
   g.textAlign = 'center';
   g.textBaseline = 'alphabetic';
   const m = g.measureText(ch);
   const x = w / 2 - (m.actualBoundingBoxRight - m.actualBoundingBoxLeft) / 2;
   const y = h / 2 + (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2;
   g.fillText(ch, x, y);
+  return [x, y];
+}
+
+const TRACE_TOLERANCE = PAD_PX / 14; // 字のふちから、これくらいまでは「なぞれている」とみなす
+const STAR_COLORS = ['#ffd54f', '#ffb300', '#ff80ab', '#80d8ff', '#b9f6ca', '#ffffff'];
+
+/** なぞりの当たり判定: 見本の字を太らせて描いた形（PAD_PX 四方の不透明度） */
+function traceMask(ch: string, font: string): Uint8ClampedArray | null {
+  const c = document.createElement('canvas');
+  c.width = PAD_PX;
+  c.height = PAD_PX;
+  const g = c.getContext('2d', { willReadFrequently: true });
+  if (!g) return null;
+  g.font = font;
+  g.fillStyle = '#000';
+  g.strokeStyle = '#000';
+  g.lineWidth = TRACE_TOLERANCE * 2;
+  g.lineJoin = 'round';
+  const [x, y] = fillCentered(g, ch, PAD_PX, PAD_PX);
+  g.strokeText(ch, x, y);
+  const data = g.getImageData(0, 0, PAD_PX, PAD_PX).data;
+  const alpha = new Uint8ClampedArray(PAD_PX * PAD_PX);
+  for (let k = 0; k < alpha.length; k++) alpha[k] = data[k * 4 + 3];
+  return alpha;
+}
+
+/** なぞれているところにキラキラ星を飛ばす（box の中の CSS px で） */
+function sparkleAt(box: HTMLElement, x: number, y: number): void {
+  for (let k = 0; k < 3; k++) {
+    const s = document.createElement('span');
+    s.className = 'trace-star';
+    s.textContent = Math.random() < 0.5 ? '★' : '✦';
+    const a = Math.random() * Math.PI * 2;
+    const d = 40 + Math.random() * 60;
+    s.style.left = `${x}px`;
+    s.style.top = `${y}px`;
+    s.style.color = STAR_COLORS[Math.floor(Math.random() * STAR_COLORS.length)];
+    s.style.fontSize = `${22 + Math.random() * 22}px`;
+    s.style.setProperty('--dx', `${Math.cos(a) * d}px`);
+    s.style.setProperty('--dy', `${Math.sin(a) * d - 20}px`);
+    s.style.setProperty('--rot', `${(Math.random() - 0.5) * 360}deg`);
+    box.append(s);
+    window.setTimeout(() => s.remove(), 750);
+  }
 }
 
 function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | null, sample: HTMLElement | null, onDone: () => void, hint: Hint, trace = false): HTMLElement {
@@ -802,6 +846,7 @@ function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | nu
       ctx.drawImage(glyphs[i], 0, 0);
       title.textContent = `${i + 1}もじめ（${i + 1}/${count}）`;
       gctx.clearRect(0, 0, PAD_PX, PAD_PX);
+      mask = trace && !fixed.has(i) ? traceMask(inScript(answer[i], settings.script), ghostFont(PAD_PX)) : null;
       if (ghost[i]) {
         gctx.fillStyle = trace ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.12)';
         gctx.font = ghostFont(PAD_PX);
@@ -823,6 +868,22 @@ function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | nu
     };
 
     let drawing = false;
+    let mask: Uint8ClampedArray | null = null;
+    let lastStar = 0;
+    // なぞりで、字の上を書いている間はキラキラ星と音
+    const sparkle = (e: PointerEvent, x: number, y: number) => {
+      if (!mask) return;
+      const px = Math.round(x);
+      const py = Math.round(y);
+      if (px < 0 || py < 0 || px >= PAD_PX || py >= PAD_PX || mask[py * PAD_PX + px] < 128) return;
+      const now = performance.now();
+      if (now - lastStar < 45) return;
+      lastStar = now;
+      const box = pad.parentElement!;
+      const r = box.getBoundingClientRect();
+      sparkleAt(box, e.clientX - r.left, e.clientY - r.top);
+      sfx('sparkle', 0.6, undefined, 110);
+    };
     const point = (e: PointerEvent) => {
       const r = pad.getBoundingClientRect();
       return [((e.clientX - r.left) / r.width) * PAD_PX, ((e.clientY - r.top) / r.height) * PAD_PX] as const;
@@ -837,12 +898,14 @@ function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | nu
       ctx.moveTo(x, y);
       ctx.lineTo(x + 0.1, y + 0.1);
       ctx.stroke();
+      sparkle(e, x, y);
     });
     pad.addEventListener('pointermove', (e) => {
       if (!drawing) return;
       const [x, y] = point(e);
       ctx.lineTo(x, y);
       ctx.stroke();
+      sparkle(e, x, y);
     });
     const end = () => { if (drawing) { drawing = false; save(); } };
     pad.addEventListener('pointerup', end);

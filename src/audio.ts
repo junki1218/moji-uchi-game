@@ -148,7 +148,10 @@ export function playJingle(name: JingleName): void {
 // 開発材料【質感】/demos/fx.js の音を移植（その場で合成。音声ファイル不要）。
 // 強さ i は 0..1 に正規化した物理量（大きさ・速さ）。master を通すので音量設定が効く。
 
-export type SfxName = 'pop' | 'boing' | 'squelch' | 'whoosh' | 'click';
+export type SfxName = 'pop' | 'boing' | 'squelch' | 'whoosh' | 'click' | 'sparkle';
+
+/** キラキラの音の高さ（ペンタトニック。どれが鳴ってもきれいに重なる） */
+const SPARKLE_HZ = [1046.5, 1174.7, 1318.5, 1568, 1760, 2093];
 
 let noiseBuf: AudioBuffer | null = null;
 const c01 = (v: number) => Math.max(0, Math.min(1, v || 0));
@@ -224,6 +227,20 @@ const SFX: Record<SfxName, (c: AudioContext, out: AudioNode, i: number, opt?: nu
     g.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
     s.connect(bp).connect(g).connect(out);
     s.start(t); s.stop(t + 0.35);
+  },
+  // キラキラ（なぞれている間）: 高い音を2つ、すぐ消える
+  sparkle(c, out, i) {
+    const t = c.currentTime;
+    for (let k = 0; k < 2; k++) {
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = 'sine';
+      o.frequency.value = SPARKLE_HZ[Math.floor(Math.random() * SPARKLE_HZ.length)] * (k ? 2 : 1);
+      const s = t + k * 0.04;
+      g.gain.setValueAtTime(0.0001, s);
+      g.gain.linearRampToValueAtTime((0.05 + 0.08 * i) / (k + 1), s + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, s + 0.35);
+      o.connect(g).connect(out); o.start(s); o.stop(s + 0.4);
+    }
   },
   // カチッ（ミシミシ）
   click(c, out, i, freq) {
