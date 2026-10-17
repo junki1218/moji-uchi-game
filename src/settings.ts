@@ -11,6 +11,8 @@ export type Volume = 'low' | 'mid' | 'high';
 export type MinigameKind = 'bubble' | 'lock' | 'hockey';
 /** キーボードに出す字の数（2026-10-17）。all＝50音ぜんぶ、k25／k10＝答えの字＋ほかの字で25／10個、answer＝答えの字だけ */
 export type KeySet = 'all' | 'k25' | 'k10' | 'answer';
+/** 太さ（2026-10-17）: なぞりの見本の字・ペンの線 */
+export type Weight = 'thin' | 'normal' | 'bold';
 
 export const VOLUME_LEVEL: Record<Volume, number> = { low: 0.3, mid: 0.6, high: 0.9 };
 
@@ -28,6 +30,10 @@ export interface Settings {
   particleInput: boolean;
   /** キーボードの字の数。変えるまで同じ難しさが続く */
   keySet: KeySet;
+  /** なぞりの見本（うすい字）の太さ */
+  traceWeight: Weight;
+  /** ペンの線の太さ（なぞり・てがき） */
+  penWidth: Weight;
   pin: string;
 }
 
@@ -46,6 +52,8 @@ const DEFAULTS: Settings = {
   minigameKinds: ['bubble', 'lock', 'hockey'],
   particleInput: false,
   keySet: 'all',
+  traceWeight: 'normal',
+  penWidth: 'normal',
   pin: DEFAULT_PIN,
 };
 
@@ -53,6 +61,7 @@ const KEY = 'moji-uchi-game/settings';
 
 const MINIGAME_KINDS: MinigameKind[] = ['bubble', 'lock', 'hockey'];
 const KEY_SETS: KeySet[] = ['all', 'k25', 'k10', 'answer'];
+const WEIGHTS: Weight[] = ['thin', 'normal', 'bold'];
 
 export function loadSettings(): Settings {
   try {
@@ -64,6 +73,8 @@ export function loadSettings(): Settings {
       s.minigameKinds = kinds.length ? kinds : [...MINIGAME_KINDS];
       if (s.pin === OLD_DEFAULT_PIN) s.pin = DEFAULT_PIN;
       if (!KEY_SETS.includes(s.keySet)) s.keySet = 'all';
+      if (!WEIGHTS.includes(s.traceWeight)) s.traceWeight = 'normal';
+      if (!WEIGHTS.includes(s.penWidth)) s.penWidth = 'normal';
       return s;
     }
   } catch {

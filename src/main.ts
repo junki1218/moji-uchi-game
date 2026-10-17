@@ -6,7 +6,7 @@ import { hasPhoto, loadPhotoIndex, photoUrl, removePhoto } from './photos';
 import { savePdf, worksheetPdf } from './worksheet-pdf';
 import { clearWritings, deleteWriting, exportWritings, listWritings, MAX_WRITINGS, saveWriting } from './writings';
 import { chars, DAKUON, inScript, SEION, SMALL } from './kana';
-import { loadSettings, saveSettings, VOLUME_LEVEL, type KeySet, type Settings } from './settings';
+import { loadSettings, saveSettings, VOLUME_LEVEL, type KeySet, type Settings, type Weight } from './settings';
 import { duckBgm, playBgm, playJingle, setSound, sfx, stopBgm, unlockAudio } from './audio';
 import { speak, stopSpeech, unlockSpeech } from './speech';
 import { MINIGAMES, runMinigame, type MiniQuestion, type MinigameKind } from './minigames';
@@ -717,6 +717,46 @@ function fillCentered(g: CanvasRenderingContext2D, ch: string, w: number, h: num
 const TRACE_TOLERANCE = PAD_PX / 14; // 字のふちから、これくらいまでは「なぞれている」とみなす
 const STAR_COLORS = ['#ffd54f', '#ffb300', '#ff80ab', '#80d8ff', '#b9f6ca', '#ffffff'];
 
+/** なぞりの見本の太さ: 字のふちを足す（ふとい）／削る（ほそい）幅。キャンバスの一辺に対する割合 */
+const GUIDE_EDGE: Record<Weight, number> = { thin: -0.016, normal: 0, bold: 0.032 };
+/** ペンの線の太さ（パッドの一辺に対する割合） */
+const PEN_WIDTH: Record<Weight, number> = { thin: 1 / 34, normal: 1 / 22, bold: 1 / 14 };
+
+/**
+ * 見本の字（不透明な黒）を、太さを変えて新しいキャンバスに描く。
+ * ふとい＝ふちを同じ色でなぞって太らせる、ほそい＝ふちを消して細らせる（どのフォントでも効く）
+ */
+function guideShape(ch: string, font: string, w: number, h: number, weight: Weight): [HTMLCanvasElement, number, number] {
+  const c = document.createElement('canvas');
+  c.width = w;
+  c.height = h;
+  const g = c.getContext('2d')!;
+  g.font = font;
+  g.fillStyle = '#000';
+  g.strokeStyle = '#000';
+  g.lineJoin = 'round';
+  const [x, y] = fillCentered(g, ch, w, h);
+  const edge = GUIDE_EDGE[weight] * w;
+  if (edge > 0) {
+    g.lineWidth = edge;
+    g.strokeText(ch, x, y);
+  } else if (edge < 0) {
+    g.globalCompositeOperation = 'destination-out';
+    g.lineWidth = -edge;
+    g.strokeText(ch, x, y);
+  }
+  return [c, x, y];
+}
+
+/** 見本の字を、うすい色（alpha）で target に描く */
+function drawGuide(target: CanvasRenderingContext2D, ch: string, font: string, w: number, h: number, alpha: number, weight: Weight): void {
+  const [shape] = guideShape(ch, font, w, h, weight);
+  target.save();
+  target.globalAlpha = alpha;
+  target.drawImage(shape, 0, 0);
+  target.restore();
+}
+
 /** なぞりの当たり判定: 見本の字を太らせて描いた形（PAD_PX 四方の不透明度） */
 function traceMask(ch: string, font: string): Uint8ClampedArray | null {
   const c = document.createElement('canvas');
@@ -724,12 +764,13 @@ function traceMask(ch: string, font: string): Uint8ClampedArray | null {
   c.height = PAD_PX;
   const g = c.getContext('2d', { willReadFrequently: true });
   if (!g) return null;
+  // 見本の形（太さの設定どおり）＋ふちから TRACE_TOLERANCE まで
+  const [shape, x, y] = guideShape(ch, font, PAD_PX, PAD_PX, settings.traceWeight);
+  g.drawImage(shape, 0, 0);
   g.font = font;
-  g.fillStyle = '#000';
   g.strokeStyle = '#000';
-  g.lineWidth = TRACE_TOLERANCE * 2;
+  g.lineWidth = TRACE_TOLERANCE * 2 + Math.max(0, GUIDE_EDGE[settings.traceWeight] * PAD_PX);
   g.lineJoin = 'round';
-  const [x, y] = fillCentered(g, ch, PAD_PX, PAD_PX);
   g.strokeText(ch, x, y);
   const data = g.getImageData(0, 0, PAD_PX, PAD_PX).data;
   const alpha = new Uint8ClampedArray(PAD_PX * PAD_PX);
@@ -778,7 +819,7 @@ function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | nu
   // なぞりは、はじめから全部のマスにうすい見本の字を出す（ヒントの薄い字と同じしくみ）
   const ghost = Array.from({ length: count }, (_, i) => trace && !fixed.has(i));
   // うすい字の色: なぞりはなぞりやすいよう少し濃く
-  const ghostColor = trace ? 'rgba(0, 0, 0, 0.24)' : 'rgba(0, 0, 0, 0.16)';
+  const ghostAlpha = trace ? 0.24 : 0.16;
   // ヒントの薄い字は、見本と同じ教科書体で（なぞって書くので字形をそろえる）
   const ghostFont = (px: number) => `600 ${px * (trace ? 0.7 : 0.62)}px "UD Digi Kyokasho NK-B", "UD Digi Kyokasho N-B", "Klee One", "Hiragino Maru Gothic ProN", sans-serif`;
 
@@ -799,9 +840,7 @@ function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | nu
     const ctx = c.getContext('2d')!;
     ctx.clearRect(0, 0, c.width, c.height);
     if (ghost[i]) {
-      ctx.fillStyle = ghostColor;
-      ctx.font = ghostFont(c.width);
-      fillCentered(ctx, inScript(answer[i], settings.script), c.width, c.height);
+      drawGuide(ctx, inScript(answer[i], settings.script), ghostFont(c.width), c.width, c.height, ghostAlpha, trace ? settings.traceWeight : 'normal');
     }
     ctx.drawImage(glyphs[i], 0, 0, c.width, c.height);
     cells[i].classList.toggle('written', written[i]);
@@ -833,7 +872,7 @@ function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | nu
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.strokeStyle = '#2B2B2B';
-    ctx.lineWidth = PAD_PX / 22;
+    ctx.lineWidth = PAD_PX * PEN_WIDTH[settings.penWidth];
 
     const title = h('p', { class: 'pad-title' });
     const padGhost = h('canvas', { class: 'pad-ghost', width: String(PAD_PX), height: String(PAD_PX) });
@@ -848,9 +887,7 @@ function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | nu
       gctx.clearRect(0, 0, PAD_PX, PAD_PX);
       mask = trace && !fixed.has(i) ? traceMask(inScript(answer[i], settings.script), ghostFont(PAD_PX)) : null;
       if (ghost[i]) {
-        gctx.fillStyle = trace ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.12)';
-        gctx.font = ghostFont(PAD_PX);
-        fillCentered(gctx, inScript(answer[i], settings.script), PAD_PX, PAD_PX);
+        drawGuide(gctx, inScript(answer[i], settings.script), ghostFont(PAD_PX), PAD_PX, PAD_PX, trace ? 0.2 : 0.12, trace ? settings.traceWeight : 'normal');
       }
       // 見本あり のときだけ、書く字の見本を横に出す（なぞりはパッドの中に字があるので出さない）
       const showGuide = settings.prompt === 'look' && !trace;
@@ -1093,6 +1130,8 @@ function settingRows(): HTMLElement[] {
     choice('volume', '音量', [['low', '小'], ['mid', '中'], ['high', '大']]),
     choice('particleInput', '文の「が」', [[false, '最初から入れておく'], [true, '子どもが打つ・書く']]),
     choice('keySet', 'キーボードの字', [['all', '50音'], ['k25', '25音'], ['k10', '10音'], ['answer', '答えの字だけ']]),
+    choice('traceWeight', 'なぞりの見本の太さ', [['thin', 'ほそい'], ['normal', 'ふつう'], ['bold', 'ふとい']]),
+    choice('penWidth', 'ペンの太さ', [['thin', 'ほそい'], ['normal', 'ふつう'], ['bold', 'ふとい']]),
     choice('minigame', 'ミニゲーム', [[true, 'あり（問題の前に毎回）'], [false, 'なし']]),
     minigameKindsRow(),
   ];
