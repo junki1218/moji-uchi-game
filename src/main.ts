@@ -386,13 +386,35 @@ function questionScreen(round: Round, afterMini = false): void {
     h(
       'main',
       { class: 'screen game' },
-      h('header', { class: 'game-header' }, quitButton(), progress(round), hintBtn),
+      h('header', { class: 'game-header' },
+        h('div', { class: 'header-left' }, quitButton(), h('button', { class: 'gear-btn', 'aria-label': 'せってい', onclick: () => openSettingsModal(round) }, '⚙')),
+        progress(round), hintBtn),
       top,
       input,
     ),
   );
 
   if (settings.prompt !== 'picture') window.setTimeout(say, 300);
+}
+
+/** 問題の途中で設定を変える（暗証番号 → 設定）。変えたら、いまの問題を新しい設定で出し直す */
+function openSettingsModal(round: Round): void {
+  const before = JSON.stringify(settings);
+  const box = h('div', { class: 'modal-box' });
+  const overlay = h('div', { class: 'overlay settings-modal' }, box);
+  const close = () => {
+    overlay.remove();
+    if (JSON.stringify(settings) !== before) {
+      stopSpeech();
+      questionScreen(round, true); // ミニゲームはとばして、同じ問題を出し直す
+    }
+  };
+  const closeBtn = h('button', { class: 'mid-btn secondary modal-close', onclick: close }, 'とじる');
+  box.append(closeBtn, ...pinPad(() => {
+    box.replaceChildren(closeBtn, h('h2', {}, '設定（先生用）'), ...settingRows(),
+      h('p', { class: 'q-note' }, '「とじる」で、いまの問題を新しい設定で出し直します。'));
+  }));
+  app.append(overlay);
 }
 
 // ------------------------------------------------------------ ミニゲーム（問題の前）
@@ -886,6 +908,11 @@ function finishScreen(): void {
 
 function pinScreen(): void {
   stopBgm(); // 先生用の画面は無音
+  show(h('main', { class: 'screen pin' }, backButton(startScreen), ...pinPad(settingsScreen)));
+}
+
+/** 暗証番号の入力（題・点・数字キー）。合っていたら onOk */
+function pinPad(onOk: () => void): HTMLElement[] {
   let entered = '';
   const dots = h('div', { class: 'pin-dots' }, ...Array.from({ length: 4 }, () => h('span', { class: 'pin-dot' })));
   const paint = () =>
@@ -897,7 +924,7 @@ function pinScreen(): void {
     paint();
     if (entered.length === 4) {
       if (entered === settings.pin) {
-        settingsScreen();
+        onOk();
       } else {
         dots.classList.remove('shake');
         void dots.offsetWidth;
@@ -918,12 +945,13 @@ function pinScreen(): void {
     h('button', { class: 'pin-key', onclick: () => { entered = entered.slice(0, -1); paint(); } }, '⌫'),
   );
 
-  show(h('main', { class: 'screen pin' }, backButton(startScreen), h('p', { class: 'pin-title' }, 'あんしょうばんごう'), dots, pad));
+  return [h('p', { class: 'pin-title' }, 'あんしょうばんごう'), dots, pad];
 }
 
 // ------------------------------------------------------------ 設定（先生用）
 
-function settingsScreen(): void {
+/** 遊び方の設定の行（設定画面と、問題中の設定モーダルで共通） */
+function settingRows(): HTMLElement[] {
   const choice = <K extends keyof Settings>(key: K, label: string, options: [Settings[K], string][]) => {
     const group = h('div', { class: 'seg' });
     const paint = () =>
@@ -936,7 +964,21 @@ function settingsScreen(): void {
     paint();
     return h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, label), group);
   };
+  return [
+    choice('script', '文字', [['hira', 'ひらがな'], ['kata', 'カタカナ']]),
+    choice('input', '入力方法', [['keyboard', 'キーボード'], ['handwriting', 'てがき']]),
+    choice('prompt', '出題', [['look', '① 見本あり'], ['listen', '② 読み上げのみ'], ['picture', '③ 絵だけ']]),
+    choice('aColumn', 'あ行の位置', [['right', '右はし（50音表と同じ）'], ['left', '左はし']]),
+    choice('sound', 'おと（BGM）', [[true, 'あり'], [false, 'なし']]),
+    choice('volume', '音量', [['low', '小'], ['mid', '中'], ['high', '大']]),
+    choice('particleInput', '文の「が」', [[false, '最初から入れておく'], [true, '子どもが打つ・書く']]),
+    choice('keySet', 'キーボードの字', [['all', '50音'], ['k25', '25音'], ['k10', '10音'], ['answer', '答えの字だけ']]),
+    choice('minigame', 'ミニゲーム', [[true, 'あり（問題の前に毎回）'], [false, 'なし']]),
+    minigameKindsRow(),
+  ];
+}
 
+function settingsScreen(): void {
   const pinInput = h('input', { class: 'pin-input', inputmode: 'numeric', maxlength: '4', placeholder: '4けた', autocomplete: 'off' });
   const pinMsg = h('span', { class: 'pin-msg' });
   const pinSave = h('button', {
@@ -957,16 +999,7 @@ function settingsScreen(): void {
       { class: 'screen settings' },
       backButton(startScreen),
       h('h2', {}, '設定（先生用）'),
-      choice('script', '文字', [['hira', 'ひらがな'], ['kata', 'カタカナ']]),
-      choice('input', '入力方法', [['keyboard', 'キーボード'], ['handwriting', 'てがき']]),
-      choice('prompt', '出題', [['look', '① 見本あり'], ['listen', '② 読み上げのみ'], ['picture', '③ 絵だけ']]),
-      choice('aColumn', 'あ行の位置', [['right', '右はし（50音表と同じ）'], ['left', '左はし']]),
-      choice('sound', 'おと（BGM）', [[true, 'あり'], [false, 'なし']]),
-      choice('volume', '音量', [['low', '小'], ['mid', '中'], ['high', '大']]),
-      choice('particleInput', '文の「が」', [[false, '最初から入れておく'], [true, '子どもが打つ・書く']]),
-      choice('keySet', 'キーボードの字', [['all', '50音'], ['k25', '25音'], ['k10', '10音'], ['answer', '答えの字だけ']]),
-      choice('minigame', 'ミニゲーム', [[true, 'あり（問題の前に毎回）'], [false, 'なし']]),
-      minigameKindsRow(),
+      ...settingRows(),
       h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'もんだい'),
         h('div', { class: 'seg' }, h('button', { class: 'seg-btn', onclick: () => questionsScreen('mono') }, '出題する問題を選ぶ・読み込む'))),
       h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'てがきのきろく'),
