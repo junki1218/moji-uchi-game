@@ -1,7 +1,8 @@
 // 設定は端末内（localStorage）に保存する。読めない環境でも既定値で動く。
 
 export type Script = 'hira' | 'kata';
-export type InputMode = 'keyboard' | 'handwriting';
+/** trace＝なぞり（2026-10-17）。てがきと同じ書き方で、マスの中にうすい見本の字があり、それをなぞる */
+export type InputMode = 'keyboard' | 'handwriting' | 'trace';
 /** ① みてうつ ② きいてうつ ③ えだけ */
 export type PromptMode = 'look' | 'listen' | 'picture';
 export type AColumn = 'left' | 'right';

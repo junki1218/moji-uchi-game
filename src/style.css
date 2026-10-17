@@ -971,3 +971,18 @@ button {
   0% { transform: translate(0, 0) rotate(0); }
   100% { transform: translate(var(--sway), 110vh) rotate(var(--spin)); }
 }
+
+/* ---------- 教科書体の字を、マスの上下の真ん中に（2026-10-17）---------- */
+/* --kyo-shift は main.ts の calibrateKyokasho() が、使われているフォントを測って入れる */
+.sample-cell, .pad-sample {
+  padding-top: max(0em, calc(var(--kyo-shift, 0em) * -2));
+  padding-bottom: max(0em, calc(var(--kyo-shift, 0em) * 2));
+}
+/* パッドのうすい字は canvas（字の形の真ん中に描く） */
+canvas.pad-ghost { width: 100%; height: 100%; }
+
+/* なぞりは見本の行がない（1段だけ）ので、マスを大きく */
+.handwriting.trace { --cell: min(15vw, 26vh); }
+.handwriting.trace:has(.hw-cell:nth-child(5)) { --cell: min(11vw, 22vh); }
+.handwriting.trace:has(.hw-cell:nth-child(7)) { --cell: min(9.5vw, 18vh); }
+.handwriting.trace:has(.hw-cell:nth-child(9)) { --cell: min(8.3vw, 16vh); }

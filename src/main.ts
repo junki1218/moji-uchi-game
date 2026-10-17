@@ -327,8 +327,9 @@ function questionScreen(round: Round, afterMini = false): void {
   const shown = (c: string) => inScript(c, settings.script);
   const say = () => speak(q.hira, () => duckBgm(true), () => duckBgm(false));
 
+  const trace = settings.input === 'trace';
   const sample =
-    settings.prompt === 'look'
+    settings.prompt === 'look' && !trace
       ? h('div', { class: 'sample' }, ...answer.map((c, i) => h('span', { class: `sample-cell ${i === pIdx ? 'particle' : ''}` }, shown(c))))
       : null;
 
@@ -379,9 +380,11 @@ function questionScreen(round: Round, afterMini = false): void {
   }, '💡 ヒント');
 
   const input =
-    settings.input === 'handwriting'
-      ? handwritingArea(answer, fixed, pIdx, sample, next, hint)
-      : keyboardArea(answer, fixed, pIdx, side, next, hint);
+    settings.input === 'keyboard'
+      ? keyboardArea(answer, fixed, pIdx, side, next, hint)
+      : handwritingArea(answer, fixed, pIdx, sample, next, hint, trace);
+  // なぞりは字がはじめから見えているので、ヒントはいらない
+  if (trace) hintBtn.hidden = true;
 
   show(
     h(
@@ -697,7 +700,20 @@ function keyboardArea(answer: string[], fixed: Set<number>, pIdx: number | null,
 
 const PAD_PX = 600;
 
-function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | null, sample: HTMLElement | null, onDone: () => void, hint: Hint): HTMLElement {
+/**
+ * 字を、字の形（インクの部分）がマスの上下左右の真ん中に来るように描く。
+ * textBaseline: middle だとフォントによって少し下にずれるので、実際の字の形を測ってそろえる
+ */
+function fillCentered(g: CanvasRenderingContext2D, ch: string, w: number, h: number): void {
+  g.textAlign = 'center';
+  g.textBaseline = 'alphabetic';
+  const m = g.measureText(ch);
+  const x = w / 2 - (m.actualBoundingBoxRight - m.actualBoundingBoxLeft) / 2;
+  const y = h / 2 + (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2;
+  g.fillText(ch, x, y);
+}
+
+function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | null, sample: HTMLElement | null, onDone: () => void, hint: Hint, trace = false): HTMLElement {
   const count = answer.length;
   // 1文字ぶんの字。パッドと同じ解像度で持っておき、マスには縮小して写す
   const glyphs = Array.from({ length: count }, (_, i) => {
@@ -709,17 +725,18 @@ function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | nu
       const g = c.getContext('2d')!;
       g.fillStyle = '#9a8f84';
       g.font = `bold ${PAD_PX * 0.62}px "Hiragino Maru Gothic ProN", "BIZ UDPGothic", sans-serif`;
-      g.textAlign = 'center';
-      g.textBaseline = 'middle';
-      g.fillText(inScript(answer[i], settings.script), PAD_PX / 2, PAD_PX / 2);
+      fillCentered(g, inScript(answer[i], settings.script), PAD_PX, PAD_PX);
     }
     return c;
   });
   const written = new Array<boolean>(count).fill(false);
   // ヒントで薄く出す字（記録の画像には入れない）
-  const ghost = new Array<boolean>(count).fill(false);
+  // なぞりは、はじめから全部のマスにうすい見本の字を出す（ヒントの薄い字と同じしくみ）
+  const ghost = Array.from({ length: count }, (_, i) => trace && !fixed.has(i));
+  // うすい字の色: なぞりはなぞりやすいよう少し濃く
+  const ghostColor = trace ? 'rgba(0, 0, 0, 0.24)' : 'rgba(0, 0, 0, 0.16)';
   // ヒントの薄い字は、見本と同じ教科書体で（なぞって書くので字形をそろえる）
-  const ghostFont = (px: number) => `600 ${px * 0.62}px "UD Digi Kyokasho NK-B", "UD Digi Kyokasho N-B", "Klee One", "Hiragino Maru Gothic ProN", sans-serif`;
+  const ghostFont = (px: number) => `600 ${px * (trace ? 0.7 : 0.62)}px "UD Digi Kyokasho NK-B", "UD Digi Kyokasho N-B", "Klee One", "Hiragino Maru Gothic ProN", sans-serif`;
 
   const cellCanvases: HTMLCanvasElement[] = [];
   const cells = Array.from({ length: count }, (_, i) => {
@@ -738,11 +755,9 @@ function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | nu
     const ctx = c.getContext('2d')!;
     ctx.clearRect(0, 0, c.width, c.height);
     if (ghost[i]) {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.16)';
+      ctx.fillStyle = ghostColor;
       ctx.font = ghostFont(c.width);
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(inScript(answer[i], settings.script), c.width / 2, c.height / 2);
+      fillCentered(ctx, inScript(answer[i], settings.script), c.width, c.height);
     }
     ctx.drawImage(glyphs[i], 0, 0, c.width, c.height);
     cells[i].classList.toggle('written', written[i]);
@@ -752,6 +767,7 @@ function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | nu
   const starts = partStarts(answer, pIdx);
   let step = 0;
   hint.show = () => {
+    if (trace) return false;
     const part = step;
     const i = starts[step++];
     ghost[i] = true;
@@ -776,7 +792,8 @@ function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | nu
     ctx.lineWidth = PAD_PX / 22;
 
     const title = h('p', { class: 'pad-title' });
-    const padGhost = h('span', { class: 'pad-ghost' });
+    const padGhost = h('canvas', { class: 'pad-ghost', width: String(PAD_PX), height: String(PAD_PX) });
+    const gctx = padGhost.getContext('2d')!;
     const guide = h('div', { class: 'pad-sample' });
     const nextBtn = h('button', { class: 'mid-btn secondary' }, 'つぎのじ');
 
@@ -784,10 +801,16 @@ function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | nu
       ctx.clearRect(0, 0, PAD_PX, PAD_PX);
       ctx.drawImage(glyphs[i], 0, 0);
       title.textContent = `${i + 1}もじめ（${i + 1}/${count}）`;
-      padGhost.textContent = ghost[i] ? inScript(answer[i], settings.script) : '';
-      // 見本あり のときだけ、書く字の見本を横に出す
-      guide.textContent = settings.prompt === 'look' ? inScript(answer[i], settings.script) : '';
-      guide.hidden = settings.prompt !== 'look';
+      gctx.clearRect(0, 0, PAD_PX, PAD_PX);
+      if (ghost[i]) {
+        gctx.fillStyle = trace ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.12)';
+        gctx.font = ghostFont(PAD_PX);
+        fillCentered(gctx, inScript(answer[i], settings.script), PAD_PX, PAD_PX);
+      }
+      // 見本あり のときだけ、書く字の見本を横に出す（なぞりはパッドの中に字があるので出さない）
+      const showGuide = settings.prompt === 'look' && !trace;
+      guide.textContent = showGuide ? inScript(answer[i], settings.script) : '';
+      guide.hidden = !showGuide;
       guide.classList.toggle('particle', i === pIdx);
       nextBtn.hidden = nextIndex(i) < 0;
       cells.forEach((c, k) => c.classList.toggle('selected', k === i));
@@ -884,11 +907,11 @@ function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | nu
 
   return h(
     'div',
-    { class: 'input-area handwriting' },
+    { class: `input-area handwriting ${trace ? 'trace' : ''}` },
     // 見本はマスの真上に置いて、1文字ずつ見比べられるようにする（見本もカラーマス）
     sample && (sample.classList.add('masu-row'), sample),
     h('div', { class: 'hw-cells' }, ...cells),
-    h('p', { class: 'hw-help' }, 'ますを タップして かこう'),
+    h('p', { class: 'hw-help' }, trace ? 'ますを タップして なぞろう' : 'ますを タップして かこう'),
     h('div', { class: 'hw-buttons' }, doneBtn),
   );
 }
@@ -1000,7 +1023,7 @@ function settingRows(): HTMLElement[] {
   };
   return [
     choice('script', '文字', [['hira', 'ひらがな'], ['kata', 'カタカナ']]),
-    choice('input', '入力方法', [['keyboard', 'キーボード'], ['handwriting', 'てがき']]),
+    choice('input', '入力方法', [['keyboard', 'キーボード'], ['handwriting', 'てがき'], ['trace', 'なぞり']]),
     choice('prompt', '出題', [['look', '① 見本あり'], ['listen', '② 読み上げのみ'], ['picture', '③ 絵だけ']]),
     choice('aColumn', 'あ行の位置', [['right', '右はし（50音表と同じ）'], ['left', '左はし']]),
     choice('sound', 'おと（BGM）', [[true, 'あり'], [false, 'なし']]),
@@ -1449,6 +1472,29 @@ function worksheetPrint(ids: string[]): void {
     ),
   );
 }
+
+// 教科書体の字は、フォントによってマスの中で少し下に出る。実際の字の形を測って、上下の真ん中にそろえる
+// （--kyo-shift を CSS の .sample-cell などが使う。フォントが読み込まれたら測り直す）
+function calibrateKyokasho(): void {
+  const fam = getComputedStyle(document.documentElement).getPropertyValue('--kyokasho').trim();
+  const g = document.createElement('canvas').getContext('2d');
+  if (!g || !fam) return;
+  g.font = `600 100px ${fam}`;
+  g.textBaseline = 'alphabetic';
+  const sampleChars = Array.from('あいうえおかきくけこさしすせそたなにぬねの');
+  const ink = sampleChars.reduce((s, c) => {
+    const m = g.measureText(c);
+    return s + (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2;
+  }, 0) / sampleChars.length;
+  const m0 = g.measureText('あ');
+  if (!Number.isFinite(m0.fontBoundingBoxAscent) || !Number.isFinite(m0.fontBoundingBoxDescent)) return;
+  const box = (m0.fontBoundingBoxAscent - m0.fontBoundingBoxDescent) / 2;
+  const shift = (box - ink) / 100; // em。プラス＝字が下にずれている → 上へ
+  document.documentElement.style.setProperty('--kyo-shift', `${shift.toFixed(3)}em`);
+}
+calibrateKyokasho();
+void document.fonts?.ready.then(calibrateKyokasho);
+document.fonts?.addEventListener?.('loadingdone', calibrateKyokasho);
 
 // 写真の一覧を読んでから始める（読めなくても始める）
 void loadPhotoIndex().finally(startScreen);
