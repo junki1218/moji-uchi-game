@@ -190,14 +190,14 @@
     },
     {
       "id": "TASK-007",
-      "title": "文 bun_14〜20 をキャラの絵で代用（7枚）",
+      "title": "文 bun_14〜20 を「うごき」の女の子の絵で代用（7枚）",
       "owner": "ClaudeCode",
       "status": "VERIFIED",
       "retry_count": 0,
       "needs_asset": true,
       "needs_browser_check": false,
       "depends_on": [],
-      "acceptance": "- 素材の7枚を正方形でコピーし台帳に登録",
+      "acceptance": "- うごきの女の子の絵7枚をコピーし台帳に登録",
       "history": [
         {
           "at": "2026-10-04T09:22:20+09:00",

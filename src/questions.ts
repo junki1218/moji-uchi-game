@@ -1,4 +1,4 @@
-// 最初から入っている問題。単語60問（IMAGE_SPEC.md 4章）＋文20問（IMAGE_SPEC_SENTENCE.md）＋文・きもち20問。表記はすべてひらがな。
+// 最初から入っている問題。単語60問（IMAGE_SPEC.md 4章）＋文20問（IMAGE_SPEC_SENTENCE.md）＋文・きもち18問。表記はすべてひらがな。
 // emoji は画像が届くまでの仮表示。画像は src/images/{id}.webp（tools/sync_images.py が作る）。
 // 先生が JSON で足す問題は bank.ts が扱う。
 
@@ -145,19 +145,19 @@ export const BUILTIN_QUESTIONS: Question[] = [
   sentence('bun_11', 'うさぎ', 'とぶ', '🐇', true),
   sentence('bun_12', 'きょうりゅう', 'あるく', '🦖', true),
   sentence('bun_13', 'くるま', 'はしる', '🚗', true),
-  // bun_14〜20 は素材の絵を流用（2026-10-04 ユーザー決定。tools/chara_from_library.py）
-  sentence('bun_14', 'きゃら', 'のむ', '🟢', true),
-  sentence('bun_15', 'きゃら', 'たべる', '🟢', true),
-  sentence('bun_16', 'きゃら', 'ねる', '🟢', true),
-  sentence('bun_17', 'きゃら', 'あるく', '🟢', true),
-  sentence('bun_18', 'きゃら', 'よむ', '🟢', true),
-  sentence('bun_19', 'きゃら', 'あらう', '🟢', true),
-  sentence('bun_20', 'きゃら', 'すわる', '🟢', true),
+  // bun_14〜20 は「うごき」の女の子の絵を流用（2026-10-19 ユーザー決定。tools/girl_from_ugoki.py）
+  sentence('bun_14', 'おんなのこ', 'のむ', '👧', true),
+  sentence('bun_15', 'おんなのこ', 'たべる', '👧', true),
+  sentence('bun_16', 'おんなのこ', 'ねる', '👧', true),
+  sentence('bun_17', 'おんなのこ', 'あるく', '👧', true),
+  sentence('bun_18', 'おんなのこ', 'よむ', '👧', true),
+  sentence('bun_19', 'おんなのこ', 'あらう', '👧', true),
+  sentence('bun_20', 'おんなのこ', 'すわる', '👧', true),
   // ぶん・きもち（2026-10-05）: 絵は素材ライブラリの表情から（tools/bunkimochi_from_library.py）。
   // ●● は きもちカテゴリの言葉。ヒントの2回目で、その言葉のきもちの絵が浮かび上がる
   sentence('bunkimochi_01', 'うさぎ', 'うれしい', '🐇', true, 'bunkimochi'),
   sentence('bunkimochi_02', 'ぞう', 'うれしい', '🐘', true, 'bunkimochi'),
-  sentence('bunkimochi_03', 'きゃら', 'うれしい', '🟢', true, 'bunkimochi'),
+  sentence('bunkimochi_03', 'ともだち', 'うれしい', '🧒', true, 'bunkimochi'),
   sentence('bunkimochi_04', 'おんなのこ', 'うれしい', '👧', true, 'bunkimochi'),
   sentence('bunkimochi_05', 'おとこのこ', 'かなしい', '👦', true, 'bunkimochi'),
   sentence('bunkimochi_06', 'おんなのこ', 'おこる', '👧', true, 'bunkimochi'),
@@ -165,14 +165,12 @@ export const BUILTIN_QUESTIONS: Question[] = [
   sentence('bunkimochi_08', 'らいおん', 'こまる', '🦁', true, 'bunkimochi'),
   sentence('bunkimochi_09', 'おとこのこ', 'こまる', '👦', true, 'bunkimochi'),
   sentence('bunkimochi_10', 'おんなのこ', 'こまる', '👧', true, 'bunkimochi'),
-  sentence('bunkimochi_11', 'きゃら', 'こまる', '🟢', true, 'bunkimochi'),
+  sentence('bunkimochi_11', 'ともだち', 'こまる', '🧒', true, 'bunkimochi'),
   sentence('bunkimochi_12', 'おとこのこ', 'びっくり', '👦', true, 'bunkimochi'),
   sentence('bunkimochi_13', 'おんなのこ', 'びっくり', '👧', true, 'bunkimochi'),
   sentence('bunkimochi_14', 'ごりら', 'たのしい', '🦍', true, 'bunkimochi'),
   sentence('bunkimochi_15', 'うさぎ', 'たのしい', '🐇', true, 'bunkimochi'),
   sentence('bunkimochi_16', 'らいおん', 'たのしい', '🦁', true, 'bunkimochi'),
-  sentence('bunkimochi_17', 'きゃら', 'たのしい', '🟢', true, 'bunkimochi'),
+  sentence('bunkimochi_17', 'ともだち', 'たのしい', '🧒', true, 'bunkimochi'),
   sentence('bunkimochi_18', 'ごりら', 'ねむい', '🦍', true, 'bunkimochi'),
-  sentence('bunkimochi_19', 'みみ', 'いたい', '👂', true, 'bunkimochi'),
-  sentence('bunkimochi_20', 'おなか', 'いたい', '🟢', true, 'bunkimochi'),
 ];

@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-10-05T05:56:28+09:00",
+  "last_updated": "2026-10-19T12:00:00+09:00",
   "assets": [
     {
       "id": "ref_person",
@@ -714,65 +714,65 @@
     {
       "id": "bun_14",
       "type": "image",
-      "purpose": "問題イラスト ぶん: きゃらが のむ（素材から流用: removed.png）",
-      "file_path": ".agent_flow/assets/asset_TASK-007_bun_14_chara_nomu.png",
+      "purpose": "問題イラスト ぶん: おんなのこが のむ（ugoki_04 と同じ絵を流用）",
+      "file_path": ".agent_flow/assets/asset_TASK-010_bun_14_nomu.png",
       "dimensions": "1024x1024",
       "created_by": "library",
-      "task_id": "TASK-007"
+      "task_id": "TASK-010"
     },
     {
       "id": "bun_15",
       "type": "image",
-      "purpose": "問題イラスト ぶん: きゃらが たべる（素材から流用: removed.png）",
-      "file_path": ".agent_flow/assets/asset_TASK-007_bun_15_chara_taberu.png",
+      "purpose": "問題イラスト ぶん: おんなのこが たべる（ugoki_03 と同じ絵を流用）",
+      "file_path": ".agent_flow/assets/asset_TASK-010_bun_15_taberu.png",
       "dimensions": "1024x1024",
       "created_by": "library",
-      "task_id": "TASK-007"
+      "task_id": "TASK-010"
     },
     {
       "id": "bun_16",
       "type": "image",
-      "purpose": "問題イラスト ぶん: きゃらが ねる（素材から流用: removed.png）",
-      "file_path": ".agent_flow/assets/asset_TASK-007_bun_16_chara_neru.png",
+      "purpose": "問題イラスト ぶん: おんなのこが ねる（ugoki_05 と同じ絵を流用）",
+      "file_path": ".agent_flow/assets/asset_TASK-010_bun_16_neru.png",
       "dimensions": "1024x1024",
       "created_by": "library",
-      "task_id": "TASK-007"
+      "task_id": "TASK-010"
     },
     {
       "id": "bun_17",
       "type": "image",
-      "purpose": "問題イラスト ぶん: きゃらが あるく（素材から流用: removed.png）",
-      "file_path": ".agent_flow/assets/asset_TASK-007_bun_17_chara_aruku.png",
+      "purpose": "問題イラスト ぶん: おんなのこが あるく（ugoki_02 と同じ絵を流用）",
+      "file_path": ".agent_flow/assets/asset_TASK-010_bun_17_aruku.png",
       "dimensions": "1024x1024",
       "created_by": "library",
-      "task_id": "TASK-007"
+      "task_id": "TASK-010"
     },
     {
       "id": "bun_18",
       "type": "image",
-      "purpose": "問題イラスト ぶん: きゃらが よむ（素材から流用: removed.png）",
-      "file_path": ".agent_flow/assets/asset_TASK-007_bun_18_chara_yomu.png",
+      "purpose": "問題イラスト ぶん: おんなのこが よむ（ugoki_11 と同じ絵を流用）",
+      "file_path": ".agent_flow/assets/asset_TASK-010_bun_18_yomu.png",
       "dimensions": "1024x1024",
       "created_by": "library",
-      "task_id": "TASK-007"
+      "task_id": "TASK-010"
     },
     {
       "id": "bun_19",
       "type": "image",
-      "purpose": "問題イラスト ぶん: きゃらが あらう（素材から流用: removed.png）",
-      "file_path": ".agent_flow/assets/asset_TASK-007_bun_19_chara_arau.png",
+      "purpose": "問題イラスト ぶん: おんなのこが あらう（ugoki_12 と同じ絵を流用）",
+      "file_path": ".agent_flow/assets/asset_TASK-010_bun_19_arau.png",
       "dimensions": "1024x1024",
       "created_by": "library",
-      "task_id": "TASK-007"
+      "task_id": "TASK-010"
     },
     {
       "id": "bun_20",
       "type": "image",
-      "purpose": "問題イラスト ぶん: きゃらが すわる（素材から流用: removed.png）",
-      "file_path": ".agent_flow/assets/asset_TASK-007_bun_20_chara_suwaru.png",
+      "purpose": "問題イラスト ぶん: おんなのこが すわる（ugoki_13 と同じ絵を流用）",
+      "file_path": ".agent_flow/assets/asset_TASK-010_bun_20_suwaru.png",
       "dimensions": "1024x1024",
       "created_by": "library",
-      "task_id": "TASK-007"
+      "task_id": "TASK-010"
     },
     {
       "id": "bunkimochi_01",
@@ -795,11 +795,11 @@
     {
       "id": "bunkimochi_03",
       "type": "image",
-      "purpose": "問題イラスト ぶん・きもち: きゃらが うれしい（素材ライブラリから流用: 素材/removed.png）",
-      "file_path": ".agent_flow/assets/asset_TASK-008_bunkimochi_03_ureshii.png",
+      "purpose": "問題イラスト ぶん・きもち: ともだちが うれしい（kimochi_01 と同じ絵を流用）",
+      "file_path": ".agent_flow/assets/asset_TASK-010_bunkimochi_03_ureshii.png",
       "dimensions": "1024x1024",
       "created_by": "library",
-      "task_id": "TASK-008"
+      "task_id": "TASK-010"
     },
     {
       "id": "bunkimochi_04",
@@ -867,11 +867,11 @@
     {
       "id": "bunkimochi_11",
       "type": "image",
-      "purpose": "問題イラスト ぶん・きもち: きゃらが こまる（素材ライブラリから流用: 素材/removed.png）",
-      "file_path": ".agent_flow/assets/asset_TASK-008_bunkimochi_11_komaru.png",
+      "purpose": "問題イラスト ぶん・きもち: ともだちが こまる（kimochi_16 と同じ絵を流用）",
+      "file_path": ".agent_flow/assets/asset_TASK-010_bunkimochi_11_komaru.png",
       "dimensions": "1024x1024",
       "created_by": "library",
-      "task_id": "TASK-008"
+      "task_id": "TASK-010"
     },
     {
       "id": "bunkimochi_12",
@@ -921,35 +921,17 @@
     {
       "id": "bunkimochi_17",
       "type": "image",
-      "purpose": "問題イラスト ぶん・きもち: きゃらが たのしい（素材ライブラリから流用: 素材/removed.png）",
-      "file_path": ".agent_flow/assets/asset_TASK-008_bunkimochi_17_tanoshii.png",
+      "purpose": "問題イラスト ぶん・きもち: ともだちが たのしい（kimochi_03 と同じ絵を流用）",
+      "file_path": ".agent_flow/assets/asset_TASK-010_bunkimochi_17_tanoshii.png",
       "dimensions": "1024x1024",
       "created_by": "library",
-      "task_id": "TASK-008"
+      "task_id": "TASK-010"
     },
     {
       "id": "bunkimochi_18",
       "type": "image",
       "purpose": "問題イラスト ぶん・きもち: ごりらが ねむい（素材ライブラリから流用: animal school/ゴリラ_2_勉強.png）",
       "file_path": ".agent_flow/assets/asset_TASK-008_bunkimochi_18_nemui.png",
-      "dimensions": "1024x1024",
-      "created_by": "library",
-      "task_id": "TASK-008"
-    },
-    {
-      "id": "bunkimochi_19",
-      "type": "image",
-      "purpose": "問題イラスト ぶん・きもち: みみが いたい（素材ライブラリから流用: 素材/removed.png）",
-      "file_path": ".agent_flow/assets/asset_TASK-008_bunkimochi_19_itai.png",
-      "dimensions": "1024x1024",
-      "created_by": "library",
-      "task_id": "TASK-008"
-    },
-    {
-      "id": "bunkimochi_20",
-      "type": "image",
-      "purpose": "問題イラスト ぶん・きもち: おなかが いたい（素材ライブラリから流用: 素材/removed.png）",
-      "file_path": ".agent_flow/assets/asset_TASK-008_bunkimochi_20_itai.png",
       "dimensions": "1024x1024",
       "created_by": "library",
       "task_id": "TASK-008"

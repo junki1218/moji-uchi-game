@@ -4,7 +4,7 @@
 - 発行: クロコ 2026-10-05
 - もと: Notion「くろまる がっくん｜『が』を たのしく まなぶ おはなし きかくしょ」＋ストーリー案（7場面）
 - ねらい: 絵本で読んだ文を、そのまま アプリ「がっくんのこくご」（旧 もじうちゲーム）の「ぶん」「ぶん・きもち」で打てるようにする。
-  そのため、出てくる相手（いぬ・ねこ・ひこうき・ばす・きゃら・らいおん）は **アプリの絵と同じ見た目** にする
+  そのため、出てくる相手（いぬ・ねこ・ひこうき・ばす・おんなのこ・らいおん）は **アプリの絵と同じ見た目** にする
 
 ---
 
@@ -62,7 +62,7 @@ G00（設定画）もこの絵を参照画像にして作り、以後の14枚は
 | ねこ | `asset_TASK-002_mono_03_neko.png`、`asset_TASK-006_bun_02_neko_neru.png` | 白と茶のぶちねこ |
 | ひこうき | `asset_TASK-002_mono_10_hikouki.png`、`asset_TASK-006_bun_05_hikouki_tobu.png` | 白い旅客機。文字・ロゴなし |
 | ばす | `asset_TASK-002_mono_06_basu.png`、`asset_TASK-006_bun_08_basu_tomaru.png` | 黄色い路線バス。行き先表示は無地 |
-| きゃら | `asset_TASK-007_bun_15_chara_taberu.png` | 緑のたまご形、黒い四角いめがね形の目、白い大きな歯の笑顔、黄色い手足、おなかに赤い（削除）。**着ぐるみ写真をクレイ風に描き直す**（形と色はそのまま）。（削除）は元のデザインどおり残してよい（文字の例外） |
+| おんなのこ | `asset_TASK-004_ugoki_03_taberu.png` | 黒いおかっぱ頭、黄色いTシャツ、青いズボンの子ども。アプリの「うごき」の絵と同じ子 |
 | らいおん | `asset_TASK-008_bunkimochi_08_komaru.png` | オレンジのたてがみ、紺のブレザー。アプリの「らいおんが こまる」の絵と同じらいおん |
 
 ---
@@ -185,27 +185,27 @@ Soft handmade clay texture, stop-motion look, soft front lighting, child-friendl
 No text anywhere except the "が" on Gakkun's body.
 ```
 
-### 場面5　きゃら
+### 場面5　おんなのこ
 
-**5a ①「きゃらが……」** — `asset_TASK-009_gakkun_5a_chara.png`
+**5a ①「おんなのこが……」** — `asset_TASK-009_gakkun_5a_onnanoko.png`
 ```
 Claymation picture book illustration, landscape 3:2.
 A small table with one plate of hamburger steak and vegetables, a fork and knife, warm cozy room.
-Gakkun (round black clay ball character with a large white hiragana "が" on the body, short black arms and legs) sits on a chair on the left side of the table, looking at the character with a curious face, mouth slightly open.
-On the right, the character sits at the table: a green egg-shaped clay character with black rectangular glasses-like eyes, a big white toothy smile, yellow arms and legs, a small (removed) on the belly (same design as the reference image, redrawn in clay style). the character holds a fork and knife but has not started eating yet.
+Gakkun (round black clay ball character with a large white hiragana "が" on the body, short black arms and legs) sits on a chair on the left side of the table, looking at the child with a curious face, mouth slightly open.
+On the right, the child with a short black bob haircut, yellow T-shirt and blue trousers (same character as the reference image) sits at the table, smiling.
 Only these two characters.
 Soft handmade clay texture, stop-motion look, soft front lighting, child-friendly.
-No text anywhere except the "が" on Gakkun's body on the character.
+No text anywhere except the "が" on Gakkun's body.
 ```
 
-**5b ②「きゃらが たべる。」** — `asset_TASK-009_gakkun_5b_chara_taberu.png`
+**5b ②「おんなのこが たべる。」** — `asset_TASK-009_gakkun_5b_onnanoko_taberu.png`
 ```
 Claymation picture book illustration, landscape 3:2. Same scene, same camera angle and same background as the previous picture (small table, plate of hamburger steak).
 Gakkun (round black clay ball character with a large white hiragana "が" on the body, short black arms and legs) stays on the left, smiling.
-On the right, the same green the character is eating: a piece of hamburger steak on the fork is at its mouth, cheeks full, happy.
-Gakkun does not touch the character or the food.
+On the right, the same child is eating: a piece of hamburger steak on the fork is at its mouth, cheeks full, happy.
+Gakkun does not touch the child or the food.
 Soft handmade clay texture, stop-motion look, soft front lighting, child-friendly.
-No text anywhere except the "が" on Gakkun's body on the character.
+No text anywhere except the "が" on Gakkun's body.
 ```
 
 ### 場面6　らいおん
@@ -238,21 +238,21 @@ No text anywhere except the "が" on Gakkun's body.
 Claymation picture book illustration, landscape 3:2.
 A sunny park meadow with soft pastel flowers.
 Gakkun (round black clay ball character with a large white hiragana "が" on the body, short black arms and legs) stands in the center, a little bigger than in other pages.
-Around Gakkun, the friends from the story gather in a gentle half circle: the small brown puppy, the white-and-brown cat, the green egg-shaped the character ((removed) on the belly), and the lion cub in a navy blazer. All of them look at Gakkun with warm, expectant faces.
+Around Gakkun, the friends from the story gather in a gentle half circle: the small brown puppy, the white-and-brown cat, the child in the yellow T-shirt, and the lion cub in a navy blazer. All of them look at Gakkun with warm, expectant faces.
 Gakkun looks a little surprised, mouth slightly open, as if wondering what will happen.
 The bus and the airplane can appear small in the far background (optional).
 Soft handmade clay texture, stop-motion look, soft front lighting, child-friendly.
-No text anywhere except the "が" on Gakkun's body on the character.
+No text anywhere except the "が" on Gakkun's body.
 ```
 
 **7b ②「がっくんが うれしい。」** — `asset_TASK-009_gakkun_7b_gakkun_ureshii.png`
 ```
 Claymation picture book illustration, landscape 3:2. Same scene, same camera angle and same background as the previous picture (sunny park meadow, friends in a half circle).
 Gakkun (round black clay ball character with a large white hiragana "が" on the body, short black arms and legs) is in the center, now very happy: big smile, eyes curved with joy, both arms raised, small hop with both feet off the ground, rosy cheeks.
-The friends around (puppy, cat, the character, lion cub) smile and clap.
+The friends around (puppy, cat, the child, lion cub) smile and clap.
 The white "が" on Gakkun's body stays clear and easy to read.
 Soft handmade clay texture, stop-motion look, soft front lighting, child-friendly.
-No text anywhere except the "が" on Gakkun's body on the character.
+No text anywhere except the "が" on Gakkun's body.
 ```
 
 ---
@@ -263,4 +263,4 @@ No text anywhere except the "が" on Gakkun's body on the character.
 2. a と b で、背景・構図・がっくんの位置が同じ。**変わっているのは相手だけ**
 3. b の絵だけを見て、文（「いぬが はしる」など）が言える
 4. 相手の見た目が、アプリの絵と同じ（子どもが「アプリの いぬだ」と気づける）
-5. 文字・数字が入っていない（「が」と、きゃらの（削除）を除く）
+5. 文字・数字が入っていない（「が」とを除く）

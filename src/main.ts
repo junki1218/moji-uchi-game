@@ -1454,7 +1454,7 @@ function stockScreen(): void {
       { class: 'screen print-menu' },
       backButton(printScreen),
       h('h2', {}, 'ストック'),
-      h('p', { class: 'q-note' }, '各20問・A4 縦4枚。おしたら PDF が ひらきます（iPad は 共有 から「"ファイル"に保存」・プリント）。インターネットが いります。'),
+      h('p', { class: 'q-note' }, '20問前後・A4 縦4枚。おしたら PDF が ひらきます（iPad は 共有 から「"ファイル"に保存」・プリント）。インターネットが いります。'),
       h('div', { class: 'stock-list' },
         ...STOCK_CATEGORIES.map(([cat, label]) =>
           h('div', { class: 'stock-row' },

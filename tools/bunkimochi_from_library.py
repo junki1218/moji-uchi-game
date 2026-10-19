@@ -4,11 +4,12 @@
     python tools/sync_images.py   ← そのあと、いつもどおりアプリ用に変換
 
 素材（読むだけ。変更しない）: G:/マイドライブ/04_素材ライブラリ/画像材料/
-  animal school/ ・ 素材/ ・ ClayAnimation/
+  animal school/ ・ ClayAnimation/
 コピー先: .agent_flow/assets/asset_TASK-008_bunkimochi_NN_<きもち>.png（1024 四方）
 台帳 ASSET_MANIFEST.json にも登録する（created_by は library）。
 
 表情は絵を見て選んだ（ヒントの「きもちの絵」は、きもちカテゴリの同じ言葉の絵を使う）。
+bunkimochi_03・11・17 は tools/girl_from_ugoki.py が「きもち」の女の子の絵から作る。19・20 は廃止（2026-10-19）。
 """
 
 from __future__ import annotations
@@ -24,7 +25,6 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 LIB = Path("G:/マイドライブ/04_素材ライブラリ/画像材料")
 ANIMAL = "animal school"
-KD = "素材"
 CLAY = "ClayAnimation"
 ROOT = Path(__file__).resolve().parent.parent
 ASSETS = ROOT / ".agent_flow" / "assets"
@@ -36,7 +36,6 @@ TASK = "TASK-008"
 PICKS = {
     "bunkimochi_01": (ANIMAL, "ウサギ_3_給食.png", "ureshii", "うさぎが うれしい", None),
     "bunkimochi_02": (ANIMAL, "ゾウ_5_肩組み.png", "ureshii", "ぞうが うれしい", None),
-    "bunkimochi_03": (KD, "removed.png", "ureshii", "きゃらが うれしい", None),
     "bunkimochi_04": (CLAY, "idea_girl_light.png", "ureshii", "おんなのこが うれしい", None),
     "bunkimochi_05": (CLAY, "clay_sad_child.png", "kanashii", "おとこのこが かなしい", None),
     "bunkimochi_06": (CLAY, "vacuum_boy_touch.png", "okoru", "おんなのこが おこる", (0.72, 0.45, 0.62)),
@@ -44,16 +43,12 @@ PICKS = {
     "bunkimochi_08": (ANIMAL, "ライオン_2_勉強.png", "komaru", "らいおんが こまる", None),
     "bunkimochi_09": (CLAY, "cord_boy_tangle.png", "komaru", "おとこのこが こまる", None),
     "bunkimochi_10": (CLAY, "cord_girl_tangle.png", "komaru", "おんなのこが こまる", None),
-    "bunkimochi_11": (KD, "removed.png", "komaru", "きゃらが こまる", None),
     "bunkimochi_12": (CLAY, "shock_boy_face.png", "bikkuri", "おとこのこが びっくり", None),
     "bunkimochi_13": (CLAY, "shock_girl_face (1).png", "bikkuri", "おんなのこが びっくり", None),
     "bunkimochi_14": (ANIMAL, "ゴリラ_6_歌う.png", "tanoshii", "ごりらが たのしい", None),
     "bunkimochi_15": (ANIMAL, "ウサギ_6_歌う.png", "tanoshii", "うさぎが たのしい", None),
     "bunkimochi_16": (ANIMAL, "ライオン_6_歌う.png", "tanoshii", "らいおんが たのしい", None),
-    "bunkimochi_17": (KD, "removed.png", "tanoshii", "きゃらが たのしい", None),
     "bunkimochi_18": (ANIMAL, "ゴリラ_2_勉強.png", "nemui", "ごりらが ねむい", None),
-    "bunkimochi_19": (KD, "removed.png", "itai", "みみが いたい", None),
-    "bunkimochi_20": (KD, "removed.png", "itai", "おなかが いたい", None),
 }
 
 

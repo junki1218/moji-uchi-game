@@ -1,6 +1,6 @@
 # 画像生成指示書：文（〇〇が●●）20枚
 
-> **2026-10-04 変更：bun_14〜20 は作らなくてよい。** 素材の絵で代用する（`tools/chara_from_library.py`、TASK-007）。
+> **2026-10-19 変更：bun_14〜20 は作らなくてよい。** 「うごき」の女の子の絵（ugoki_02〜13）で代用する（`tools/girl_from_ugoki.py`、TASK-010）。
 > TASK-006 は **bun_01〜13 の13枚で完了** とする。届いている13枚を `ASSET_MANIFEST.json` に登録し、完了通知を出すこと。
 
 - 宛先: Antigravity（AGY）
