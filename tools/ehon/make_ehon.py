@@ -4,7 +4,10 @@
 
 - 絵: 画像生成で作った pptx（1スライドに絵1枚）から取り出す。または画像ファイルを直接指定
 - 文: JSON に書く（1ページ＝絵1枚＋右の余白の文）
-- 出力: 16:9 の pptx。絵は左に高さいっぱい、右の余白に文。文の「が」は黒地に白い字（アプリの見本と同じ）
+- 出力: 16:9 の pptx。絵は左に高さいっぱい、右の余白に文。文の「が」は黒地に白い字（アプリの見本と同じ）、
+  「は」はピンク地に黒い字（はっちゃんの色）
+- 絵がまだないページは "placeholder" に絵の説明を書くと、説明入りの枠（たたき用）を置く
+- "layout": "full" のページは、絵をスライドいっぱいに置き、文は上に1行（キャラクターシートなど）
 - できた pptx は G: ドライブにコピーし、Google スライドで開いて「ファイル → Google スライドとして保存」で変換する
   （Drive のコネクタでは pptx を Google スライドに変換できないため）
 
@@ -20,7 +23,7 @@ import sys
 from pathlib import Path
 
 from lxml import etree
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
@@ -34,6 +37,9 @@ BG = RGBColor(0xFF, 0xF7, 0xEC)
 INK = RGBColor(0x22, 0x22, 0x22)
 SOUND = RGBColor(0xE0, 0x7A, 0x1F)
 WHITE = RGBColor(0xFF, 0xFF, 0xFF)
+# 格助詞の目印: [が]＝黒地に白い字（がっくん）、[は]＝ピンク地に黒い字（はっちゃん）
+PARTICLES = {"が": ("222222", WHITE), "は": ("F9C9D6", INK)}
+PH_FONT = "C:/Windows/Fonts/BIZ-UDGothicB.ttc"  # 絵の枠の説明の字
 FONT = "Klee One"  # Google スライドで使える教科書体ふうのフォント
 
 # 文の種類 → (大きさ pt, 太字, 色)。Google スライドでは字が少し大きく出るので、1行は6字くらいまでにする
@@ -58,11 +64,11 @@ def set_font(run, size: int, bold: bool, color: RGBColor) -> None:
         el.set("typeface", FONT)
 
 
-def highlight_black(run) -> None:
-    """「が」を黒地にする（白い字と組み合わせて、アプリの黒丸の「が」に寄せる）"""
+def highlight(run, color: str) -> None:
+    """字の後ろに色を敷く（格助詞の目印）"""
     rpr = run._r.get_or_add_rPr()
     hl = etree.SubElement(rpr, qn("a:highlight"))
-    etree.SubElement(hl, qn("a:srgbClr")).set("val", "222222")
+    etree.SubElement(hl, qn("a:srgbClr")).set("val", color)
     fill = rpr.find(qn("a:solidFill"))
     if fill is not None:  # スキーマの順番: solidFill のあとに highlight
         rpr.remove(hl)
@@ -78,6 +84,36 @@ def images_from_pptx(path: Path) -> dict[int, bytes]:
                 out[n] = sh.image.blob
                 break
     return out
+
+
+def placeholder(text: str, header: str = "【え】 まだ ありません") -> bytes:
+    """絵がまだないページの枠（1200×896）。何の絵を入れるかを書いておく"""
+    w, h = 1200, 896
+    im = Image.new("RGB", (w, h), "#efe9df")
+    d = ImageDraw.Draw(im)
+    for x in range(30, w - 30, 28):  # 点線の枠
+        d.line([(x, 30), (x + 14, 30)], fill="#b9ad9c", width=4)
+        d.line([(x, h - 30), (x + 14, h - 30)], fill="#b9ad9c", width=4)
+    for y in range(30, h - 30, 28):
+        d.line([(30, y), (30, y + 14)], fill="#b9ad9c", width=4)
+        d.line([(w - 30, y), (w - 30, y + 14)], fill="#b9ad9c", width=4)
+    f_big = ImageFont.truetype(PH_FONT, 64)
+    f = ImageFont.truetype(PH_FONT, 40)
+    d.text((w / 2, 120), header, font=f_big, fill="#8a7d6b", anchor="mm")
+    # 説明を 22 字ずつ折り返す
+    lines: list[str] = []
+    for para in text.split("\n"):
+        while len(para) > 22:
+            lines.append(para[:22])
+            para = para[22:]
+        lines.append(para)
+    y = 230
+    for line in lines:
+        d.text((90, y), line, font=f, fill="#4a4237")
+        y += 58
+    buf = io.BytesIO()
+    im.save(buf, "PNG")
+    return buf.getvalue()
 
 
 def to_jpeg(data: bytes, crop_ratio: float | None) -> tuple[io.BytesIO, tuple[int, int]]:
@@ -111,7 +147,9 @@ def main() -> None:
     prs.slide_width, prs.slide_height = W, H
     blank = prs.slide_layouts[6]
     for n, page in enumerate(spec["pages"], 1):
-        if "image" in page:
+        if "placeholder" in page:
+            data = placeholder(page["placeholder"], page.get("placeholder_header", "【え】 まだ ありません"))
+        elif "image" in page:
             path = resolve(page["image"])
             if not path.is_file():
                 sys.exit(f"{n}ページ目: 絵が見つからない {path}")
@@ -125,11 +163,18 @@ def main() -> None:
         s = prs.slides.add_slide(blank)
         s.background.fill.solid()
         s.background.fill.fore_color.rgb = BG
-        pw = int(H * iw / ih)  # 絵は高さいっぱい
-        s.shapes.add_picture(buf, 0, 0, pw, H)
-
         pad = Inches(0.15)
-        tb = s.shapes.add_textbox(pw + pad, Inches(0.3), W - pw - pad * 2, H - Inches(0.6))
+        if page.get("layout") == "full":
+            # 絵をスライドいっぱい（文は上に1行）。キャラクターシートなど横長の絵
+            top = Inches(0.8)
+            pw = min(W, int((H - top) * iw / ih))
+            ph = int(pw * ih / iw)
+            s.shapes.add_picture(buf, (W - pw) // 2, top + (H - top - ph) // 2, pw, ph)
+            tb = s.shapes.add_textbox(pad, Inches(0.1), W - pad * 2, top - Inches(0.1))
+        else:
+            pw = int(H * iw / ih)  # 絵は高さいっぱい
+            s.shapes.add_picture(buf, 0, 0, pw, H)
+            tb = s.shapes.add_textbox(pw + pad, Inches(0.3), W - pw - pad * 2, H - Inches(0.6))
         tf = tb.text_frame
         tf.word_wrap = True
         tf.vertical_anchor = MSO_ANCHOR.MIDDLE
@@ -143,14 +188,15 @@ def main() -> None:
                 r.text = " "
                 set_font(r, size, False, INK)
                 continue
-            for part in re.split(r"(\[が\])", text):
+            for part in re.split(r"(\[[がは]\])", text):
                 if not part:
                     continue
                 r = p.add_run()
-                if part == "[が]":
-                    r.text = "が"
-                    set_font(r, size, True, WHITE)
-                    highlight_black(r)
+                if len(part) == 3 and part[1] in PARTICLES:
+                    bg, fg = PARTICLES[part[1]]
+                    r.text = part[1]
+                    set_font(r, size, True, fg)
+                    highlight(r, bg)
                 else:
                     r.text = part
                     set_font(r, size, bold, color)

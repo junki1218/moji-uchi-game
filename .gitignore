@@ -17,3 +17,6 @@ scratch_*.py
 
 # えほんの組み上がり（tools/ehon/make_ehon.py の出力）
 tools/ehon/build/
+
+# キャラクターシートなどの参照画像（正本は Drive「画像材料/moji-uchi-game/がっくん絵本用」）
+tools/ehon/refs/
