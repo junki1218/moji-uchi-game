@@ -14,3 +14,6 @@ desktop.ini
 # Antigravity の作業用スクリプト（手元のパスを含む）はリポジトリに入れない
 scratch_*.py
 
+
+# えほんの組み上がり（tools/ehon/make_ehon.py の出力）
+tools/ehon/build/
