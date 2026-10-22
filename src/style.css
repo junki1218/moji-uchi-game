@@ -1009,3 +1009,8 @@ canvas.pad-ghost { width: 100%; height: 100%; }
 .sample-cell.particle::before { display: none; }
 .pad-sample.particle { background: transparent; padding: 0; border-radius: 0; }
 .ws-particle-badge { width: 100%; height: 100%; }
+
+/* ---------- ワークシート: 印刷の前の選択と、PDF と同じ絵の確認（2026-10-22）---------- */
+.ws-opt { width: min(92vw, 900px); }
+.ws-page-img { width: min(92vw, 210mm); height: auto; background: #fff; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15); }
+.ws-pages.landscape .ws-page-img { width: min(94vw, 297mm); }

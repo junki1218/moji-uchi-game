@@ -3,7 +3,7 @@ import { registerSW } from 'virtual:pwa-register';
 import { CATEGORIES, MAX_CHARS, type Category, type Question } from './questions';
 import { allQuestions, applyImport, attachPhoto, deleteCustom, enabledQuestions, exportJson, isEnabled, parseImport, setEnabled, type ImportPlan } from './bank';
 import { hasPhoto, loadPhotoIndex, photoUrl, removePhoto } from './photos';
-import { savePdf, worksheetPdf } from './worksheet-pdf';
+import { DEFAULT_SHEET, perPage, savePdf, worksheetPages, worksheetPdf, type SheetOptions } from './worksheet-pdf';
 import { clearWritings, deleteWriting, exportWritings, listWritings, MAX_WRITINGS, saveWriting } from './writings';
 import { chars, DAKUON, inScript, SEION, SMALL } from './kana';
 import { loadSettings, saveSettings, VOLUME_LEVEL, type KeySet, type Settings, type Weight } from './settings';
@@ -1406,7 +1406,6 @@ async function writingsScreen(message = ''): Promise<void> {
 // iPad で遊んだあとに鉛筆で書く用。A4 縦に5問。1問＝絵＋見本の行（教科書体）＋書く行（十字の補助線）。
 
 const LAST_ROUND_KEY = 'moji-uchi-game/last-round';
-const WS_PER_PAGE = 5;
 
 /** ワークシート画面の「もどる」の行き先（設定から来たか、プリントから来たか） */
 let worksheetBack: () => void = settingsScreen;
@@ -1474,6 +1473,24 @@ function lastRoundIds(): string[] {
   }
 }
 
+const SHEET_KEY = 'moji-uchi-game/sheet-options';
+
+function loadSheetOptions(): SheetOptions {
+  try {
+    return { ...DEFAULT_SHEET, ...JSON.parse(localStorage.getItem(SHEET_KEY) || '{}') };
+  } catch {
+    return { ...DEFAULT_SHEET };
+  }
+}
+
+function saveSheetOptions(o: SheetOptions): void {
+  try {
+    localStorage.setItem(SHEET_KEY, JSON.stringify(o));
+  } catch {
+    // 覚えられなくても作れる
+  }
+}
+
 function worksheetScreen(selected: string[] = lastRoundIds(), cat?: Category): void {
   stopBgm();
   const all = allQuestions();
@@ -1498,81 +1515,58 @@ function worksheetScreen(selected: string[] = lastRoundIds(), cat?: Category): v
     h('span', { class: 'q-card-word' }, inScript(q.hira, settings.script)));
   });
 
-  const pages = Math.ceil(sel.length / WS_PER_PAGE);
+  // 印刷の前に選ぶ: 種類（みてかく／なぞる）・大きさ（ふつう／おおきい）・マス（十字線／カラーマス）
+  const opts = loadSheetOptions();
+  const pages = Math.ceil(sel.length / perPage(opts));
+  const pick = <K extends keyof SheetOptions>(key: K, label: string, options: [SheetOptions[K], string][]) =>
+    h('div', { class: 'setting-row ws-opt' }, h('span', { class: 'setting-label' }, label),
+      h('div', { class: 'seg' }, ...options.map(([v, text]) =>
+        h('button', {
+          class: `seg-btn ${opts[key] === v ? 'on' : ''}`,
+          onclick: () => { saveSheetOptions({ ...opts, [key]: v }); rerender(sel); },
+        }, text))));
   show(
     h(
       'main',
       { class: 'screen questions worksheet-pick' },
       backButton(worksheetBack, worksheetBack === settingsScreen ? '設定へ' : 'もどる'),
-      h('h2', {}, 'ワークシート（視写）'),
+      h('h2', {}, 'ワークシート（オリジナル）'),
+      pick('kind', 'しゅるい', [['copy', 'みてかく（視写）'], ['trace', 'なぞる']]),
+      pick('size', 'おおきさ', [['normal', 'ふつう（A4たて・5もん）'], ['large', 'おおきい（A4よこ・2もん）']]),
+      pick('grid', 'マス', [['cross', 'じゅうじせん'], ['color', 'カラーマス']]),
       h('div', { class: 'seg toolbar' },
         h('button', { class: 'seg-btn', onclick: () => rerender(lastRoundIds()) }, 'さいごに遊んだ問題'),
         h('button', { class: 'seg-btn', onclick: () => rerender([]) }, 'えらび直す（ぜんぶ外す）'),
-        h('button', { class: 'seg-btn on', disabled: sel.length === 0, onclick: () => worksheetPrint(sel) }, `PDFを作る（${sel.length}問・A4 ${pages}枚）`)),
-      h('p', { class: 'q-note' }, `タップで選ぶ／外す（番号の順に並びます）。A4 縦1枚に${WS_PER_PAGE}問。見本は教科書体、文字は設定の「${settings.script === 'kata' ? 'カタカナ' : 'ひらがな'}」。`),
+        h('button', { class: 'seg-btn on', disabled: sel.length === 0, onclick: () => worksheetPrint(sel) }, `つぎへ：みる・PDFにする（${sel.length}問・A4 ${pages}枚）`)),
+      h('p', { class: 'q-note' }, `タップで選ぶ／外す（番号の順に並びます）。見本は教科書体、文字は設定の「${settings.script === 'kata' ? 'カタカナ' : 'ひらがな'}」。`),
       tabs,
       h('div', { class: 'q-grid' }, ...cards),
     ),
   );
 }
 
-/** 見た目の確認と PDF の保存。iPad は共有シートの「"ファイル"に保存」、パソコンはダウンロード */
+/** 見た目の確認と PDF の保存。確認画面には PDF と同じページの絵を出す。iPad は共有シートの「"ファイル"に保存」 */
 function worksheetPrint(ids: string[]): void {
   const all = allQuestions();
   const qs = ids.map((id) => all.find((q) => q.id === id)).filter((q): q is Question => !!q);
-  const pages: Question[][] = [];
-  for (let i = 0; i < qs.length; i += WS_PER_PAGE) pages.push(qs.slice(i, i + WS_PER_PAGE));
+  const opts = loadSheetOptions();
+  const nPages = Math.ceil(qs.length / perPage(opts));
+  const what = `${opts.kind === 'trace' ? 'なぞる' : 'みてかく'}・${opts.size === 'large' ? 'A4 よこ' : 'A4 たて'} ${nPages}枚・${opts.grid === 'color' ? 'カラーマス' : 'じゅうじせん'}`;
 
-  const sheet = (items: Question[], pageNo: number) => {
-    // マスの大きさは、そのページでいちばん長い言葉に合わせる（最大 16mm）。
-    // 書ける幅 = A4 210mm − 左右の余白 28mm − 絵 34mm − すき間 6mm = 142mm
-    const longest = Math.max(...items.map((q) => chars(q.hira).length));
-    const cell = Math.min(16, Math.floor((142 / longest) * 10) / 10);
-    const rows = items.map((q) => {
-      const cs = chars(inScript(q.hira, settings.script));
-      const pi = particleIndex(q);
-      return h(
-        'section',
-        { class: 'ws-item' },
-        h('div', { class: 'ws-pic' }, questionPicture(q, 'ws-pic-inner')),
-        h('div', { class: 'ws-lines', style: `--ws-cell:${cell}mm` },
-          h('div', { class: 'ws-row ws-sample' }, ...cs.map((c, k) =>
-            k === pi ? h('span', { class: 'ws-cell' }, particleBadge(c, 'particle-badge ws-particle-badge')) : h('span', { class: 'ws-cell' }, c))),
-          h('div', { class: 'ws-row ws-write' }, ...cs.map(() => h('span', { class: 'ws-cell' })))),
-      );
-    });
-    return h(
-      'div',
-      { class: 'ws-page' },
-      h('header', { class: 'ws-head' },
-        h('div', { class: 'ws-title' }, 'がっくんの こくご ワークシート'),
-        h('div', { class: 'ws-name' }, 'なまえ', h('span', { class: 'ws-blank' })),
-        h('div', { class: 'ws-date' }, h('span', { class: 'ws-blank short' }), 'がつ', h('span', { class: 'ws-blank short' }), 'にち')),
-      h('p', { class: 'ws-lead' }, 'みて かこう'),
-      ...rows,
-      pages.length > 1 && h('footer', { class: 'ws-foot' }, `${pageNo} / ${pages.length}`),
-    );
-  };
-
-  const note = h('span', { class: 'ws-bar-note' }, `A4 縦 ${pages.length}枚。「PDFを保存」→ 「"ファイル"に保存」で iPad に保存`);
+  const note = h('span', { class: 'ws-bar-note' }, `${what}。ページを作っています…`);
+  const pagesBox = h('div', { class: `ws-pages ${opts.size === 'large' ? 'landscape' : ''}` });
+  let canvases: HTMLCanvasElement[] = [];
   const doPdf: HTMLButtonElement = h('button', {
     class: 'mid-btn primary',
+    disabled: true,
     onclick: async () => {
       doPdf.disabled = true;
       note.textContent = 'PDFを作っています…';
       try {
-        const items = qs.map((q) => ({
-          chars: chars(inScript(q.hira, settings.script)),
-          particle: particleIndex(q),
-          imageUrl: hasPhoto(q.id) ? null : q.builtin ? imageUrl(q.id) : null,
-          photoId: hasPhoto(q.id) ? q.id : null,
-          emoji: q.emoji,
-        }));
-        // 先生が付けた写真はその URL を使う
-        for (const it of items) if (it.photoId) it.imageUrl = await photoUrl(it.photoId);
-        const blob = await worksheetPdf(items);
+        const blob = await worksheetPdf(canvases, opts);
         const d = new Date();
-        const name = `moji-worksheet-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}.pdf`;
+        const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+        const name = `gakkun-${opts.kind === 'trace' ? 'nazori' : 'worksheet'}${opts.size === 'large' ? '-large' : ''}-${ymd}.pdf`;
         const how = await savePdf(blob, name);
         note.textContent = how === 'cancelled' ? '保存をやめました' : how === 'shared' ? 'PDFを渡しました（「"ファイル"に保存」を選ぶと iPad に残ります）' : `PDFを保存しました（${name}）`;
       } catch {
@@ -1590,9 +1584,26 @@ function worksheetPrint(ids: string[]): void {
         h('button', { class: 'mid-btn secondary', onclick: () => worksheetScreen(ids) }, 'もどる'),
         note,
         doPdf),
-      h('div', { class: 'ws-pages' }, ...pages.map((p, i) => sheet(p, i + 1))),
+      pagesBox,
     ),
   );
+
+  void (async () => {
+    const items = await Promise.all(qs.map(async (q) => ({
+      chars: chars(inScript(q.hira, settings.script)),
+      particle: particleIndex(q),
+      // 先生が付けた写真はその URL を使う
+      imageUrl: hasPhoto(q.id) ? await photoUrl(q.id) : q.builtin ? imageUrl(q.id) : null,
+      emoji: q.emoji,
+    })));
+    canvases = await worksheetPages(items, opts);
+    pagesBox.replaceChildren(...canvases.map((c) => {
+      c.className = 'ws-page-img';
+      return c;
+    }));
+    note.textContent = `${what}。よければ「PDFを保存」`;
+    doPdf.disabled = false;
+  })().catch(() => { note.textContent = 'ページを作れませんでした。もどって もう一度ためしてください'; });
 }
 
 // 教科書体の字は、フォントによってマスの中で少し下に出る。実際の字の形を測って、上下の真ん中にそろえる
