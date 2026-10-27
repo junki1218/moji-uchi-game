@@ -430,7 +430,8 @@ function speakAndWait(text: string, l: SpeechLang = 'ja'): Promise<void> {
 }
 
 /** 答えのマスを1つずつ大きくして読み上げ、元に戻す。途中で画面を離れたら false */
-async function readOut(cells: HTMLElement[], answer: string[], pIdx: number | null = null, en = false): Promise<boolean> {
+/** whole: 1文字ずつ読んだあとに、もう一度読む言葉（でんしゃ ……で・ん・し・ちいさい や…… でんしゃ） */
+async function readOut(cells: HTMLElement[], answer: string[], pIdx: number | null = null, en = false, whole = ''): Promise<boolean> {
   duckBgm(true);
   try {
     for (let i = 0; i < cells.length; i++) {
@@ -444,11 +445,11 @@ async function readOut(cells: HTMLElement[], answer: string[], pIdx: number | nu
       cell.classList.remove('readout');
       await wait(READ_GAP_MS);
     }
-    // 英語は、1文字ずつ読んだあとに単語としてもう一度読む（S, H, I, P …… ship。2026-10-27）
-    if (en && answer.length > 1 && cells.every((c) => c.isConnected)) {
+    // 1文字ずつ読んだあとに、言葉としてもう一度読む（英語 S, H, I, P …… ship／日本語 で・ん・し・ちいさい や …… でんしゃ。2026-10-27）
+    if (whole && answer.length > 1 && cells.every((c) => c.isConnected)) {
       await wait(READ_GAP_MS);
       cells.forEach((c) => c.classList.add('readout-word'));
-      await speakAndWait(answer.join(''), 'en');
+      await speakAndWait(whole, en ? 'en' : 'ja');
       await wait(READ_PAUSE_MS);
       cells.forEach((c) => c.classList.remove('readout-word'));
     }
@@ -499,17 +500,16 @@ function questionScreen(round: Round, afterMini = false): void {
       : null;
 
   const speaker = h('button', { class: 'speaker-btn', 'aria-label': 'よみあげ', onclick: say }, '🔊');
-  // 英語は 🔊 を絵の左へ（右の列が縦に長くなり、iPad で上の帯やキーボードにかぶったため。2026-10-27）
+  // 🔊 は絵の左（右の列が縦に長くなり、iPad で上の帯やキーボードにかぶったため。2026-10-27 英語、同日 日本語も）
   const side = h(
     'div',
     { class: 'q-side' },
-    en ? null : speaker,
     sample,
     // 英語: カタカナの読み方を、いつも単語の下に
     en && q.kana ? h('div', { class: 'en-kana' }, q.kana) : null,
   );
   const pic = questionPicture(q, 'q-pic');
-  const top = h('div', { class: `q-top ${q.type === 'sentence' ? 'sentence' : ''}` }, en ? speaker : null, pic, side);
+  const top = h('div', { class: `q-top ${q.type === 'sentence' ? 'sentence' : ''}` }, speaker, pic, side);
 
   // 答えができたら、まず1文字ずつ大きくして読み上げる（字と音を結びつける）→ 花丸
   let finishing = false;
@@ -519,7 +519,7 @@ function questionScreen(round: Round, afterMini = false): void {
     const screen = app.querySelector<HTMLElement>('.screen.game');
     screen?.classList.add('reading'); // 読み上げ中は入力を受け付けない（やめる は押せる）
     const cells = [...(screen?.querySelectorAll<HTMLElement>('.answer .answer-cell, .hw-cells .hw-cell') ?? [])];
-    void readOut(cells, answer, pIdx, en).then((ok) => { if (ok) celebrate(); });
+    void readOut(cells, answer, pIdx, en, en ? q.hira : spokenText(q)).then((ok) => { if (ok) celebrate(); });
   };
   const celebrate = () => {
     const overlay = h('div', { class: 'overlay clear' }, hanamaru('pop'));
