@@ -667,6 +667,9 @@ const LINE_GUIDE: Record<Weight, number> = { thin: 0.045, normal: 0.065, bold: 0
 const LINE_TOLERANCE = LINE_PX * 0.045; // 線のふちから、これくらいまでは「なぞれている」
 const HINT_RED = 'rgba(229, 72, 77, 0.45)';
 const LINE_HINT_HOLD_MS = 700; // 問題を出したときのヒント: 書き終えてから灰色にもどすまで
+/** ヒントの先っぽの がっくん: 大きさ（見本の線の太さの何倍か）と、見え方（透過度70% → 不透明度0.3） */
+const LINE_HEAD_SIZE = 2.6;
+const LINE_HEAD_ALPHA = 0.3;
 
 function lineScreen(round: Round): void {
   playBgm('bgm2_question');
@@ -757,6 +760,8 @@ function lineScreen(round: Round): void {
 
   // ヒント: うすい赤で一筆書きの動き。長い形ほどゆっくり（2.5〜7秒）
   const hg = hintC.getContext('2d')!;
+  const head = new Image();
+  head.src = imageUrl('gakkun_head') ?? '';
   let anim = 0;
   const cum: number[] = [0];
   for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
@@ -782,12 +787,20 @@ function lineScreen(round: Round): void {
       hg.lineWidth = gw * 0.7;
       tracePath(hg, pts, 0, 0, S, n + 1);
       hg.stroke();
-      // 先っぽの丸（いまどこを書いているか）
+      // 先っぽ（いまどこを書いているか）: がっくん（2026-10-27）。絵がまだ読めていなければ赤い丸
       const [hx, hy] = pts[n] as Pt;
-      hg.fillStyle = 'rgba(229, 72, 77, 0.8)';
-      hg.beginPath();
-      hg.arc(hx * S, hy * S, gw * 0.6, 0, Math.PI * 2);
-      hg.fill();
+      if (head.complete && head.naturalWidth) {
+        const d = gw * LINE_HEAD_SIZE;
+        hg.save();
+        hg.globalAlpha = LINE_HEAD_ALPHA;
+        hg.drawImage(head, hx * S - d / 2, hy * S - d / 2, d, d);
+        hg.restore();
+      } else {
+        hg.fillStyle = 'rgba(229, 72, 77, 0.8)';
+        hg.beginPath();
+        hg.arc(hx * S, hy * S, gw * 0.6, 0, Math.PI * 2);
+        hg.fill();
+      }
       if (f < 1) anim = requestAnimationFrame(frame);
       else if (clearAfter) clearTimer = window.setTimeout(() => hg.clearRect(0, 0, S, S), LINE_HINT_HOLD_MS);
     };
