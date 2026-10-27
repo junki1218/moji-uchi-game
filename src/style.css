@@ -1014,3 +1014,33 @@ canvas.pad-ghost { width: 100%; height: 100%; }
 .ws-opt { width: min(92vw, 900px); }
 .ws-page-img { width: min(92vw, 210mm); height: auto; background: #fff; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15); }
 .ws-pages.landscape .ws-page-img { width: min(94vw, 297mm); }
+
+/* ---------- えほんを選ぶ（2026-10-27）---------- */
+.ehon-pick { justify-content: center; gap: 5vh; }
+.ehon-pick h2 { margin: 0; font-size: min(5vw, 7vh); color: var(--primary); }
+.ehon-books { display: flex; gap: 5vw; flex-wrap: wrap; justify-content: center; }
+.ehon-book {
+  width: min(34vw, 48vh); padding: 4vh 2vw 3vh;
+  display: flex; flex-direction: column; align-items: center; gap: 2vh;
+  background: var(--card); border: 4px solid var(--line); border-radius: 28px;
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.08);
+}
+.ehon-book:active { transform: scale(0.95) translateY(3px); box-shadow: 0 4px 0 rgba(0, 0, 0, 0.08); }
+.ehon-no {
+  font-size: min(3vw, 4.2vh); font-weight: 700; color: #fff; background: var(--primary);
+  border-radius: 999px; padding: 0.1em 0.8em;
+}
+.ehon-marks { display: flex; gap: 1.5vw; }
+.ehon-mark {
+  width: min(12vw, 17vh); height: min(12vw, 17vh); border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: var(--kyokasho); font-weight: 700; font-size: min(7vw, 10vh); line-height: 1;
+}
+.ehon-mark.mark-ga { background: #222; color: #fff; }
+.ehon-mark.mark-ha { background: #fff; color: #222; border: 4px solid #e9dfd2; box-shadow: inset 0 0 0 2px #fff; }
+.ehon-title { font-size: min(3.2vw, 4.6vh); font-weight: 700; text-align: center; word-break: keep-all; overflow-wrap: anywhere; }
+@media (prefers-reduced-motion: no-preference) {
+  .ehon-book { animation: card-in 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) backwards; }
+  .ehon-book:nth-child(2) { animation-delay: 0.1s; }
+  .ehon-mark { animation: float 3.2s ease-in-out infinite; }
+}

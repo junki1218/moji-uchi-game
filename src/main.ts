@@ -166,21 +166,55 @@ function startScreen(): void {
   }
 }
 
-// ------------------------------------------------------------ えほん（くろまる がっくん）
+// ------------------------------------------------------------ えほん（がっくんの えほん）
 // Google スライドの絵本を、アプリの中でそのままスライドショーで見せる（2026-10-05）。
 // 発表用の埋め込みプレーヤー（/embed）を全画面で出す。ネットが必要。
 // スライドは「リンクを知っている全員が閲覧可」にしておく（iPad は Google にログインしていないため）。
+// 2026-10-27: 本を選べるように（1 くろまる がっくん／2 がっくんと はっちゃん）。
+//   本を足すときは EHON_BOOKS に1行足す（id は Google スライドの URL の /d/ と /edit の間）
 
-const EHON_SLIDES_ID = '1HCh2Wph8ASZyXvOPRZkWTAEZGIR5-iPDqGPenowOpWs';
-const EHON_URL = `https://docs.google.com/presentation/d/${EHON_SLIDES_ID}/embed?start=false&loop=false&delayms=60000`;
+interface EhonBook {
+  no: number;
+  title: string;
+  /** Google スライドの ID */
+  id: string;
+  /** 表紙の印（格助詞）。が＝がっくん（黒い丸）、は＝はっちゃん（白い丸） */
+  marks: ('が' | 'は')[];
+}
 
+const EHON_BOOKS: EhonBook[] = [
+  { no: 1, title: 'くろまる がっくん', id: '1HCh2Wph8ASZyXvOPRZkWTAEZGIR5-iPDqGPenowOpWs', marks: ['が'] },
+  { no: 2, title: 'がっくんと はっちゃん', id: '1z3vt6AEqnvu0PeymGuCSesbLZAbRlReNBvSJg1gBHT8', marks: ['が', 'は'] },
+];
+
+const ehonUrl = (b: EhonBook) => `https://docs.google.com/presentation/d/${b.id}/embed?start=false&loop=false&delayms=60000`;
+
+/** 本を選ぶ */
 function ehonScreen(): void {
   stopBgm();
   stopSpeech();
+  show(
+    h(
+      'main',
+      { class: 'screen ehon-pick' },
+      backButton(startScreen),
+      h('h2', {}, letters('えほん', 'kt-wave')),
+      h('div', { class: 'ehon-books' },
+        ...EHON_BOOKS.map((b) =>
+          h('button', { class: 'ehon-book', onclick: () => ehonView(b) },
+            h('span', { class: 'ehon-no' }, String(b.no)),
+            h('span', { class: 'ehon-marks' }, ...b.marks.map((m) => h('span', { class: `ehon-mark mark-${m === 'が' ? 'ga' : 'ha'}` }, m))),
+            h('span', { class: 'ehon-title' }, b.title)))),
+    ),
+  );
+}
+
+/** えらんだ本をスライドショーで見せる */
+function ehonView(b: EhonBook): void {
   const body = navigator.onLine
-    ? h('iframe', { class: 'ehon-frame', src: EHON_URL, allowfullscreen: 'true', title: 'くろまる がっくん' })
+    ? h('iframe', { class: 'ehon-frame', src: ehonUrl(b), allowfullscreen: 'true', title: b.title })
     : h('p', { class: 'ehon-offline' }, 'えほんは インターネットに つないで みてね');
-  show(h('main', { class: 'screen ehon-screen' }, backButton(startScreen), body));
+  show(h('main', { class: 'screen ehon-screen' }, backButton(ehonScreen), body));
 }
 
 // ------------------------------------------------------------ カテゴリ
