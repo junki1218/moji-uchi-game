@@ -277,7 +277,7 @@ function langScreen(): void {
         h('button', { class: 'lang-btn en', onclick: () => choose('en') },
           h('span', { class: 'lang-sample' }, settings.letterCase === 'upper' ? 'ABC' : 'abc'),
           h('span', { class: 'lang-label' }, letters('えいご', 'kt-pop'))),
-        h('button', { class: 'lang-btn line', onclick: () => choose('line') },
+        h('button', { class: 'lang-btn line', disabled: !LINE_QUESTIONS.some((q) => isEnabled(q.id)), onclick: () => choose('line') },
           h('span', { class: 'lang-sample line-sample' }, shapeThumb(LINE_SHAPES[6].pts)),
           h('span', { class: 'lang-label' }, letters('せんの れんしゅう', 'kt-pop')))),
     ),
@@ -306,7 +306,7 @@ function categoryScreen(): void {
         { class: 'category-grid' },
         ...cats.map((c) => {
           // 出題する問題が1つもないカテゴリは押せない
-          const empty = (lang === 'en' ? enQuestions(c.id) : enabledQuestions(c.id)).length === 0;
+          const empty = (lang === 'en' ? enQuestions(c.id).filter((q) => isEnabled(q.id)) : enabledQuestions(c.id)).length === 0;
           return h(
             'button',
             { class: `category-btn ${empty ? 'disabled' : ''}`, disabled: empty, onclick: () => startRound(c.id) },
@@ -335,7 +335,7 @@ interface Round {
 }
 
 function startRound(cat: Category): void {
-  const pool = lang === 'en' ? enQuestions(cat) : enabledQuestions(cat);
+  const pool = lang === 'en' ? enQuestions(cat).filter((q) => isEnabled(q.id)) : enabledQuestions(cat);
   const round: Round = { questions: applyParticles(shuffle(pool).slice(0, ROUND_SIZE), true), index: 0 };
   try {
     localStorage.setItem(LAST_ROUND_KEY, JSON.stringify(round.questions.map((q) => q.id)));
@@ -361,7 +361,8 @@ function applyParticles(qs: Question[], random = false): Question[] {
 
 /** せんの れんしゅう: 20この形から10こ、やさしい順に */
 function startLineRound(): void {
-  const picked = shuffle(LINE_QUESTIONS).slice(0, settings.lineCount).sort((a, b) => a.id.localeCompare(b.id));
+  const pool = LINE_QUESTIONS.filter((q) => isEnabled(q.id));
+  const picked = shuffle(pool.length ? pool : LINE_QUESTIONS).slice(0, settings.lineCount).sort((a, b) => a.id.localeCompare(b.id));
   const round: Round = { questions: picked, index: 0 };
   try {
     localStorage.setItem(LAST_ROUND_KEY, JSON.stringify(picked.map((q) => q.id)));
@@ -859,7 +860,7 @@ function openSettingsModal(round: Round, inMini = false): void {
   box.append(closeBtn, ...pinPad(() => {
     const q = round.questions[round.index];
     const tab: SettingTab = q.category === 'line' ? 'line' : q.lang === 'en' ? 'en' : 'ja';
-    box.replaceChildren(closeBtn, h('h2', {}, '設定（先生用）'), settingPanel([], tab),
+    box.replaceChildren(closeBtn, h('h2', {}, '設定（先生用）'), settingPanel({}, tab),
       h('p', { class: 'q-note' }, '「とじる」で、いまの問題を新しい設定で出し直します。'));
   }));
   app.append(overlay);
@@ -1619,16 +1620,16 @@ let settingTab: SettingTab = 'common';
 
 /**
  * 設定のタブと中身（設定画面と、問題中の設定モーダルで共通）。
- * commonExtra は「共通」タブの下に足す行（設定画面だけ: 問題の管理・暗証番号など）
+ * extra はタブの下に足す行（設定画面だけ: 出題する問題・暗証番号など）
  */
-function settingPanel(commonExtra: HTMLElement[] = [], first?: SettingTab): HTMLElement {
+function settingPanel(extra: Partial<Record<SettingTab, HTMLElement[]>> = {}, first?: SettingTab): HTMLElement {
   if (first) settingTab = first;
   const rows = settingRows();
   const body = h('div', { class: 'setting-body' });
   const tabs = h('div', { class: 'seg setting-tabs' });
   const paint = () => {
     Array.from(tabs.children).forEach((b, i) => b.classList.toggle('on', SETTING_TABS[i][0] === settingTab));
-    body.replaceChildren(...rows[settingTab], ...(settingTab === 'common' ? commonExtra : []));
+    body.replaceChildren(...rows[settingTab], ...(extra[settingTab] ?? []));
   };
   for (const [id, label] of SETTING_TABS) {
     tabs.append(h('button', { class: 'seg-btn', onclick: () => { settingTab = id; paint(); } }, label));
@@ -1725,21 +1726,28 @@ function settingsScreen(): void {
     },
   }, '変更');
 
+  // 出題する問題は、タブごと（ひらがな カタカナ／アルファベット／線なぞり）に選ぶ（2026-10-27）
+  const qRow = (group: QGroup, text: string) =>
+    h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, '出題する問題'),
+      h('div', { class: 'seg' }, h('button', { class: 'seg-btn', onclick: () => questionsScreen(group === 'line' ? 'line' : 'mono', '', group) }, text)));
   show(
     h(
       'main',
       { class: 'screen settings' },
       backButton(startScreen),
       h('h2', {}, '設定（先生用）'),
-      settingPanel([
-        h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'もんだい'),
-          h('div', { class: 'seg' }, h('button', { class: 'seg-btn', onclick: () => questionsScreen('mono') }, '出題する問題を選ぶ・読み込む'))),
+      settingPanel({
+        ja: [qRow('ja', '選ぶ・写真・JSONの読み込み')],
+        en: [qRow('en', '選ぶ（もの・うごき・アルファベット）')],
+        line: [qRow('line', '選ぶ（20この形）')],
+        common: [
         h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'てがきのきろく'),
           h('div', { class: 'seg' }, h('button', { class: 'seg-btn', onclick: () => void writingsScreen() }, '見る・書き出す'))),
         h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'ワークシート'),
           h('div', { class: 'seg' }, h('button', { class: 'seg-btn', onclick: () => { worksheetBack = settingsScreen; worksheetScreen(); } }, '作る・印刷する'))),
         h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, '暗証番号'), h('div', { class: 'seg' }, pinInput, pinSave, pinMsg)),
-      ]),
+        ],
+      }),
     ),
   );
 }
@@ -1767,19 +1775,34 @@ function minigameKindsRow(): HTMLElement {
 
 // ------------------------------------------------------------ 出題する問題（先生用）
 
-function questionsScreen(cat: Category, message = ''): void {
-  stopBgm();
-  const rerender = (msg = '') => questionsScreen(cat, msg);
-  const list = allQuestions(cat);
-  const onCount = list.filter((q) => isEnabled(q.id)).length;
+/** 出題する問題の画面のまとまり（設定のタブと同じ） */
+type QGroup = 'ja' | 'en' | 'line';
 
+function groupQuestions(group: QGroup, cat: Category): Question[] {
+  if (group === 'en') return enQuestions(cat);
+  if (group === 'line') return LINE_QUESTIONS;
+  return allQuestions(cat);
+}
+
+/**
+ * 出題する問題を選ぶ（先生用）。2026-10-27: 英語・線なぞり も選べるように。
+ * 写真・JSON の読み込み／書き出し・けす は日本語だけ（英語の絵は日本語の問題の絵・写真を使う）
+ */
+function questionsScreen(cat: Category, message = '', group: QGroup = 'ja'): void {
+  stopBgm();
+  const rerender = (msg = '') => questionsScreen(cat, msg, group);
+  const list = groupQuestions(group, cat);
+  const onCount = list.filter((q) => isEnabled(q.id)).length;
+  const ja = group === 'ja';
+
+  const cats = group === 'en' ? enCategories() : group === 'line' ? [] : CATEGORIES;
   const tabs = h(
     'div',
     { class: 'seg' },
-    ...CATEGORIES.map((c) => {
-      const all = allQuestions(c.id);
+    ...cats.map((c) => {
+      const all = groupQuestions(group, c.id);
       const on = all.filter((q) => isEnabled(q.id)).length;
-      return h('button', { class: `seg-btn ${c.id === cat ? 'on' : ''}`, onclick: () => questionsScreen(c.id) }, `${c.label}  ${on}/${all.length}`);
+      return h('button', { class: `seg-btn ${c.id === cat ? 'on' : ''}`, onclick: () => questionsScreen(c.id, '', group) }, `${c.label}  ${on}/${all.length}`);
     }),
   );
 
@@ -1831,8 +1854,9 @@ function questionsScreen(cat: Category, message = ''): void {
       { class: `q-card ${on ? 'on' : 'off'}`, role: 'button', 'aria-pressed': String(on), onclick: () => { setEnabled([q.id], !on); rerender(); } },
       h('span', { class: 'q-card-mark' }, on ? '✓' : ''),
       questionPicture(q, 'q-card-pic'),
-      h('span', { class: 'q-card-word' }, q.hira),
-      h(
+      h('span', { class: 'q-card-word' }, ja ? q.hira : dispQ(q, q.hira)),
+      q.kana ? h('span', { class: 'q-card-kana' }, q.kana) : null,
+      ja && h(
         'div',
         { class: 'q-card-tools' },
         photoInput,
@@ -1850,21 +1874,23 @@ function questionsScreen(cat: Category, message = ''): void {
     h(
       'main',
       { class: 'screen questions' },
-      backButton(settingsScreen, '設定へ'),
-      h('h2', {}, '出題する問題'),
+      backButton(() => { settingTab = group; settingsScreen(); }, '設定へ'),
+      h('h2', {}, `出題する問題（${group === 'en' ? 'アルファベット' : group === 'line' ? '線なぞり' : 'ひらがな カタカナ'}）`),
       tabs,
       h(
         'div',
         { class: 'seg toolbar' },
         h('button', { class: 'seg-btn', onclick: () => { setEnabled(list.map((q) => q.id), true); rerender(); } }, 'ぜんぶ ON'),
         h('button', { class: 'seg-btn', onclick: () => { setEnabled(list.map((q) => q.id), false); rerender(); } }, 'ぜんぶ OFF'),
-        fileInput,
-        h('button', { class: 'seg-btn', onclick: () => fileInput.click() }, 'JSONを読み込む'),
-        exportBtn,
+        ja && fileInput,
+        ja && h('button', { class: 'seg-btn', onclick: () => fileInput.click() }, 'JSONを読み込む'),
+        ja && exportBtn,
       ),
       h('p', { class: 'q-note' },
-        message || `タップで ON/OFF。ON の問題から1回に最大10問を出します（いま ${onCount}問）。単語は${MAX_CHARS}文字まで。`),
-      onCount === 0 && h('p', { class: 'q-note warn' }, 'このカテゴリは ON の問題がないので、子どもの画面で選べません'),
+        message || (group === 'line'
+          ? `タップで ON/OFF。ON の形から、設定の「1回の数」だけ やさしい順に出します（いま ${onCount}こ）。`
+          : `タップで ON/OFF。ON の問題から1回に最大10問を出します（いま ${onCount}問）。${ja ? `単語は${MAX_CHARS}文字まで。` : '英語の絵・写真は「ひらがな カタカナ」の同じ絵の問題で変えます。'}`)),
+      onCount === 0 && h('p', { class: 'q-note warn' }, group === 'line' ? 'ON の形がないので、「せんの れんしゅう」は押せません' : 'このカテゴリは ON の問題がないので、子どもの画面で選べません'),
       h('div', { class: 'q-grid' }, ...cards),
     ),
   );
