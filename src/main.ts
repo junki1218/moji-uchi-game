@@ -12,6 +12,7 @@ import { currentEnglishVoice, englishVoices, setEnglishVoice, speak, stopSpeech,
 import { MINIGAMES, runMinigame, type MiniQuestion, type MinigameKind } from './minigames';
 import { letters } from './kinetic';
 import { drawEnGlyph, drawEnLines, enLines, fillCentered } from './glyph';
+import { LINE_QUESTIONS, LINE_SHAPES, lineShape, pathLength, shapeThumb, tracePath, type Pt } from './lines';
 import { ALPHABET_QUESTIONS, ALPHABET_ROWS, EN_CATEGORIES, EN_QUESTIONS, enQuestions, isAlphabet, letterName } from './english';
 
 // 新しい版が届いたら、ゲームの途中ではなくスタート画面に戻ったときに読み込み直す
@@ -49,7 +50,8 @@ const app = document.getElementById('app')!;
 let settings = loadSettings();
 
 // 英語版（2026-10-27）。「はじめる」のあとで ひらがな・カタカナ／えいご を選ぶ
-type Lang = 'ja' | 'en';
+/** line＝せんの れんしゅう（2026-10-27） */
+type Lang = 'ja' | 'en' | 'line';
 let lang: Lang = 'ja';
 
 /** 字の見せ方: 日本語はひらがな／カタカナの設定、英語は小文字／大文字の設定 */
@@ -116,6 +118,10 @@ const emoji = (e: string) => () => h('span', { class: 'emoji' }, e);
 /** 問題の絵。先生が付けた写真 → 最初からの絵（src/images/{id}.webp）→ 絵文字 の順に使う */
 function questionPicture(q: Question, cls = ''): HTMLElement {
   if (isAlphabet(q)) return abcPicture(q, cls);
+  if (q.category === 'line') {
+    const s = lineShape(q.id);
+    return h('div', { class: `picture ${cls} line-pic` }, s ? shapeThumb(s.pts) : null);
+  }
   const pid = q.img ?? q.id;
   if (hasPhoto(pid)) {
     const box = h('div', { class: `picture ${cls}` });
@@ -255,7 +261,9 @@ function langScreen(): void {
     lang = l;
     // 英語の字（Andika）を先に読み込んでおく（キャンバスに描く字が代わりのフォントにならないように）
     if (l === 'en') void document.fonts?.load(`700 40px Andika`).catch(() => undefined);
-    categoryScreen();
+    // せんの れんしゅう はカテゴリなし。すぐ始める
+    if (l === 'line') startLineRound();
+    else categoryScreen();
   };
   show(
     h(
@@ -268,7 +276,10 @@ function langScreen(): void {
           h('span', { class: 'lang-label' }, letters('ひらがな カタカナ', 'kt-pop'))),
         h('button', { class: 'lang-btn en', onclick: () => choose('en') },
           h('span', { class: 'lang-sample' }, settings.letterCase === 'upper' ? 'ABC' : 'abc'),
-          h('span', { class: 'lang-label' }, letters('えいご', 'kt-pop')))),
+          h('span', { class: 'lang-label' }, letters('えいご', 'kt-pop'))),
+        h('button', { class: 'lang-btn line', onclick: () => choose('line') },
+          h('span', { class: 'lang-sample line-sample' }, shapeThumb(LINE_SHAPES[6].pts)),
+          h('span', { class: 'lang-label' }, letters('せんの れんしゅう', 'kt-pop')))),
     ),
   );
 }
@@ -346,6 +357,18 @@ function applyParticles(qs: Question[], random = false): Question[] {
     const p: Particle = settings.particleMode === 'ha' ? 'は' : settings.particleMode === 'mix' ? (k++ % 2 ? 'は' : 'が') : 'が';
     return withParticle(q, p);
   });
+}
+
+/** せんの れんしゅう: 20この形から10こ、やさしい順に */
+function startLineRound(): void {
+  const picked = shuffle(LINE_QUESTIONS).slice(0, ROUND_SIZE).sort((a, b) => a.id.localeCompare(b.id));
+  const round: Round = { questions: picked, index: 0 };
+  try {
+    localStorage.setItem(LAST_ROUND_KEY, JSON.stringify(picked.map((q) => q.id)));
+  } catch {
+    // 覚えられなくても遊べる
+  }
+  questionScreen(round);
 }
 
 function progress(round: Round): HTMLElement {
@@ -438,6 +461,11 @@ async function readOut(cells: HTMLElement[], answer: string[], pIdx: number | nu
 function questionScreen(round: Round, afterMini = false): void {
   // 英語版: ミニゲームの前に、まず「いぬ は dog」を見せて読む
   const q0 = round.questions[round.index];
+  // せんの れんしゅう は別の画面（ミニゲームなし）
+  if (q0.category === 'line') {
+    lineScreen(round);
+    return;
+  }
   if (q0.lang === 'en' && !isAlphabet(q0) && round.introAt !== round.index) {
     introScreen(round);
     return;
@@ -626,6 +654,170 @@ function linedLetter(ch: string): HTMLCanvasElement {
   draw();
   void document.fonts?.load(`700 40px Andika`).then(draw).catch(() => undefined);
   return c;
+}
+
+// ------------------------------------------------------------ せんの れんしゅう（2026-10-27）
+// 大きな四角に うすい灰色の形。指でなぞる（黒い線）。線の上を書いているあいだはキラキラ星と音。
+// ヒント: うすい赤の線が、一筆書きの動きでゆっくり進む。もう一度押すと、赤を消してから はじめから
+
+const LINE_PX = 600;
+/** 見本の線の太さ（四角の一辺に対する割合。設定「なぞりの見本の太さ」） */
+const LINE_GUIDE: Record<Weight, number> = { thin: 0.045, normal: 0.065, bold: 0.09 };
+const LINE_TOLERANCE = LINE_PX * 0.045; // 線のふちから、これくらいまでは「なぞれている」
+const HINT_RED = 'rgba(229, 72, 77, 0.45)';
+
+function lineScreen(round: Round): void {
+  playBgm('bgm2_question');
+  const q = round.questions[round.index];
+  const shape = lineShape(q.id)!;
+  const pts = shape.pts;
+  const S = LINE_PX;
+  const gw = S * LINE_GUIDE[settings.traceWeight];
+  const canvas = (cls: string) => h('canvas', { class: cls, width: String(S), height: String(S) });
+  const guide = canvas('line-layer');
+  const hintC = canvas('line-layer');
+  const ink = canvas('line-layer line-ink');
+
+  // 見本: うすい灰色の形と、書きはじめの緑の点
+  const gg = guide.getContext('2d')!;
+  gg.lineCap = 'round';
+  gg.lineJoin = 'round';
+  gg.strokeStyle = '#d9d2c7';
+  gg.lineWidth = gw;
+  tracePath(gg, pts, 0, 0, S);
+  gg.stroke();
+  gg.fillStyle = '#4caf50';
+  gg.beginPath();
+  gg.arc(pts[0][0] * S, pts[0][1] * S, gw * 0.75, 0, Math.PI * 2);
+  gg.fill();
+
+  // なぞりの当たり判定
+  const mask = (() => {
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const g = c.getContext('2d', { willReadFrequently: true })!;
+    g.lineCap = 'round';
+    g.lineJoin = 'round';
+    g.lineWidth = gw + LINE_TOLERANCE * 2;
+    tracePath(g, pts, 0, 0, S);
+    g.stroke();
+    const d = g.getImageData(0, 0, S, S).data;
+    const a = new Uint8ClampedArray(S * S);
+    for (let k = 0; k < a.length; k++) a[k] = d[k * 4 + 3];
+    return a;
+  })();
+
+  // 書く（黒い線）
+  const ctx = ink.getContext('2d')!;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#2B2B2B';
+  ctx.lineWidth = S * PEN_WIDTH[settings.penWidth];
+  const stage = h('div', { class: 'line-stage' }, guide, hintC, ink);
+  let drawing = false;
+  let lastStar = 0;
+  const point = (e: PointerEvent) => {
+    const r = ink.getBoundingClientRect();
+    return [((e.clientX - r.left) / r.width) * S, ((e.clientY - r.top) / r.height) * S] as const;
+  };
+  const sparkle = (e: PointerEvent, x: number, y: number) => {
+    const px = Math.round(x);
+    const py = Math.round(y);
+    if (px < 0 || py < 0 || px >= S || py >= S || mask[py * S + px] < 128) return;
+    const now = performance.now();
+    if (now - lastStar < 45) return;
+    lastStar = now;
+    const r = stage.getBoundingClientRect();
+    sparkleAt(stage, e.clientX - r.left, e.clientY - r.top);
+    sfx('sparkle', 0.6, undefined, 110);
+  };
+  ink.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    ink.setPointerCapture(e.pointerId);
+    drawing = true;
+    const [x, y] = point(e);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + 0.1, y + 0.1);
+    ctx.stroke();
+    sparkle(e, x, y);
+  });
+  ink.addEventListener('pointermove', (e) => {
+    if (!drawing) return;
+    const [x, y] = point(e);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    sparkle(e, x, y);
+  });
+  const end = () => { drawing = false; };
+  ink.addEventListener('pointerup', end);
+  ink.addEventListener('pointercancel', end);
+
+  // ヒント: うすい赤で一筆書きの動き。長い形ほどゆっくり（2.5〜7秒）
+  const hg = hintC.getContext('2d')!;
+  let anim = 0;
+  const cum: number[] = [0];
+  for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  const total = pathLength(pts);
+  const duration = Math.min(7000, Math.max(2500, total * 2600));
+  const playHint = () => {
+    cancelAnimationFrame(anim);
+    hg.clearRect(0, 0, S, S); // いったん もとの灰色にもどす
+    const t0 = performance.now() + 250;
+    const frame = (now: number) => {
+      if (!hintC.isConnected) return;
+      const f = Math.max(0, Math.min(1, (now - t0) / duration));
+      const len = f * total;
+      let n = cum.findIndex((c) => c >= len);
+      if (n < 0) n = pts.length - 1;
+      hg.clearRect(0, 0, S, S);
+      hg.lineCap = 'round';
+      hg.lineJoin = 'round';
+      hg.strokeStyle = HINT_RED;
+      hg.lineWidth = gw * 0.7;
+      tracePath(hg, pts, 0, 0, S, n + 1);
+      hg.stroke();
+      // 先っぽの丸（いまどこを書いているか）
+      const [hx, hy] = pts[n] as Pt;
+      hg.fillStyle = 'rgba(229, 72, 77, 0.8)';
+      hg.beginPath();
+      hg.arc(hx * S, hy * S, gw * 0.6, 0, Math.PI * 2);
+      hg.fill();
+      if (f < 1) anim = requestAnimationFrame(frame);
+    };
+    anim = requestAnimationFrame(frame);
+  };
+  const hintBtn = h('button', { class: 'hint-btn', onclick: playHint }, '💡 ヒント');
+
+  const say = () => speak(`${shape.name} を なぞろう`, () => duckBgm(true), () => duckBgm(false));
+  const erase = () => ctx.clearRect(0, 0, S, S);
+  const done = () => {
+    cancelAnimationFrame(anim);
+    app.querySelector('.screen.game')?.classList.add('reading');
+    app.append(h('div', { class: 'overlay clear' }, hanamaru('pop')));
+    playJingle('correct');
+    window.setTimeout(() => {
+      round.index++;
+      if (round.index < round.questions.length) questionScreen(round);
+      else finishScreen();
+    }, HANAMARU_MS);
+  };
+
+  show(
+    h(
+      'main',
+      { class: 'screen game line-mode' },
+      h('header', { class: 'game-header' }, headerLeft(round, false), progress(round), hintBtn),
+      h('div', { class: 'line-head' },
+        h('button', { class: 'speaker-btn', 'aria-label': 'よみあげ', onclick: say }, '🔊'),
+        h('h2', { class: 'line-title' }, letters(shape.name, 'kt-pop'))),
+      stage,
+      h('div', { class: 'hw-buttons' },
+        h('button', { class: 'mid-btn secondary', onclick: erase }, 'けしごむ'),
+        h('button', { class: 'mid-btn primary', onclick: done }, 'できた')),
+    ),
+  );
+  window.setTimeout(say, 300);
 }
 
 /** 左上の「やめる」と ⚙（問題・ミニゲームの両方に出す） */
@@ -1807,23 +1999,24 @@ function saveSheetOptions(o: SheetOptions): void {
 }
 
 function worksheetScreen(selected: string[] = lastRoundIds(), cat?: Category, wl?: Lang): void {
+  // せんの れんしゅう も選べる（2026-10-27）
   stopBgm();
   // 英語版の問題も選べる（2026-10-27）。日本語と英語は同じプリントにまぜてもよい
-  const all = [...allQuestions(), ...EN_QUESTIONS, ...ALPHABET_QUESTIONS];
+  const all = [...allQuestions(), ...EN_QUESTIONS, ...ALPHABET_QUESTIONS, ...LINE_QUESTIONS];
   const sel = selected.filter((id) => all.some((q) => q.id === id));
   // ことば・カテゴリの指定がなければ、選んでいる問題（＝さいごに遊んだ問題）のものを開く
   const first = all.find((q) => q.id === sel[0]);
-  const showLang: Lang = wl ?? (first?.lang === 'en' ? 'en' : 'ja');
-  const cats = showLang === 'en' ? enCategories() : CATEGORIES;
+  const showLang: Lang = wl ?? (first?.lang === 'en' ? 'en' : first?.category === 'line' ? 'line' : 'ja');
+  const cats = showLang === 'en' ? enCategories() : showLang === 'line' ? [] : CATEGORIES;
   const showCat: Category = cat && cats.some((c) => c.id === cat) ? cat : first && cats.some((c) => c.id === first.category) ? first.category : 'mono';
   const rerender = (next: string[]) => worksheetScreen(next, showCat, showLang);
 
-  const langTabs = h('div', { class: 'seg' }, ...([['ja', 'ひらがな・カタカナ'], ['en', 'えいご']] as [Lang, string][]).map(([l, label]) =>
+  const langTabs = h('div', { class: 'seg' }, ...([['ja', 'ひらがな・カタカナ'], ['en', 'えいご'], ['line', 'せん']] as [Lang, string][]).map(([l, label]) =>
     h('button', { class: `seg-btn ${l === showLang ? 'on' : ''}`, onclick: () => worksheetScreen(sel, showCat, l) }, label)));
   const tabs = h('div', { class: 'seg' }, ...cats.map((c) =>
     h('button', { class: `seg-btn ${c.id === showCat ? 'on' : ''}`, onclick: () => worksheetScreen(sel, c.id, showLang) }, c.label)));
 
-  const list = showLang === 'en' ? enQuestions(showCat) : applyParticles(allQuestions(showCat));
+  const list = showLang === 'en' ? enQuestions(showCat) : showLang === 'line' ? LINE_QUESTIONS : applyParticles(allQuestions(showCat));
   const cards = list.map((q) => {
     const on = sel.includes(q.id);
     return h('div', {
@@ -1877,7 +2070,7 @@ function worksheetScreen(selected: string[] = lastRoundIds(), cat?: Category, wl
 
 /** 見た目の確認と PDF の保存。確認画面には PDF と同じページの絵を出す。iPad は共有シートの「"ファイル"に保存」 */
 function worksheetPrint(ids: string[]): void {
-  const all = [...allQuestions(), ...EN_QUESTIONS, ...ALPHABET_QUESTIONS];
+  const all = [...allQuestions(), ...EN_QUESTIONS, ...ALPHABET_QUESTIONS, ...LINE_QUESTIONS];
   const qs = applyParticles(ids.map((id) => all.find((q) => q.id === id)).filter((q): q is Question => !!q));
   const opts = loadSheetOptions();
   const nPages = pageCount(qs.map((q) => ({ en: q.lang === 'en' })), opts);
@@ -1924,7 +2117,8 @@ function worksheetPrint(ids: string[]): void {
 
   void (async () => {
     const items = await Promise.all(qs.map(async (q) => ({
-      chars: chars(dispQ(q, q.hira)),
+      chars: q.category === 'line' ? [] : chars(dispQ(q, q.hira)),
+      shape: q.category === 'line' ? lineShape(q.id)?.pts : undefined,
       particle: particleIndex(q),
       // 先生が付けた写真はその URL を使う
       imageUrl: await questionImageUrl(q),

@@ -20,6 +20,8 @@ export interface SheetItem {
   /** 英語版（2026-10-27）: 4本線に書く。kana はカタカナの読み方（絵の下に出す） */
   en?: boolean;
   kana?: string;
+  /** せんの れんしゅう（2026-10-27）: 形の点（0〜1）。左に見本（なぞる線）、右に書く四角 */
+  shape?: [number, number][];
 }
 
 export type SheetKind = 'copy' | 'trace';
@@ -118,6 +120,39 @@ function drawChar(g: CanvasRenderingContext2D, ch: string, x: number, y: number,
   fillCenteredAt(g, ch, x + cell / 2, y + cell / 2);
 }
 
+/**
+ * せんの れんしゅう 1問: 左の四角に見本（みてかく＝黒い線、なぞる＝うすい線）、右に何もない四角。
+ * どちらも書きはじめに緑の点。マスの設定（十字線／カラーマス）は四角に使う
+ */
+function drawShapeItem(g: CanvasRenderingContext2D, pts: [number, number][], o: SheetOptions, pageW: number, cy: number, slotH: number): void {
+  const gap = o.size === 'large' ? 20 : 12;
+  const b = Math.min(slotH - 6, (pageW - MARGIN_X * 2 - gap) / 2);
+  const x0 = (pageW - (b * 2 + gap)) / 2;
+  const y0 = cy - b / 2;
+  const x1 = x0 + b + gap;
+  for (const x of [x0, x1]) drawCell(g, x, y0, b, o.grid);
+  g.save();
+  g.lineCap = 'round';
+  g.lineJoin = 'round';
+  g.strokeStyle = o.kind === 'trace' ? TRACE_INK : '#222';
+  g.lineWidth = b * (o.kind === 'trace' ? 0.06 : 0.025);
+  g.beginPath();
+  g.moveTo(x0 + pts[0][0] * b, y0 + pts[0][1] * b);
+  for (const [px, py] of pts.slice(1)) g.lineTo(x0 + px * b, y0 + py * b);
+  g.stroke();
+  // 書きはじめ（両方の四角に。右は同じ場所から書く目安）
+  g.fillStyle = '#4caf50';
+  for (const x of [x0, x1]) {
+    g.beginPath(); g.arc(x + pts[0][0] * b, y0 + pts[0][1] * b, b * 0.035, 0, Math.PI * 2); g.fill();
+  }
+  // 矢印（見本 → 書く四角）
+  const ax = x0 + b + gap / 2;
+  const ah = gap * 0.22;
+  g.fillStyle = '#c8bfb2';
+  g.beginPath(); g.moveTo(ax - ah, cy - ah); g.lineTo(ax + ah, cy); g.lineTo(ax - ah, cy + ah); g.closePath(); g.fill();
+  g.restore();
+}
+
 async function drawPage(items: SheetItem[], o: SheetOptions, pageNo: number, pages: number, en = false): Promise<HTMLCanvasElement> {
   const L = layout(o, en);
   const c = document.createElement('canvas');
@@ -185,9 +220,25 @@ async function drawPage(items: SheetItem[], o: SheetOptions, pageNo: number, pag
     ? Math.min(o.size === 'large' ? 60 : 46, slotH - 8, ...enItems.map((it) => (enWriteW - EN_ARROW) / (enRowW1(it) * 2)))
     : 0;
 
+  // 区切りの点線
+  const separator = (i: number) => {
+    if (i >= items.length - 1) return;
+    const ly = top + slotH * (i + 1);
+    g.strokeStyle = '#bbb';
+    g.lineWidth = 0.3;
+    g.setLineDash([1.2, 1.2]);
+    g.beginPath(); g.moveTo(MARGIN_X, ly); g.lineTo(L.pageW - MARGIN_X, ly); g.stroke();
+    g.setLineDash([]);
+  };
+
   for (let i = 0; i < items.length; i++) {
     const it = items[i];
     const cy = top + slotH * i + slotH / 2;
+    if (it.shape) {
+      drawShapeItem(g, it.shape, o, L.pageW, cy, slotH);
+      separator(i);
+      continue;
+    }
     // 絵
     const kanaH = it.kana ? (o.size === 'large' ? 9 : en ? 7 : 5) : 0;
     const pic = picBox - kanaH;
@@ -271,15 +322,7 @@ async function drawPage(items: SheetItem[], o: SheetOptions, pageNo: number, pag
     });
     g.textBaseline = 'alphabetic';
 
-    // 区切りの点線
-    if (i < items.length - 1) {
-      const ly = top + slotH * (i + 1);
-      g.strokeStyle = '#bbb';
-      g.lineWidth = 0.3;
-      g.setLineDash([1.2, 1.2]);
-      g.beginPath(); g.moveTo(MARGIN_X, ly); g.lineTo(L.pageW - MARGIN_X, ly); g.stroke();
-      g.setLineDash([]);
-    }
+    separator(i);
   }
 
   if (pages > 1) {
