@@ -36,6 +36,8 @@ export interface Settings {
   particleMode: ParticleMode;
   /** 英語版の字（小文字／大文字） */
   letterCase: LetterCase;
+  /** 英語の声の名前（'' は じどう）。iPad で鳴らない声があったので選べるように */
+  enVoice: string;
   /** キーボードの字の数。変えるまで同じ難しさが続く */
   keySet: KeySet;
   /** なぞりの見本（うすい字）の太さ */
@@ -61,6 +63,7 @@ const DEFAULTS: Settings = {
   particleInput: false,
   particleMode: 'ga',
   letterCase: 'lower',
+  enVoice: '',
   keySet: 'all',
   traceWeight: 'normal',
   penWidth: 'normal',
@@ -88,6 +91,7 @@ export function loadSettings(): Settings {
       if (!WEIGHTS.includes(s.penWidth)) s.penWidth = 'normal';
       if (!PARTICLE_MODES.includes(s.particleMode)) s.particleMode = 'ga';
       if (s.letterCase !== 'upper') s.letterCase = 'lower';
+      if (typeof s.enVoice !== 'string') s.enVoice = '';
       return s;
     }
   } catch {

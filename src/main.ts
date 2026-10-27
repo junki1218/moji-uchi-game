@@ -8,7 +8,7 @@ import { clearWritings, deleteWriting, exportWritings, listWritings, MAX_WRITING
 import { chars, DAKUON, inScript, SEION, SMALL } from './kana';
 import { loadSettings, saveSettings, VOLUME_LEVEL, type KeySet, type Settings, type Weight, type ParticleMode } from './settings';
 import { duckBgm, playBgm, playJingle, setSound, sfx, stopBgm, unlockAudio } from './audio';
-import { speak, stopSpeech, unlockSpeech, type SpeechLang } from './speech';
+import { currentEnglishVoice, englishVoices, setEnglishVoice, speak, stopSpeech, unlockSpeech, type SpeechLang } from './speech';
 import { MINIGAMES, runMinigame, type MiniQuestion, type MinigameKind } from './minigames';
 import { letters } from './kinetic';
 import { drawEnGlyph, drawEnLines, enLines, fillCentered } from './glyph';
@@ -67,6 +67,7 @@ function placeGlyph(g: CanvasRenderingContext2D, ch: string, w: number, hh: numb
   return fillCentered(g, ch, w, hh);
 }
 setSound(settings.sound, VOLUME_LEVEL[settings.volume]);
+setEnglishVoice(settings.enVoice);
 
 // ------------------------------------------------------------ 小さな道具
 
@@ -1412,6 +1413,7 @@ function settingRows(): HTMLElement[] {
   return [
     choice('script', '文字', [['hira', 'ひらがな'], ['kata', 'カタカナ']]),
     choice('letterCase', 'えいごの 文字', [['lower', 'こもじ（abc）'], ['upper', 'おおもじ（ABC）']]),
+    enVoiceRow(),
     choice('input', '入力方法', [['keyboard', 'キーボード'], ['handwriting', 'てがき'], ['trace', 'なぞり']]),
     choice('prompt', '出題', [['look', '① 見本あり'], ['listen', '② 読み上げのみ'], ['picture', '③ 絵だけ']]),
     choice('aColumn', 'あ行の位置', [['right', '右はし（50音表と同じ）'], ['left', '左はし']]),
@@ -1425,6 +1427,33 @@ function settingRows(): HTMLElement[] {
     choice('minigame', 'ミニゲーム', [[true, 'あり（問題の前に毎回）'], [false, 'なし']]),
     minigameKindsRow(),
   ];
+}
+
+/**
+ * 英語の声を選ぶ・ためす（2026-10-27 iPad で英語が鳴らなかった件）。
+ * じどう＝ふつうに話す声（Samantha など）を名前でさがし、なければ iPad にまかせる
+ */
+function enVoiceRow(): HTMLElement {
+  const sel = h('select', { class: 'voice-select', 'aria-label': 'えいごの こえ' });
+  const fill = () => {
+    const now = currentEnglishVoice();
+    sel.replaceChildren(
+      h('option', { value: '' }, `じどう${!settings.enVoice ? `（${now || 'iPad にまかせる'}）` : ''}`),
+      ...englishVoices().map((v) => h('option', { value: v.name }, `${v.name}（${v.lang}）`)),
+    );
+    sel.value = settings.enVoice;
+  };
+  fill();
+  // iPad は声の一覧があとから届くことがある
+  if ('speechSynthesis' in window) speechSynthesis.addEventListener?.('voiceschanged', () => { if (sel.isConnected) fill(); });
+  sel.addEventListener('change', () => {
+    settings = { ...settings, enVoice: sel.value };
+    saveSettings(settings);
+    setEnglishVoice(sel.value);
+    fill();
+  });
+  const test = h('button', { class: 'seg-btn', onclick: () => { unlockSpeech(); speak('Hello. A, B, C. Dog, cat.', undefined, undefined, 'en'); } }, '▶ ためす');
+  return h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'えいごの こえ'), h('div', { class: 'seg' }, sel, test));
 }
 
 function settingsScreen(): void {
