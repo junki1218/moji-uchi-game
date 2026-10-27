@@ -1146,8 +1146,14 @@ canvas.pad-ghost { width: 100%; height: 100%; }
 .line-ink { touch-action: none; }
 .line-pic { background: #fff; }
 
-/* 設定のタブ（2026-10-27） */
-.setting-panel { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 1.5vh; }
-.setting-tabs { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0; justify-content: center; }
-.setting-tabs .seg-btn { font-size: 20px; padding: 10px 22px; }
-.setting-body { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 1.2vh; }
+/* 設定のタブ（2026-10-27）: 右に縦に並べる（字は横書き）。設定の色は青 */
+.screen.settings, .settings-modal { --primary: #3b82c4; }
+.setting-panel { width: 100%; max-width: 1200px; display: flex; flex-direction: row-reverse; align-items: flex-start; gap: 2vw; }
+.setting-tabs {
+  position: sticky; top: 0; z-index: 2; flex: none;
+  display: flex; flex-direction: column; align-items: stretch; gap: 10px;
+  padding: 6px 0;
+}
+.setting-tabs .seg-btn { font-size: 20px; padding: 14px 22px; white-space: nowrap; text-align: center; border-radius: 16px; }
+.setting-body { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: stretch; gap: 1.2vh; }
+.setting-body .setting-row { width: 100%; }
