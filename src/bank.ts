@@ -41,6 +41,11 @@ export function allQuestions(cat?: Category): Question[] {
   return cat ? all.filter((q) => q.category === cat) : all;
 }
 
+/** 先生が足した問題か（アプリで作った・JSON で読み込んだ。日本語・英語とも） */
+export function isCustom(id: string): boolean {
+  return custom.some((q) => q.id === id);
+}
+
 /** 先生が作った英語の問題（2026-10-27） */
 export function customEnQuestions(cat?: Category): Question[] {
   return custom.filter((q) => q.lang === 'en' && (!cat || q.category === cat));

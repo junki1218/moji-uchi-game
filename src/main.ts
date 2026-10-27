@@ -1,7 +1,7 @@
 import './style.css';
 import { registerSW } from 'virtual:pwa-register';
 import { CATEGORIES, MAX_CHARS, type Category, type Question, withParticle, spokenText, type Particle } from './questions';
-import { addCustom, allQuestions, applyImport, attachPhoto, deleteCustom, enabledQuestions, exportJson, isEnabled, parseImport, setEnabled, type ImportPlan } from './bank';
+import { addCustom, allQuestions, applyImport, attachPhoto, customEnQuestions, deleteCustom, isCustom, enabledQuestions, exportJson, isEnabled, parseImport, setEnabled, type ImportPlan } from './bank';
 import { hasPhoto, loadPhotoIndex, photoUrl, removePhoto } from './photos';
 import { DEFAULT_SHEET, pageCount, savePdf, worksheetPages, worksheetPdf, type SheetItem, type SheetOptions, type SheetSize } from './worksheet-pdf';
 import { clearWritings, deleteWriting, exportWritings, listWritings, MAX_WRITINGS, saveWriting } from './writings';
@@ -2107,8 +2107,12 @@ interface StockSet {
   qs: () => Question[];
 }
 
-const builtinOf = (cat: Category) => allQuestions(cat).filter((q) => q.builtin);
+// ストックの各プリントは、最初から入っている問題だけ（中身が変わらない定番）。
+// 先生が作った問題は「つくった もんだい」の行に まとめて出す（2026-10-27）
+const builtinOf = (cat: Category) => allQuestions(cat).filter((q) => !isCustom(q.id));
+const enBuiltinOf = (cat: Category) => enQuestions(cat).filter((q) => !isCustom(q.id));
 const catPic = (cat: string) => () => picture(`cat_${cat}`, () => h('span'), 'stock-pic');
+const madePic = () => h('div', { class: 'picture stock-pic made-pic' }, h('span', {}, '✏️'));
 
 const STOCK_SETS: Record<StockGroup, StockSet[]> = {
   ja: [
@@ -2118,11 +2122,13 @@ const STOCK_SETS: Record<StockGroup, StockSet[]> = {
     { key: 'bun', label: 'ぶん', pic: catPic('bun'), qs: () => builtinOf('bun') },
     { key: 'bunkimochi', label: 'ぶん・きもち「が」', pic: catPic('bunkimochi'), qs: () => builtinOf('bunkimochi').map((q) => withParticle(q, 'が')) },
     { key: 'bunkimochi_ha', label: 'ぶん・きもち「は」', pic: catPic('bunkimochi'), qs: () => builtinOf('bunkimochi').map((q) => withParticle(q, 'は')) },
+    { key: 'made', label: 'つくった もんだい', pic: madePic, qs: () => allQuestions().filter((q) => isCustom(q.id)) },
   ],
   en: [
-    { key: 'mono', label: 'もの', pic: catPic('mono'), qs: () => enQuestions('mono') },
-    { key: 'ugoki', label: 'うごき', pic: catPic('ugoki'), qs: () => enQuestions('ugoki') },
+    { key: 'mono', label: 'もの', pic: catPic('mono'), qs: () => enBuiltinOf('mono') },
+    { key: 'ugoki', label: 'うごき', pic: catPic('ugoki'), qs: () => enBuiltinOf('ugoki') },
     { key: 'abc', label: 'アルファベット', pic: () => h('div', { class: 'picture stock-pic abc-cat' }, h('span', { class: 'abc-cat-text' }, 'Aa')), qs: () => ALPHABET_QUESTIONS },
+    { key: 'made', label: 'つくった もんだい', pic: madePic, qs: () => customEnQuestions() },
   ],
   line: [
     { key: 'easy', label: 'やさしい 10こ', pic: () => h('div', { class: 'picture stock-pic line-pic' }, shapeThumb(LINE_SHAPES[0].pts)), qs: () => LINE_QUESTIONS.slice(0, 10) },
@@ -2190,9 +2196,11 @@ function stockScreen(): void {
 
   const button = (set: StockSet, v: StockVariant) => {
     let blob: Blob | null = null;
+    const empty = set.qs().length === 0;
     const name = `gakkun-stock-${stockGroup}-${set.key}-${v.file}${stockSize === 'large' ? '-large' : ''}.pdf`;
     const btn: HTMLButtonElement = h('button', {
       class: `mid-btn stock-dl ${v.kind}`,
+      disabled: empty,
       onclick: async () => {
         if (blob) {
           const how = await savePdf(blob, name);
@@ -2223,7 +2231,7 @@ function stockScreen(): void {
     list.replaceChildren(...STOCK_SETS[stockGroup].map((set) =>
       h('div', { class: 'stock-row' },
         set.pic(),
-        h('span', { class: 'stock-label' }, set.label, h('small', {}, `${set.qs().length}もん`)),
+        h('span', { class: 'stock-label' }, set.label, h('small', {}, set.qs().length ? `${set.qs().length}もん` : 'まだ ありません（せってい の「＋ つくる」で つくれます）')),
         h('div', { class: 'stock-btns' }, ...STOCK_VARIANTS[stockGroup].map((v) => button(set, v))))));
     paintNote();
   };
