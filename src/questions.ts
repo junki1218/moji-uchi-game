@@ -31,6 +31,13 @@ export interface Question {
   parts?: [string, string];
   /** 文の助詞（なければ「が」）。「は」は「わ」と読む */
   particle?: Particle;
+  /** 英語版の問題（2026-10-27）。hira に英単語（小文字）が入る */
+  lang?: 'en';
+  /** 絵の名前（英語版は日本語の問題の絵をそのまま使う。なければ id） */
+  img?: string;
+  /** 英語版: 日本語（ひらがな）と、カタカナの読み方 */
+  ja?: string;
+  kana?: string;
   emoji: string;
   /** 最初から入っている問題（削除できない。画像は src/images/{id}.webp） */
   builtin: boolean;

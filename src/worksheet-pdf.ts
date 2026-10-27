@@ -7,7 +7,7 @@
 // 2026-10-22: 種類（みてかく＝視写／なぞる）・大きさ（ふつう＝A4縦5問／おおきい＝A4横2問）・
 //             マス（十字線／カラーマス）を選べるようにした
 
-import { fillCenteredAt } from './glyph';
+import { drawEnLines, EN_FONT, enLines, fillCenteredAt, fillOnLines } from './glyph';
 
 export interface SheetItem {
   /** 表示する字（ひらがな／カタカナ設定に合わせた後） */
@@ -17,6 +17,9 @@ export interface SheetItem {
   emoji: string;
   /** 文の「が」の位置（見本で黒丸に白字にする）。単語なら null */
   particle?: number | null;
+  /** 英語版（2026-10-27）: 4本線に書く。kana はカタカナの読み方（絵の下に出す） */
+  en?: boolean;
+  kana?: string;
 }
 
 export type SheetKind = 'copy' | 'trace';
@@ -161,9 +164,10 @@ async function drawPage(items: SheetItem[], o: SheetOptions, pageNo: number, pag
     const it = items[i];
     const cy = top + slotH * i + slotH / 2;
     // 絵
-    const pic = Math.min(L.pic, slotH - 6);
-    const px = MARGIN_X;
-    const py = cy - pic / 2;
+    const kanaH = it.kana ? (o.size === 'large' ? 9 : 5) : 0;
+    const pic = Math.min(L.pic, slotH - 6) - kanaH;
+    const px = MARGIN_X + kanaH / 2;
+    const py = cy - (pic + kanaH) / 2;
     g.save();
     roundRect(g, px, py, pic, pic, 3);
     g.clip();
@@ -184,12 +188,37 @@ async function drawPage(items: SheetItem[], o: SheetOptions, pageNo: number, pag
     g.strokeStyle = '#ccc';
     roundRect(g, px, py, pic, pic, 3);
     g.stroke();
+    if (it.kana) {
+      g.font = `bold ${kanaH * 0.62}px ${GOTHIC}`;
+      g.fillStyle = '#444';
+      g.textAlign = 'center';
+      g.textBaseline = 'alphabetic';
+      g.fillText(it.kana, px + pic / 2, py + pic + kanaH * 0.78, pic + kanaH);
+    }
 
     // 上の行（見本 か なぞる字）と、下の行（自分で書く）
-    const lx = MARGIN_X + pic + L.gap;
+    const lx = MARGIN_X + Math.min(L.pic, slotH - 6) + L.gap;
     const sy = cy - (cell * 2 + rowGap) / 2;
     const wy = sy + cell + rowGap;
-    it.chars.forEach((ch, k) => {
+    if (it.en) {
+      // 英語: マスの代わりに、行の幅いっぱいの4本線（カラーマスと同じ色の仲間）。字は線にのせる
+      // 字と字のあいだは、ひとつの単語に見えるくらいにつめる（字の幅をはかって、少しだけあける）
+      const top = enLines(g, cell, sy);
+      const bot = enLines(g, cell, wy);
+      g.font = `700 ${top.size}px ${EN_FONT}`;
+      const gap = cell * 0.12;
+      const widths = it.chars.map((ch) => g.measureText(ch).width);
+      const rowW = Math.max(cell * 2, widths.reduce((s, w) => s + w + gap, gap) + cell * 0.6);
+      drawEnLines(g, lx, rowW, top, 0.3);
+      drawEnLines(g, lx, rowW, bot, 0.3);
+      let x = lx + cell * 0.3 + gap;
+      it.chars.forEach((ch, k) => {
+        g.fillStyle = o.kind === 'trace' ? TRACE_INK : '#222';
+        fillOnLines(g, ch, x + widths[k] / 2, top);
+        x += widths[k] + gap;
+      });
+      g.textBaseline = 'alphabetic';
+    } else it.chars.forEach((ch, k) => {
       const cx = lx + k * cell;
       const isParticle = k === it.particle;
       if (o.kind === 'trace') {
@@ -232,6 +261,7 @@ export async function worksheetPages(items: SheetItem[], o: SheetOptions): Promi
   // 教科書体（Klee One）を読み込んでから描く（canvas は読み込み前のフォントだと代わりの字形になる）
   const allChars = [...new Set(items.flatMap((it) => it.chars).concat([...'みてかこうなぞ']))].join('');
   await Promise.all([
+    items.some((it) => it.en) ? document.fonts.load('700 40px Andika') : Promise.resolve(),
     document.fonts.load(`600 40px "Klee One"`, allChars),
     document.fonts.load(`40px ${GOTHIC}`, 'がっくんのこくごワークシートなぞりがきなまえがつにち'),
   ]).catch(() => undefined);

@@ -15,6 +15,8 @@ export type KeySet = 'all' | 'k25' | 'k10' | 'answer';
 export type Weight = 'thin' | 'normal' | 'bold';
 /** ぶん・きもちの助詞（2026-10-27）: ga＝「が」、ha＝「は」、mix＝「が」と「は」を1問ずつ交代 */
 export type ParticleMode = 'ga' | 'ha' | 'mix';
+/** 英語版の字（2026-10-27）: lower＝小文字、upper＝大文字 */
+export type LetterCase = 'lower' | 'upper';
 
 export const VOLUME_LEVEL: Record<Volume, number> = { low: 0.3, mid: 0.6, high: 0.9 };
 
@@ -32,6 +34,8 @@ export interface Settings {
   particleInput: boolean;
   /** ぶん・きもちの助詞（が／は／が・は） */
   particleMode: ParticleMode;
+  /** 英語版の字（小文字／大文字） */
+  letterCase: LetterCase;
   /** キーボードの字の数。変えるまで同じ難しさが続く */
   keySet: KeySet;
   /** なぞりの見本（うすい字）の太さ */
@@ -56,6 +60,7 @@ const DEFAULTS: Settings = {
   minigameKinds: ['bubble', 'lock', 'hockey'],
   particleInput: false,
   particleMode: 'ga',
+  letterCase: 'lower',
   keySet: 'all',
   traceWeight: 'normal',
   penWidth: 'normal',
@@ -82,6 +87,7 @@ export function loadSettings(): Settings {
       if (!WEIGHTS.includes(s.traceWeight)) s.traceWeight = 'normal';
       if (!WEIGHTS.includes(s.penWidth)) s.penWidth = 'normal';
       if (!PARTICLE_MODES.includes(s.particleMode)) s.particleMode = 'ga';
+      if (s.letterCase !== 'upper') s.letterCase = 'lower';
       return s;
     }
   } catch {

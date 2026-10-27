@@ -35,6 +35,8 @@ export interface MiniQuestion {
   showSample: boolean;
   /** ひらがな→表示用（カタカナ設定のとき変換） */
   toScript: (s: string) => string;
+  /** 錠前のダイヤルに出す字（なければ50音。英語版はアルファベット） */
+  dialChars?: string[];
 }
 
 const TAU = Math.PI * 2;
@@ -476,7 +478,7 @@ function lockGame(stage: HTMLElement, q: MiniQuestion, onProgress: (n: number) =
       return { ok: () => true };
     }
     // 正解＋ほかの字3つ。最初は正解以外から始める
-    const pool = shuffle(DIAL_CHARS.map(q.toScript).filter((c) => c !== ch)).slice(0, 3);
+    const pool = shuffle((q.dialChars ?? DIAL_CHARS.map(q.toScript)).filter((c) => c !== ch)).slice(0, 3);
     const options = shuffle([ch, ...pool]);
     let idx = (options.indexOf(ch) + 1 + Math.floor(Math.random() * (options.length - 1))) % options.length;
     const face = el('div', 'dial-face');

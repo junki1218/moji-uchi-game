@@ -8,10 +8,11 @@ import { clearWritings, deleteWriting, exportWritings, listWritings, MAX_WRITING
 import { chars, DAKUON, inScript, SEION, SMALL } from './kana';
 import { loadSettings, saveSettings, VOLUME_LEVEL, type KeySet, type Settings, type Weight, type ParticleMode } from './settings';
 import { duckBgm, playBgm, playJingle, setSound, sfx, stopBgm, unlockAudio } from './audio';
-import { speak, stopSpeech, unlockSpeech } from './speech';
+import { speak, stopSpeech, unlockSpeech, type SpeechLang } from './speech';
 import { MINIGAMES, runMinigame, type MiniQuestion, type MinigameKind } from './minigames';
 import { letters } from './kinetic';
-import { fillCentered } from './glyph';
+import { drawEnLines, enLines, fillCentered, fillOnLines } from './glyph';
+import { ALPHABET_ROWS, EN_CATEGORIES, EN_QUESTIONS, enQuestions } from './english';
 
 // 新しい版が届いたら、ゲームの途中ではなくスタート画面に戻ったときに読み込み直す
 // （古いプログラムと新しい絵が混ざって、絵と問題が食い違うのを防ぐ）
@@ -46,6 +47,25 @@ const HINT_AFTER_MISSES = 2;
 
 const app = document.getElementById('app')!;
 let settings = loadSettings();
+
+// 英語版（2026-10-27）。「はじめる」のあとで ひらがな・カタカナ／えいご を選ぶ
+type Lang = 'ja' | 'en';
+let lang: Lang = 'ja';
+
+/** 字の見せ方: 日本語はひらがな／カタカナの設定、英語は小文字／大文字の設定 */
+function disp(s: string, l: Lang = lang): string {
+  if (l === 'en') return settings.letterCase === 'upper' ? s.toUpperCase() : s;
+  return inScript(s, settings.script);
+}
+
+/** その問題の字の見せ方（プリントは日本語と英語がまざることがある） */
+const dispQ = (q: Question, s: string) => disp(s, q.lang === 'en' ? 'en' : 'ja');
+
+/** 英語の字の大きさ・位置（4本線）。日本語はマスの真ん中 */
+function placeGlyph(g: CanvasRenderingContext2D, ch: string, w: number, hh: number): [number, number] {
+  if (lang === 'en') return fillOnLines(g, ch, w / 2, enLines(g, hh));
+  return fillCentered(g, ch, w, hh);
+}
 setSound(settings.sound, VOLUME_LEVEL[settings.volume]);
 
 // ------------------------------------------------------------ 小さな道具
@@ -94,16 +114,24 @@ const emoji = (e: string) => () => h('span', { class: 'emoji' }, e);
 
 /** 問題の絵。先生が付けた写真 → 最初からの絵（src/images/{id}.webp）→ 絵文字 の順に使う */
 function questionPicture(q: Question, cls = ''): HTMLElement {
-  if (hasPhoto(q.id)) {
+  const pid = q.img ?? q.id;
+  if (hasPhoto(pid)) {
     const box = h('div', { class: `picture ${cls}` });
-    void photoUrl(q.id).then((url) => {
+    void photoUrl(pid).then((url) => {
       if (url) box.replaceChildren(h('img', { src: url, alt: '', draggable: 'false' }));
       else box.replaceChildren(emoji(q.emoji)());
     });
     return box;
   }
-  if (q.builtin) return picture(q.id, emoji(q.emoji), cls);
+  if (q.builtin) return picture(pid, emoji(q.emoji), cls);
   return h('div', { class: `picture ${cls}` }, emoji(q.emoji)());
+}
+
+/** 問題の絵の URL（canvas に描くとき。ミニゲーム・プリント） */
+async function questionImageUrl(q: Question): Promise<string | null> {
+  const pid = q.img ?? q.id;
+  if (hasPhoto(pid)) return photoUrl(pid);
+  return q.builtin ? imageUrl(pid) : null;
 }
 
 // ボタン・題名などの UI の文言は、設定がカタカナでもひらがなのまま（読めない操作ボタンを作らない）
@@ -146,7 +174,7 @@ function startScreen(): void {
         'div',
         { class: 'start-buttons' },
         h('div', { class: 'start-col' },
-          h('button', { class: 'big-btn primary', onclick: () => { unlockSpeech(); categoryScreen(); } },
+          h('button', { class: 'big-btn primary', onclick: () => { unlockSpeech(); langScreen(); } },
             'はじめる'),
           h('button', { class: 'big-btn ehon', onclick: ehonScreen }, 'えほん')),
         h('div', { class: 'start-col' },
@@ -217,21 +245,50 @@ function ehonView(b: EhonBook): void {
   show(h('main', { class: 'screen ehon-screen' }, backButton(ehonScreen), body));
 }
 
+// ------------------------------------------------------------ ことば（ひらがな・カタカナ／えいご）
+
+function langScreen(): void {
+  playBgm('bgm1_start');
+  const choose = (l: Lang) => {
+    lang = l;
+    // 英語の字（Andika）を先に読み込んでおく（キャンバスに描く字が代わりのフォントにならないように）
+    if (l === 'en') void document.fonts?.load(`700 40px Andika`).catch(() => undefined);
+    categoryScreen();
+  };
+  show(
+    h(
+      'main',
+      { class: 'screen lang-pick' },
+      backButton(startScreen),
+      h('div', { class: 'lang-grid' },
+        h('button', { class: 'lang-btn', onclick: () => choose('ja') },
+          h('span', { class: 'lang-sample' }, 'あ ア'),
+          h('span', { class: 'lang-label' }, letters('ひらがな カタカナ', 'kt-pop'))),
+        h('button', { class: 'lang-btn en', onclick: () => choose('en') },
+          h('span', { class: 'lang-sample' }, settings.letterCase === 'upper' ? 'ABC' : 'abc'),
+          h('span', { class: 'lang-label' }, letters('えいご', 'kt-pop')))),
+    ),
+  );
+}
+
 // ------------------------------------------------------------ カテゴリ
 
 function categoryScreen(): void {
   playBgm('bgm1_start');
+  // 英語版は「もの」「うごき」だけ（「ぶん」は後日）
+  const cats = lang === 'en' ? CATEGORIES.filter((c) => EN_CATEGORIES.includes(c.id)) : CATEGORIES;
   show(
     h(
       'main',
-      { class: 'screen category' },
-      backButton(startScreen),
+      { class: `screen category ${lang === 'en' ? 'en' : ''}` },
+      backButton(langScreen),
+      lang === 'en' ? h('h2', { class: 'category-title' }, letters('えいご', 'kt-wave')) : null,
       h(
         'div',
         { class: 'category-grid' },
-        ...CATEGORIES.map((c) => {
+        ...cats.map((c) => {
           // 出題する問題が1つもないカテゴリは押せない
-          const empty = enabledQuestions(c.id).length === 0;
+          const empty = (lang === 'en' ? enQuestions(c.id) : enabledQuestions(c.id)).length === 0;
           return h(
             'button',
             { class: `category-btn ${empty ? 'disabled' : ''}`, disabled: empty, onclick: () => startRound(c.id) },
@@ -253,19 +310,22 @@ function backButton(to: () => void, label = 'もどる'): HTMLElement {
 interface Round {
   questions: Question[];
   index: number;
+  /** 英語版: 「いぬ は dog」を見せ終えた問題の番号 */
+  introAt?: number;
   /** 直前のミニゲーム（同じものが続かないように） */
   lastMini?: MinigameKind;
 }
 
 function startRound(cat: Category): void {
-  const pool = enabledQuestions(cat);
+  const pool = lang === 'en' ? enQuestions(cat) : enabledQuestions(cat);
   const round: Round = { questions: applyParticles(shuffle(pool).slice(0, ROUND_SIZE), true), index: 0 };
   try {
     localStorage.setItem(LAST_ROUND_KEY, JSON.stringify(round.questions.map((q) => q.id)));
   } catch {
     // 覚えられなくても遊べる
   }
-  questionScreen(round);
+  if (lang === 'en') void (document.fonts?.load(`700 40px Andika`) ?? Promise.resolve()).catch(() => undefined).finally(() => questionScreen(round));
+  else questionScreen(round);
 }
 
 /**
@@ -329,25 +389,27 @@ function charReading(c: string): string {
 
 const wait = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms));
 
-function speakAndWait(text: string): Promise<void> {
+function speakAndWait(text: string, l: SpeechLang = 'ja'): Promise<void> {
   return new Promise((resolve) => {
     let done = false;
     const end = () => { if (!done) { done = true; resolve(); } };
     const timer = window.setTimeout(end, READ_MAX_MS);
-    if ('speechSynthesis' in window) speak(text, undefined, () => { clearTimeout(timer); end(); });
+    if ('speechSynthesis' in window) speak(text, undefined, () => { clearTimeout(timer); end(); }, l);
     else { clearTimeout(timer); setTimeout(end, 600); } // 声が出ない環境でも、間をおいて次の字へ
   });
 }
 
 /** 答えのマスを1つずつ大きくして読み上げ、元に戻す。途中で画面を離れたら false */
-async function readOut(cells: HTMLElement[], answer: string[], pIdx: number | null = null): Promise<boolean> {
+async function readOut(cells: HTMLElement[], answer: string[], pIdx: number | null = null, en = false): Promise<boolean> {
   duckBgm(true);
   try {
     for (let i = 0; i < cells.length; i++) {
       const cell = cells[i];
       if (!cell.isConnected) return false;
       cell.classList.add('readout');
-      await speakAndWait(i === pIdx && answer[i] === 'は' ? 'わ' : charReading(answer[i]));
+      // 英語は字の名前（大文字で渡すと「エイ」「ビー」と読む。小文字の a は「ア」と読まれることがある）
+      if (en) await speakAndWait(answer[i].toUpperCase(), 'en');
+      else await speakAndWait(i === pIdx && answer[i] === 'は' ? 'わ' : charReading(answer[i]));
       await wait(READ_PAUSE_MS);
       cell.classList.remove('readout');
       await wait(READ_GAP_MS);
@@ -359,6 +421,11 @@ async function readOut(cells: HTMLElement[], answer: string[], pIdx: number | nu
 }
 
 function questionScreen(round: Round, afterMini = false): void {
+  // 英語版: ミニゲームの前に、まず「いぬ は dog」を見せて読む
+  if (round.questions[round.index].lang === 'en' && round.introAt !== round.index) {
+    introScreen(round);
+    return;
+  }
   // 問題の前に毎回ミニゲーム（設定で切れる）
   const valid = settings.minigameKinds.filter((k) => MINIGAMES.some((m) => m.id === k));
   const kinds = valid.length ? valid : MINIGAMES.map((m) => m.id);
@@ -372,14 +439,18 @@ function questionScreen(round: Round, afterMini = false): void {
   // 文（〇〇が●●）の「が」の位置。設定で「最初から入れておく」なら打たせない
   const pIdx = particleIndex(q);
   const fixed = particleFixed(pIdx);
-  const shown = (c: string) => inScript(c, settings.script);
-  const say = () => speak(spokenText(q), () => duckBgm(true), () => duckBgm(false));
+  const en = q.lang === 'en';
+  const shown = (c: string) => disp(c);
+  const say = () => speak(en ? q.hira : spokenText(q), () => duckBgm(true), () => duckBgm(false), en ? 'en' : 'ja');
 
   const trace = settings.input === 'trace';
+  const lined = en && settings.input !== 'keyboard'; // 英語のてがき: 見本も4本線
   const sample =
     settings.prompt === 'look' && !trace
       ? h('div', { class: 'sample' }, ...answer.map((c, i) =>
-        i === pIdx ? h('span', { class: 'sample-cell particle' }, particleBadge(shown(c))) : h('span', { class: 'sample-cell' }, shown(c))))
+        i === pIdx ? h('span', { class: 'sample-cell particle' }, particleBadge(shown(c)))
+          : lined ? h('span', { class: 'sample-cell lined' }, linedLetter(shown(c)))
+            : h('span', { class: 'sample-cell' }, shown(c))))
       : null;
 
   const side = h(
@@ -387,6 +458,8 @@ function questionScreen(round: Round, afterMini = false): void {
     { class: 'q-side' },
     h('button', { class: 'speaker-btn', 'aria-label': 'よみあげ', onclick: say }, '🔊'),
     sample,
+    // 英語: カタカナの読み方を、いつも単語の下に
+    en && q.kana ? h('div', { class: 'en-kana' }, q.kana) : null,
   );
   const pic = questionPicture(q, 'q-pic');
   const top = h('div', { class: `q-top ${q.type === 'sentence' ? 'sentence' : ''}` }, pic, side);
@@ -399,7 +472,7 @@ function questionScreen(round: Round, afterMini = false): void {
     const screen = app.querySelector<HTMLElement>('.screen.game');
     screen?.classList.add('reading'); // 読み上げ中は入力を受け付けない（やめる は押せる）
     const cells = [...(screen?.querySelectorAll<HTMLElement>('.answer .answer-cell, .hw-cells .hw-cell') ?? [])];
-    void readOut(cells, answer, pIdx).then((ok) => { if (ok) celebrate(); });
+    void readOut(cells, answer, pIdx, en).then((ok) => { if (ok) celebrate(); });
   };
   const celebrate = () => {
     const overlay = h('div', { class: 'overlay clear' }, hanamaru('pop'));
@@ -438,16 +511,91 @@ function questionScreen(round: Round, afterMini = false): void {
   show(
     h(
       'main',
-      { class: 'screen game' },
+      { class: `screen game ${en ? 'en' : ''}` },
       h('header', { class: 'game-header' },
         headerLeft(round, false),
         progress(round), hintBtn),
+      en ? enBanner(q) : null,
       top,
       input,
     ),
   );
 
   if (settings.prompt !== 'picture') window.setTimeout(say, 300);
+}
+
+/**
+ * 英語版: 「いぬ は dog」の帯（2026-10-27）。日本語はひらがな、「は」はピンクの丸（これまでのきまり）、
+ * 英単語の下にカタカナの読み方。ミニゲーム・問題のあいだも出したままにする
+ */
+function enBanner(q: Question, big = false): HTMLElement {
+  return h('div', { class: `en-banner ${big ? 'big' : ''}` },
+    h('span', { class: 'en-ja' }, q.ja ?? ''),
+    h('span', { class: 'en-ha' }, particleBadge('は')),
+    h('span', { class: 'en-word' },
+      h('span', { class: 'en-word-text' }, dispQ(q, q.hira)),
+      h('span', { class: 'en-kana' }, q.kana ?? '')));
+}
+
+/** 「いぬ は dog」と読む（日本語の声 → 英語の声）。「は」は「わ」と読む */
+async function sayIntro(q: Question): Promise<void> {
+  duckBgm(true);
+  try {
+    await speakAndWait(`${q.ja ?? ''} わ`);
+    await wait(150);
+    await speakAndWait(q.hira, 'en');
+  } finally {
+    duckBgm(false);
+  }
+}
+
+/** 英語版: ミニゲーム（または問題）の前に「いぬ は dog」を見せて読む。「つぎへ」で進む */
+function introScreen(round: Round): void {
+  playBgm('bgm2_question');
+  const q = round.questions[round.index];
+  const nextBtn: HTMLButtonElement = h('button', {
+    class: 'big-btn primary intro-next',
+    hidden: true,
+    onclick: () => {
+      stopSpeech();
+      round.introAt = round.index;
+      questionScreen(round);
+    },
+  }, 'つぎへ ▶');
+  const say = () => void sayIntro(q).then(() => { nextBtn.hidden = false; });
+  show(
+    h(
+      'main',
+      { class: 'screen game en intro' },
+      h('header', { class: 'game-header' }, headerLeft(round, true), progress(round)),
+      h('div', { class: 'intro-body' },
+        questionPicture(q, 'q-pic intro-pic'),
+        h('div', { class: 'intro-side' },
+          enBanner(q, true),
+          h('button', { class: 'speaker-btn', 'aria-label': 'よみあげ', onclick: say }, '🔊'))),
+      nextBtn,
+    ),
+  );
+  // 声が出ないときも進めるように、少したったら「つぎへ」を出す
+  window.setTimeout(() => { nextBtn.hidden = false; }, 6000);
+  window.setTimeout(say, 400);
+}
+
+/** 英語のてがきの見本: 4本線の上に字（キャンバス） */
+function linedLetter(ch: string): HTMLCanvasElement {
+  const S = 240;
+  const c = h('canvas', { class: 'lined-letter', width: String(S), height: String(S), 'aria-label': ch, role: 'img' });
+  const draw = () => {
+    const g = c.getContext('2d')!;
+    g.clearRect(0, 0, S, S);
+    const L = enLines(g, S);
+    drawEnLines(g, 0, S, L, 3);
+    g.fillStyle = '#333';
+    fillOnLines(g, ch, S / 2, L);
+  };
+  draw();
+  void document.fonts?.load(`700 40px Andika`).then(draw).catch(() => undefined);
+  return c;
 }
 
 /** 左上の「やめる」と ⚙（問題・ミニゲームの両方に出す） */
@@ -535,16 +683,18 @@ function minigameScreen(round: Round, kinds: MinigameKind[], onDone: () => void)
 
   const say = () => speak(info.instruction, () => duckBgm(true), () => duckBgm(false));
   // 🔊 は正解の言葉を読む（やることは最初に1回読む）
-  const sayWord = () => speak(spokenText(round.questions[round.index]), () => duckBgm(true), () => duckBgm(false));
+  const cur = round.questions[round.index];
+  const sayWord = () => speak(cur.lang === 'en' ? cur.hira : spokenText(cur), () => duckBgm(true), () => duckBgm(false), cur.lang === 'en' ? 'en' : 'ja');
   show(
     h(
       'main',
-      { class: `screen game mini mini-${kind}` },
+      { class: `screen game mini mini-${kind} ${cur.lang === 'en' ? 'en' : ''}` },
       h('header', { class: 'game-header' }, headerLeft(round, true), progress(round)),
       h('div', { class: 'mini-head' },
         h('button', { class: 'speaker-btn', 'aria-label': 'ことばを よみあげ', onclick: sayWord }, '🔊'),
         h('p', { class: 'mini-instruction' }, letters(info.instruction, 'kt-drop')),
         stars),
+      cur.lang === 'en' ? enBanner(cur) : null,
       stage,
     ),
   );
@@ -556,26 +706,26 @@ function minigameScreen(round: Round, kinds: MinigameKind[], onDone: () => void)
 
 /** 次の問題から、ミニゲームに渡す情報を作る（まちがいの言葉は同じカテゴリのほかの問題から） */
 function miniQuestion(q: Question): MiniQuestion {
-  const disp = (s: string) => inScript(s, settings.script);
+  const show1 = (s: string) => dispQ(q, s);
   const answer = chars(q.hira);
   const fixed = particleFixed(particleIndex(q));
+  const pool = q.lang === 'en' ? enQuestions(q.category) : allQuestions(q.category);
   const others = shuffle(
-    [...new Set(allQuestions(q.category).map((x) => withParticle(x, q.particle ?? 'が').hira).filter((w) => w !== q.hira))],
-  ).map(disp);
-  const pictureUrl = async () => {
-    if (hasPhoto(q.id)) return photoUrl(q.id);
-    return q.builtin ? imageUrl(q.id) : null;
-  };
+    [...new Set(pool.map((x) => withParticle(x, q.particle ?? 'が').hira).filter((w) => w !== q.hira))],
+  ).map(show1);
+  const pictureUrl = () => questionImageUrl(q);
   return {
-    answer: disp(q.hira),
-    chars: answer.map(disp),
+    answer: show1(q.hira),
+    chars: answer.map(show1),
     fixed,
     others,
     picture: () => questionPicture(q, 'mini-q-pic'),
     pictureUrl,
     emoji: q.emoji,
     showSample: settings.prompt === 'look',
-    toScript: disp,
+    toScript: show1,
+    // 錠前のダイヤルの字: 英語はアルファベット
+    dialChars: q.lang === 'en' ? ALPHABET_ROWS.flat().map(show1) : undefined,
   };
 }
 
@@ -616,6 +766,7 @@ function partStarts(answer: string[], pIdx: number | null): number[] {
 const KEY_SET_COUNT: Record<KeySet, number> = { all: Infinity, k25: 25, k10: 10, answer: 0 };
 const KEY_SET_STARS: Record<KeySet, string> = { all: '★★★★', k25: '★★★', k10: '★★', answer: '★' };
 const KEY_SET_LABEL: Record<KeySet, string> = { all: '50おん', k25: '25おん', k10: '10おん', answer: 'こたえの もじだけ' };
+const KEY_SET_LABEL_EN: Record<KeySet, string> = { all: 'ABC ぜんぶ', k25: '20もじ', k10: '10もじ', answer: 'こたえの もじだけ' };
 
 function openKeySetMenu(onChange: () => void): void {
   const close = () => overlay.remove();
@@ -630,7 +781,7 @@ function openKeySetMenu(onChange: () => void): void {
             onChange();
             close();
           },
-        }, h('span', { class: 'keyset-stars' }, KEY_SET_STARS[k]), h('span', {}, KEY_SET_LABEL[k]))),
+        }, h('span', { class: 'keyset-stars' }, KEY_SET_STARS[k]), h('span', {}, (lang === 'en' ? KEY_SET_LABEL_EN : KEY_SET_LABEL)[k]))),
       h('button', { class: 'mid-btn secondary', onclick: close }, 'とじる')));
   app.append(overlay);
 }
@@ -639,7 +790,7 @@ function keyboardArea(answer: string[], fixed: Set<number>, pIdx: number | null,
   let pos = 0;
   let misses = 0;
   const cells = answer.map((c, i) =>
-    fixed.has(i) ? h('span', { class: 'answer-cell fixed' }, inScript(c, settings.script)) : h('span', { class: 'answer-cell' }),
+    fixed.has(i) ? h('span', { class: 'answer-cell fixed' }, disp(c)) : h('span', { class: 'answer-cell' }),
   );
   cells[0].classList.add('current');
   // 1段目（〇〇）を打ち終えたとき: 〇〇のマスを緑にして音を鳴らす
@@ -661,7 +812,7 @@ function keyboardArea(answer: string[], fixed: Set<number>, pIdx: number | null,
     const part = step < starts.length ? step : -1;
     const i = part >= 0 ? starts[step++] : pos;
     if (i < answer.length) {
-      cells[i].dataset.ghost = inScript(answer[i], settings.script);
+      cells[i].dataset.ghost = disp(answer[i]);
       cells[i].classList.add('ghost');
       glowAt.add(i);
       glowIfDue();
@@ -686,7 +837,7 @@ function keyboardArea(answer: string[], fixed: Set<number>, pIdx: number | null,
       if (misses >= HINT_AFTER_MISSES) keys.get(answer[pos])?.classList.add('hint');
       return;
     }
-    cells[pos].textContent = inScript(c, settings.script);
+    cells[pos].textContent = disp(c);
     cells[pos].classList.remove('current', 'ghost');
     cells[pos].classList.add('filled');
     clearHint();
@@ -712,7 +863,7 @@ function keyboardArea(answer: string[], fixed: Set<number>, pIdx: number | null,
           { class: 'kb-col' },
           ...col.map((c) => {
             if (!c) return h('span', { class: 'key empty' });
-            const key = h('button', { class: 'key' }, inScript(c, settings.script));
+            const key = h('button', { class: 'key' }, disp(c));
             key.addEventListener('pointerdown', (e) => {
               e.preventDefault();
               press(c, key);
@@ -725,15 +876,26 @@ function keyboardArea(answer: string[], fixed: Set<number>, pIdx: number | null,
     );
   };
 
-  const blocks = [block(SEION, 'seion'), block(DAKUON, 'dakuon'), block(SMALL, 'small')];
-  if (settings.aColumn === 'right') blocks.reverse();
+  // 英語はアルファベット表（ABC順。7字ずつ4段、左から右へ）
+  const alphabet = () => h('div', { class: 'kb-block alpha' },
+    ...ALPHABET_ROWS.map((row) => h('div', { class: 'kb-row' }, ...row.map((c) => {
+      const key = h('button', { class: 'key' }, disp(c));
+      key.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        press(c, key);
+      });
+      keys.set(c, key);
+      return key;
+    }))));
+  const blocks = lang === 'en' ? [alphabet()] : [block(SEION, 'seion'), block(DAKUON, 'dakuon'), block(SMALL, 'small')];
+  if (settings.aColumn === 'right' && lang !== 'en') blocks.reverse();
 
   // 字の数（☰ で選ぶ）。出さないキーは場所を空けたまま隠す（50音表の並びを崩さない）
   const needed = new Set(answer.filter((_, i) => !fixed.has(i)));
   const others = shuffle([...keys.keys()].filter((c) => !needed.has(c))); // この問題の間は同じ顔ぶれ
   const menuBtn = h('button', { class: 'kb-tool kb-menu', 'aria-label': 'メニュー', onclick: () => openKeySetMenu(applyKeySet) }, '☰');
   function applyKeySet(): void {
-    const total = KEY_SET_COUNT[settings.keySet];
+    const total = lang === 'en' && settings.keySet === 'k25' ? 20 : KEY_SET_COUNT[settings.keySet];
     const shown = new Set([...needed, ...others.slice(0, Math.max(0, total - needed.size))]);
     keys.forEach((k, c) => k.classList.toggle('off', !shown.has(c)));
   }
@@ -805,7 +967,7 @@ function guideShape(ch: string, font: string, w: number, h: number, weight: Weig
   g.fillStyle = '#000';
   g.strokeStyle = '#000';
   g.lineJoin = 'round';
-  const [x, y] = fillCentered(g, ch, w, h);
+  const [x, y] = placeGlyph(g, ch, w, h);
   const edge = GUIDE_EDGE[weight] * w;
   if (edge > 0) {
     g.lineWidth = edge;
@@ -837,7 +999,7 @@ function traceMask(ch: string, font: string): Uint8ClampedArray | null {
   // 見本の形（太さの設定どおり）＋ふちから TRACE_TOLERANCE まで
   const [shape, x, y] = guideShape(ch, font, PAD_PX, PAD_PX, settings.traceWeight);
   g.drawImage(shape, 0, 0);
-  g.font = font;
+  g.font = shape.getContext('2d')!.font; // 英語は placeGlyph が字の大きさを決める
   g.strokeStyle = '#000';
   g.lineWidth = TRACE_TOLERANCE * 2 + Math.max(0, GUIDE_EDGE[settings.traceWeight] * PAD_PX);
   g.lineJoin = 'round';
@@ -880,7 +1042,7 @@ function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | nu
       const g = c.getContext('2d')!;
       g.fillStyle = '#9a8f84';
       g.font = `bold ${PAD_PX * 0.62}px "Hiragino Maru Gothic ProN", "BIZ UDPGothic", sans-serif`;
-      fillCentered(g, inScript(answer[i], settings.script), PAD_PX, PAD_PX);
+      placeGlyph(g, disp(answer[i]), PAD_PX, PAD_PX);
     }
     return c;
   });
@@ -909,8 +1071,10 @@ function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | nu
     c.height = Math.max(1, Math.round(r.height * dpr));
     const ctx = c.getContext('2d')!;
     ctx.clearRect(0, 0, c.width, c.height);
+    // 英語は4本線（カラーマスの代わり）
+    if (lang === 'en' && !fixed.has(i)) drawEnLines(ctx, 0, c.width, enLines(ctx, c.height), Math.max(1, c.height / 80));
     if (ghost[i]) {
-      drawGuide(ctx, inScript(answer[i], settings.script), ghostFont(c.width), c.width, c.height, ghostAlpha, trace ? settings.traceWeight : 'normal');
+      drawGuide(ctx, disp(answer[i]), ghostFont(c.width), c.width, c.height, ghostAlpha, trace ? settings.traceWeight : 'normal');
     }
     ctx.drawImage(glyphs[i], 0, 0, c.width, c.height);
     cells[i].classList.toggle('written', written[i]);
@@ -955,14 +1119,15 @@ function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | nu
       ctx.drawImage(glyphs[i], 0, 0);
       title.textContent = `${i + 1}もじめ（${i + 1}/${count}）`;
       gctx.clearRect(0, 0, PAD_PX, PAD_PX);
-      mask = trace && !fixed.has(i) ? traceMask(inScript(answer[i], settings.script), ghostFont(PAD_PX)) : null;
+      if (lang === 'en') drawEnLines(gctx, 0, PAD_PX, enLines(gctx, PAD_PX), 5);
+      mask = trace && !fixed.has(i) ? traceMask(disp(answer[i]), ghostFont(PAD_PX)) : null;
       if (ghost[i]) {
-        drawGuide(gctx, inScript(answer[i], settings.script), ghostFont(PAD_PX), PAD_PX, PAD_PX, trace ? 0.2 : 0.12, trace ? settings.traceWeight : 'normal');
+        drawGuide(gctx, disp(answer[i]), ghostFont(PAD_PX), PAD_PX, PAD_PX, trace ? 0.2 : 0.12, trace ? settings.traceWeight : 'normal');
       }
       // 見本あり のときだけ、書く字の見本を横に出す（なぞりはパッドの中に字があるので出さない）
       const showGuide = settings.prompt === 'look' && !trace;
-      if (showGuide && i === pIdx) guide.replaceChildren(particleBadge(inScript(answer[i], settings.script)));
-      else guide.textContent = showGuide ? inScript(answer[i], settings.script) : '';
+      if (showGuide && i === pIdx) guide.replaceChildren(particleBadge(disp(answer[i])));
+      else guide.textContent = showGuide ? disp(answer[i]) : '';
       guide.hidden = !showGuide;
       guide.classList.toggle('particle', i === pIdx);
       nextBtn.hidden = nextIndex(i) < 0;
@@ -1041,7 +1206,7 @@ function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | nu
       { class: 'overlay pad-overlay' },
       h(
         'div',
-        { class: 'pad-dialog' },
+        { class: `pad-dialog ${lang === 'en' ? 'en' : ''}` },
         title,
         h('div', { class: 'pad-row' }, guide, h('div', { class: 'pad-box' }, padGhost, pad)),
         h(
@@ -1060,7 +1225,7 @@ function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | nu
   const doneBtn = h('button', {
     class: 'mid-btn primary',
     onclick: () => {
-      if (written.some(Boolean)) void saveWriting(glyphs, inScript(answer.join(''), settings.script)).catch(() => undefined);
+      if (written.some(Boolean)) void saveWriting(glyphs, disp(answer.join(''))).catch(() => undefined);
       onDone();
     },
   }, 'できた');
@@ -1078,7 +1243,7 @@ function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | nu
 
   return h(
     'div',
-    { class: `input-area handwriting ${trace ? 'trace' : ''}` },
+    { class: `input-area handwriting ${trace ? 'trace' : ''} ${lang === 'en' ? 'en' : ''}` },
     // 見本はマスの真上に置いて、1文字ずつ見比べられるようにする（見本もカラーマス）
     sample && (sample.classList.add('masu-row'), sample),
     h('div', { class: 'hw-cells' }, ...cells),
@@ -1194,6 +1359,7 @@ function settingRows(): HTMLElement[] {
   };
   return [
     choice('script', '文字', [['hira', 'ひらがな'], ['kata', 'カタカナ']]),
+    choice('letterCase', 'えいごの 文字', [['lower', 'こもじ（abc）'], ['upper', 'おおもじ（ABC）']]),
     choice('input', '入力方法', [['keyboard', 'キーボード'], ['handwriting', 'てがき'], ['trace', 'なぞり']]),
     choice('prompt', '出題', [['look', '① 見本あり'], ['listen', '② 読み上げのみ'], ['picture', '③ 絵だけ']]),
     choice('aColumn', 'あ行の位置', [['right', '右はし（50音表と同じ）'], ['left', '左はし']]),
@@ -1545,18 +1711,25 @@ function saveSheetOptions(o: SheetOptions): void {
   }
 }
 
-function worksheetScreen(selected: string[] = lastRoundIds(), cat?: Category): void {
+function worksheetScreen(selected: string[] = lastRoundIds(), cat?: Category, wl?: Lang): void {
   stopBgm();
-  const all = allQuestions();
+  // 英語版の問題も選べる（2026-10-27）。日本語と英語は同じプリントにまぜてもよい
+  const all = [...allQuestions(), ...EN_QUESTIONS];
   const sel = selected.filter((id) => all.some((q) => q.id === id));
-  // カテゴリの指定がなければ、選んでいる問題（＝さいごに遊んだ問題）のカテゴリを開く
-  const showCat: Category = cat ?? all.find((q) => q.id === sel[0])?.category ?? 'mono';
-  const rerender = (next: string[]) => worksheetScreen(next, showCat);
+  // ことば・カテゴリの指定がなければ、選んでいる問題（＝さいごに遊んだ問題）のものを開く
+  const first = all.find((q) => q.id === sel[0]);
+  const showLang: Lang = wl ?? (first?.lang === 'en' ? 'en' : 'ja');
+  const cats = showLang === 'en' ? CATEGORIES.filter((c) => EN_CATEGORIES.includes(c.id)) : CATEGORIES;
+  const showCat: Category = cat && cats.some((c) => c.id === cat) ? cat : first && cats.some((c) => c.id === first.category) ? first.category : 'mono';
+  const rerender = (next: string[]) => worksheetScreen(next, showCat, showLang);
 
-  const tabs = h('div', { class: 'seg' }, ...CATEGORIES.map((c) =>
-    h('button', { class: `seg-btn ${c.id === showCat ? 'on' : ''}`, onclick: () => worksheetScreen(sel, c.id) }, c.label)));
+  const langTabs = h('div', { class: 'seg' }, ...([['ja', 'ひらがな・カタカナ'], ['en', 'えいご']] as [Lang, string][]).map(([l, label]) =>
+    h('button', { class: `seg-btn ${l === showLang ? 'on' : ''}`, onclick: () => worksheetScreen(sel, showCat, l) }, label)));
+  const tabs = h('div', { class: 'seg' }, ...cats.map((c) =>
+    h('button', { class: `seg-btn ${c.id === showCat ? 'on' : ''}`, onclick: () => worksheetScreen(sel, c.id, showLang) }, c.label)));
 
-  const cards = applyParticles(allQuestions(showCat)).map((q) => {
+  const list = showLang === 'en' ? enQuestions(showCat) : applyParticles(allQuestions(showCat));
+  const cards = list.map((q) => {
     const on = sel.includes(q.id);
     return h('div', {
       class: `q-card ${on ? 'on' : 'off'}`,
@@ -1566,7 +1739,8 @@ function worksheetScreen(selected: string[] = lastRoundIds(), cat?: Category): v
     },
     h('span', { class: 'q-card-mark' }, on ? String(sel.indexOf(q.id) + 1) : ''),
     questionPicture(q, 'q-card-pic'),
-    h('span', { class: 'q-card-word' }, inScript(q.hira, settings.script)));
+    h('span', { class: 'q-card-word' }, dispQ(q, q.hira)),
+    q.kana ? h('span', { class: 'q-card-kana' }, q.kana) : null);
   });
 
   // 印刷の前に選ぶ: 種類（みてかく／なぞる）・大きさ（ふつう／おおきい）・マス（十字線／カラーマス）
@@ -1598,7 +1772,8 @@ function worksheetScreen(selected: string[] = lastRoundIds(), cat?: Category): v
         h('button', { class: 'seg-btn', onclick: () => rerender(lastRoundIds()) }, 'さいごに遊んだ問題'),
         h('button', { class: 'seg-btn', onclick: () => rerender([]) }, 'えらび直す（ぜんぶ外す）'),
         h('button', { class: 'seg-btn on', disabled: sel.length === 0, onclick: () => worksheetPrint(sel) }, `つぎへ：みる・PDFにする（${sel.length}問・A4 ${pages}枚）`)),
-      h('p', { class: 'q-note' }, `タップで選ぶ／外す（番号の順に並びます）。見本は教科書体、文字は設定の「${settings.script === 'kata' ? 'カタカナ' : 'ひらがな'}」。`),
+      h('p', { class: 'q-note' }, `タップで選ぶ／外す（番号の順に並びます）。見本は教科書体、文字は設定の「${settings.script === 'kata' ? 'カタカナ' : 'ひらがな'}」。えいごは4本線に、設定の「${settings.letterCase === 'upper' ? 'おおもじ' : 'こもじ'}」で書きます（マスの設定は使いません）。`),
+      langTabs,
       tabs,
       h('div', { class: 'q-grid' }, ...cards),
     ),
@@ -1607,7 +1782,7 @@ function worksheetScreen(selected: string[] = lastRoundIds(), cat?: Category): v
 
 /** 見た目の確認と PDF の保存。確認画面には PDF と同じページの絵を出す。iPad は共有シートの「"ファイル"に保存」 */
 function worksheetPrint(ids: string[]): void {
-  const all = allQuestions();
+  const all = [...allQuestions(), ...EN_QUESTIONS];
   const qs = applyParticles(ids.map((id) => all.find((q) => q.id === id)).filter((q): q is Question => !!q));
   const opts = loadSheetOptions();
   const nPages = Math.ceil(qs.length / perPage(opts));
@@ -1650,11 +1825,13 @@ function worksheetPrint(ids: string[]): void {
 
   void (async () => {
     const items = await Promise.all(qs.map(async (q) => ({
-      chars: chars(inScript(q.hira, settings.script)),
+      chars: chars(dispQ(q, q.hira)),
       particle: particleIndex(q),
       // 先生が付けた写真はその URL を使う
-      imageUrl: hasPhoto(q.id) ? await photoUrl(q.id) : q.builtin ? imageUrl(q.id) : null,
+      imageUrl: await questionImageUrl(q),
       emoji: q.emoji,
+      en: q.lang === 'en',
+      kana: q.kana,
     })));
     canvases = await worksheetPages(items, opts);
     pagesBox.replaceChildren(...canvases.map((c) => {

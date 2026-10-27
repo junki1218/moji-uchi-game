@@ -1044,3 +1044,62 @@ canvas.pad-ghost { width: 100%; height: 100%; }
   .ehon-book:nth-child(2) { animation-delay: 0.1s; }
   .ehon-mark { animation: float 3.2s ease-in-out infinite; }
 }
+
+/* ---------- 英語版（2026-10-27）---------- */
+:root { --en-font: 'Andika', 'Hiragino Maru Gothic ProN', 'BIZ UDPGothic', sans-serif; --en-ink: #2f6fb8; }
+/* ことばを選ぶ（ひらがな カタカナ／えいご） */
+.lang-pick { justify-content: center; }
+.lang-grid { display: flex; gap: 5vw; }
+.lang-btn {
+  width: min(36vw, 52vh); padding: 4vh 2vw 3vh;
+  display: flex; flex-direction: column; align-items: center; gap: 2vh;
+  background: var(--card); border: 4px solid var(--line); border-radius: 28px;
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.08);
+}
+.lang-btn:active { transform: translateY(4px); box-shadow: 0 4px 0 rgba(0, 0, 0, 0.08); }
+.lang-sample { font-size: min(11vw, 16vh); font-weight: 700; line-height: 1.1; font-family: var(--kyokasho); color: var(--primary); }
+.lang-btn.en .lang-sample { font-family: var(--en-font); color: var(--en-ink); }
+.lang-label { font-size: min(4.6vw, 6.6vh); font-weight: 700; }
+.category-title { margin: 0 0 3vh; font-size: min(5vw, 7vh); color: var(--en-ink); }
+.category.en { gap: 0; }
+
+/* 英語の字 */
+.screen.en .sample-cell, .screen.en .answer-cell, .screen.en .key, .screen.en .answer-cell.ghost::after,
+.pad-dialog.en .pad-sample, .screen.en .dial-face, .screen.en .lock-sample { font-family: var(--en-font); }
+.screen.en .answer-cell, .screen.en .sample-cell { font-size: calc(var(--cell) * 0.6); }
+/* アルファベット表: ABC順に 7字ずつ4段 */
+.kb-block.alpha { flex-direction: column; --key: min(8vw, 8.4vh); }
+.kb-row { display: flex; gap: var(--gap); }
+.kb-block.alpha .key { font-size: calc(var(--key) * 0.62); }
+
+/* カタカナの読み方 */
+.en-kana { font-size: min(3vw, 4.4vh); font-weight: 700; color: var(--sub); letter-spacing: 0.05em; }
+
+/* 「いぬ は dog」の帯 */
+.en-banner {
+  display: flex; align-items: center; gap: 1.2vw;
+  background: var(--card); border: 3px solid var(--line); border-radius: 18px;
+  padding: 0.5vh 2.4vw; font-size: min(3.8vw, 5.4vh); font-weight: 700; line-height: 1.1;
+}
+.en-ja { font-family: var(--kyokasho); white-space: nowrap; }
+.en-banner, .en-word-text, .en-kana { white-space: nowrap; }
+.en-ha { width: 1.35em; height: 1.35em; display: inline-block; flex: none; }
+.en-ha .particle-badge { width: 100%; height: 100%; }
+.en-word { display: inline-flex; flex-direction: column; align-items: center; }
+.en-word-text { font-family: var(--en-font); color: var(--en-ink); }
+.en-word .en-kana { font-size: 0.42em; }
+.en-banner.big { font-size: min(7vw, 10vh); padding: 2vh 3vw; border-radius: 28px; gap: 2vw; }
+.intro-body { flex: 1; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; gap: 4vw; }
+.intro-pic { height: auto; width: min(36vw, 52vh); max-height: none; }
+.intro-side { display: flex; flex-direction: column; align-items: center; gap: 4vh; }
+.intro-next { margin-bottom: 2vh; }
+.intro-next[hidden] { display: none; }
+
+/* てがき・なぞり: カラーマスの代わりに4本線（線はキャンバスに描く） */
+.handwriting.en .hw-cell:not(.fixed), .pad-dialog.en .pad-box,
+.handwriting.en .sample.masu-row .sample-cell { background: #fff; }
+.sample-cell.lined { padding: 0; overflow: hidden; }
+.lined-letter { width: 100%; height: 100%; display: block; }
+
+/* プリントの問題えらび */
+.q-card-kana { font-size: 15px; font-weight: 700; color: var(--sub); }
