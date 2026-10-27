@@ -7,7 +7,7 @@
 // 2026-10-22: 種類（みてかく＝視写／なぞる）・大きさ（ふつう＝A4縦5問／おおきい＝A4横2問）・
 //             マス（十字線／カラーマス）を選べるようにした
 
-import { drawEnLines, EN_FONT, enLines, fillCenteredAt, fillOnLines } from './glyph';
+import { drawEnGlyph, drawEnLines, enGlyphWidth, enLines, fillCenteredAt } from './glyph';
 
 export interface SheetItem {
   /** 表示する字（ひらがな／カタカナ設定に合わせた後） */
@@ -205,16 +205,15 @@ async function drawPage(items: SheetItem[], o: SheetOptions, pageNo: number, pag
       // 字と字のあいだは、ひとつの単語に見えるくらいにつめる（字の幅をはかって、少しだけあける）
       const top = enLines(g, cell, sy);
       const bot = enLines(g, cell, wy);
-      g.font = `700 ${top.size}px ${EN_FONT}`;
       const gap = cell * 0.12;
-      const widths = it.chars.map((ch) => g.measureText(ch).width);
+      const widths = it.chars.map((ch) => enGlyphWidth(ch, top));
       const rowW = Math.max(cell * 2, widths.reduce((s, w) => s + w + gap, gap) + cell * 0.6);
       drawEnLines(g, lx, rowW, top, 0.3);
       drawEnLines(g, lx, rowW, bot, 0.3);
       let x = lx + cell * 0.3 + gap;
       it.chars.forEach((ch, k) => {
         g.fillStyle = o.kind === 'trace' ? TRACE_INK : '#222';
-        fillOnLines(g, ch, x + widths[k] / 2, top);
+        drawEnGlyph(g, ch, x + widths[k] / 2, top);
         x += widths[k] + gap;
       });
       g.textBaseline = 'alphabetic';

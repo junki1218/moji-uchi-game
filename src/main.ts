@@ -11,7 +11,7 @@ import { duckBgm, playBgm, playJingle, setSound, sfx, stopBgm, unlockAudio } fro
 import { speak, stopSpeech, unlockSpeech, type SpeechLang } from './speech';
 import { MINIGAMES, runMinigame, type MiniQuestion, type MinigameKind } from './minigames';
 import { letters } from './kinetic';
-import { drawEnLines, enLines, fillCentered, fillOnLines } from './glyph';
+import { drawEnGlyph, drawEnLines, enLines, fillCentered } from './glyph';
 import { ALPHABET_ROWS, EN_CATEGORIES, EN_QUESTIONS, enQuestions } from './english';
 
 // 新しい版が届いたら、ゲームの途中ではなくスタート画面に戻ったときに読み込み直す
@@ -63,7 +63,7 @@ const dispQ = (q: Question, s: string) => disp(s, q.lang === 'en' ? 'en' : 'ja')
 
 /** 英語の字の大きさ・位置（4本線）。日本語はマスの真ん中 */
 function placeGlyph(g: CanvasRenderingContext2D, ch: string, w: number, hh: number): [number, number] {
-  if (lang === 'en') return fillOnLines(g, ch, w / 2, enLines(g, hh));
+  if (lang === 'en') return drawEnGlyph(g, ch, w / 2, enLines(g, hh));
   return fillCentered(g, ch, w, hh);
 }
 setSound(settings.sound, VOLUME_LEVEL[settings.volume]);
@@ -591,7 +591,7 @@ function linedLetter(ch: string): HTMLCanvasElement {
     const L = enLines(g, S);
     drawEnLines(g, 0, S, L, 3);
     g.fillStyle = '#333';
-    fillOnLines(g, ch, S / 2, L);
+    drawEnGlyph(g, ch, S / 2, L);
   };
   draw();
   void document.fonts?.load(`700 40px Andika`).then(draw).catch(() => undefined);
@@ -967,8 +967,13 @@ function guideShape(ch: string, font: string, w: number, h: number, weight: Weig
   g.fillStyle = '#000';
   g.strokeStyle = '#000';
   g.lineJoin = 'round';
-  const [x, y] = placeGlyph(g, ch, w, h);
   const edge = GUIDE_EDGE[weight] * w;
+  // 英語は4本線のきまりで描く（太さもいっしょに）
+  if (lang === 'en') {
+    const [ex, ey] = drawEnGlyph(g, ch, w / 2, enLines(g, h), edge > 0 ? { stroke: edge } : { erase: -edge });
+    return [c, ex, ey];
+  }
+  const [x, y] = placeGlyph(g, ch, w, h);
   if (edge > 0) {
     g.lineWidth = edge;
     g.strokeText(ch, x, y);
@@ -999,11 +1004,17 @@ function traceMask(ch: string, font: string): Uint8ClampedArray | null {
   // 見本の形（太さの設定どおり）＋ふちから TRACE_TOLERANCE まで
   const [shape, x, y] = guideShape(ch, font, PAD_PX, PAD_PX, settings.traceWeight);
   g.drawImage(shape, 0, 0);
-  g.font = shape.getContext('2d')!.font; // 英語は placeGlyph が字の大きさを決める
-  g.strokeStyle = '#000';
-  g.lineWidth = TRACE_TOLERANCE * 2 + Math.max(0, GUIDE_EDGE[settings.traceWeight] * PAD_PX);
-  g.lineJoin = 'round';
-  g.strokeText(ch, x, y);
+  const wider = TRACE_TOLERANCE * 2 + Math.max(0, GUIDE_EDGE[settings.traceWeight] * PAD_PX);
+  if (lang === 'en') {
+    g.fillStyle = '#000';
+    drawEnGlyph(g, ch, PAD_PX / 2, enLines(g, PAD_PX), { stroke: wider });
+  } else {
+    g.font = font;
+    g.strokeStyle = '#000';
+    g.lineWidth = wider;
+    g.lineJoin = 'round';
+    g.strokeText(ch, x, y);
+  }
   const data = g.getImageData(0, 0, PAD_PX, PAD_PX).data;
   const alpha = new Uint8ClampedArray(PAD_PX * PAD_PX);
   for (let k = 0; k < alpha.length; k++) alpha[k] = data[k * 4 + 3];
