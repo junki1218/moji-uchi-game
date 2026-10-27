@@ -115,6 +115,7 @@ const emoji = (e: string) => () => h('span', { class: 'emoji' }, e);
 
 /** 問題の絵。先生が付けた写真 → 最初からの絵（src/images/{id}.webp）→ 絵文字 の順に使う */
 function questionPicture(q: Question, cls = ''): HTMLElement {
+  if (isAlphabet(q)) return abcPicture(q, cls);
   const pid = q.img ?? q.id;
   if (hasPhoto(pid)) {
     const box = h('div', { class: `picture ${cls}` });
@@ -469,7 +470,7 @@ function questionScreen(round: Round, afterMini = false): void {
     // 英語: カタカナの読み方を、いつも単語の下に
     en && q.kana ? h('div', { class: 'en-kana' }, q.kana) : null,
   );
-  const pic = isAlphabet(q) ? abcPicture(q, 'q-pic') : questionPicture(q, 'q-pic');
+  const pic = questionPicture(q, 'q-pic');
   const top = h('div', { class: `q-top ${q.type === 'sentence' ? 'sentence' : ''}` }, pic, side);
 
   // 答えができたら、まず1文字ずつ大きくして読み上げる（字と音を結びつける）→ 花丸
@@ -589,12 +590,15 @@ function introScreen(round: Round): void {
   window.setTimeout(say, 400);
 }
 
-/** アルファベットの問題の「絵」: 大文字と小文字を大きく（Aa） */
+/**
+ * アルファベットの問題の「絵」: 字を1つ大きく。ふつうは設定の こもじ／おおもじ だけ
+ * （大文字と小文字を両方出すと、どちらを書くのか迷うので出さない。2026-10-27）。
+ * ミニゲームは あてる元の小文字を渡す（only）
+ */
 function abcPicture(q: Question, cls: string, only?: string): HTMLElement {
-  const up = q.hira.toUpperCase();
+  const ch = only ?? dispQ(q, q.hira);
   return h('div', { class: `picture ${cls} abc-pic` },
-    only !== undefined ? h('span', { class: 'abc-one' }, only)
-      : h('span', { class: 'abc-pair' }, h('span', {}, up), h('span', {}, q.hira)));
+    h('span', { class: `abc-one ${ch === ch.toUpperCase() ? 'upper' : 'lower'}` }, ch));
 }
 
 /** 英語のてがきの見本: 4本線の上に字（キャンバス） */
@@ -1914,7 +1918,8 @@ function worksheetPrint(ids: string[]): void {
       particle: particleIndex(q),
       // 先生が付けた写真はその URL を使う
       imageUrl: await questionImageUrl(q),
-      emoji: q.emoji,
+      // アルファベットは絵の代わりに字（設定の こもじ／おおもじ だけ）
+      emoji: isAlphabet(q) ? dispQ(q, q.hira) : q.emoji,
       en: q.lang === 'en',
       kana: q.kana,
     })));
