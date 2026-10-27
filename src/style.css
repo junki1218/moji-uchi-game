@@ -1176,3 +1176,23 @@ canvas.pad-ghost { width: 100%; height: 100%; }
 .stock-dl.trace { background: #8fbfe6; }
 .stock-dl.ready { background: #4caf50; }
 .stock-dl:disabled { opacity: 0.7; }
+
+/* ---------- 先生が問題を作る（2026-10-27）---------- */
+.seg-btn.create { background: #4caf50; border-color: #4caf50; color: #fff; font-weight: 700; }
+.create-dialog { width: min(94vw, 980px); max-height: 92vh; overflow-y: auto; text-align: left; }
+.create-dialog h2 { margin: 0 0 1.5vh; text-align: center; }
+.create-body { display: flex; gap: 3vw; align-items: flex-start; }
+.create-left { display: flex; flex-direction: column; align-items: center; gap: 12px; flex: none; }
+.create-photo {
+  width: min(26vw, 34vh); aspect-ratio: 1; border: 3px dashed var(--line); border-radius: 18px;
+  display: grid; place-items: center; overflow: hidden; background: #fff; color: var(--sub);
+}
+.create-photo img { width: 100%; height: 100%; object-fit: contain; }
+.create-right { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+.create-field { display: flex; flex-direction: column; gap: 6px; }
+.create-label { font-weight: 700; }
+.create-field small { color: var(--sub); }
+.create-input { font: inherit; font-size: 22px; padding: 10px 14px; border: 3px solid var(--line); border-radius: 14px; background: #fff; min-width: 0; }
+.create-inline { display: flex; gap: 10px; }
+.create-inline .create-input { flex: 1; }
+.create-msg { min-height: 1.4em; margin: 1vh 0; color: #c0392b; font-weight: 700; text-align: center; }

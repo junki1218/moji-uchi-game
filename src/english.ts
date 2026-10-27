@@ -3,6 +3,7 @@
 // 「ぶん」は英会話に親しめる形を後日考える（それまで英語版には出さない）
 
 import { BUILTIN_QUESTIONS, type Category, type Question } from './questions';
+import { customEnQuestions } from './bank';
 
 /** 英語版で出すカテゴリ（アルファベットは 2026-10-27 追加） */
 export const EN_CATEGORIES: Category[] = ['mono', 'ugoki', 'alphabet'];
@@ -85,7 +86,8 @@ export const isAlphabet = (q: Question) => q.category === 'alphabet';
 export const letterName = (c: string): string => c.toLowerCase();
 
 export function enQuestions(cat?: Category): Question[] {
-  const all = [...EN_QUESTIONS, ...ALPHABET_QUESTIONS];
+  // 先生が作った英語の問題も（2026-10-27）
+  const all = [...EN_QUESTIONS, ...ALPHABET_QUESTIONS, ...customEnQuestions()];
   return cat ? all.filter((q) => q.category === cat) : all;
 }
 

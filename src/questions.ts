@@ -39,6 +39,8 @@ export interface Question {
   /** 英語版: 日本語（ひらがな）と、カタカナの読み方 */
   ja?: string;
   kana?: string;
+  /** よみかた（先生が作った問題。2026-10-27）。あれば言葉のかわりにこれを読む（名前のアクセント・「は」の読みなど） */
+  reading?: string;
   emoji: string;
   /** 最初から入っている問題（削除できない。画像は src/images/{id}.webp） */
   builtin: boolean;
@@ -73,6 +75,7 @@ export function withParticle(q: Question, p: Particle): Question {
 
 /** 読み上げる文。助詞の「は」は「わ」と読ませる（ひらがなだけだと「は」と読まれることがある） */
 export function spokenText(q: Question): string {
+  if (q.reading) return q.reading;
   if (q.type === 'sentence' && q.parts && q.particle === 'は') return `${q.parts[0]} わ ${q.parts[1]}`;
   return q.hira;
 }

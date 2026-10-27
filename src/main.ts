@@ -1,7 +1,7 @@
 import './style.css';
 import { registerSW } from 'virtual:pwa-register';
 import { CATEGORIES, MAX_CHARS, type Category, type Question, withParticle, spokenText, type Particle } from './questions';
-import { allQuestions, applyImport, attachPhoto, deleteCustom, enabledQuestions, exportJson, isEnabled, parseImport, setEnabled, type ImportPlan } from './bank';
+import { addCustom, allQuestions, applyImport, attachPhoto, deleteCustom, enabledQuestions, exportJson, isEnabled, parseImport, setEnabled, type ImportPlan } from './bank';
 import { hasPhoto, loadPhotoIndex, photoUrl, removePhoto } from './photos';
 import { DEFAULT_SHEET, pageCount, savePdf, worksheetPages, worksheetPdf, type SheetItem, type SheetOptions, type SheetSize } from './worksheet-pdf';
 import { clearWritings, deleteWriting, exportWritings, listWritings, MAX_WRITINGS, saveWriting } from './writings';
@@ -420,6 +420,12 @@ function charReading(c: string): string {
 
 const wait = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms));
 
+/** その問題を読むときの言葉（よみかた があればそれ。アルファベットは字の名前） */
+function speechOf(q: Question): string {
+  if (q.lang === 'en') return isAlphabet(q) ? letterName(q.hira) : q.reading || q.hira;
+  return spokenText(q);
+}
+
 function speakAndWait(text: string, l: SpeechLang = 'ja'): Promise<void> {
   return new Promise((resolve) => {
     let done = false;
@@ -488,7 +494,7 @@ function questionScreen(round: Round, afterMini = false): void {
   const en = q.lang === 'en';
   const shown = (c: string) => disp(c);
   // アルファベットは字の名前
-  const say = () => speak(en ? (isAlphabet(q) ? letterName(q.hira) : q.hira) : spokenText(q), () => duckBgm(true), () => duckBgm(false), en ? 'en' : 'ja');
+  const say = () => speak(speechOf(q), () => duckBgm(true), () => duckBgm(false), en ? 'en' : 'ja');
 
   const trace = settings.input === 'trace';
   const lined = en && settings.input !== 'keyboard'; // 英語のてがき: 見本も4本線
@@ -520,7 +526,7 @@ function questionScreen(round: Round, afterMini = false): void {
     const screen = app.querySelector<HTMLElement>('.screen.game');
     screen?.classList.add('reading'); // 読み上げ中は入力を受け付けない（やめる は押せる）
     const cells = [...(screen?.querySelectorAll<HTMLElement>('.answer .answer-cell, .hw-cells .hw-cell') ?? [])];
-    void readOut(cells, answer, pIdx, en, en ? q.hira : spokenText(q)).then((ok) => { if (ok) celebrate(); });
+    void readOut(cells, answer, pIdx, en, speechOf(q)).then((ok) => { if (ok) celebrate(); });
   };
   const celebrate = () => {
     const overlay = h('div', { class: 'overlay clear' }, hanamaru('pop'));
@@ -591,7 +597,7 @@ async function sayIntro(q: Question): Promise<void> {
   try {
     await speakAndWait(`${q.ja ?? ''} わ`);
     await wait(150);
-    await speakAndWait(q.hira, 'en');
+    await speakAndWait(speechOf(q), 'en');
   } finally {
     duckBgm(false);
   }
@@ -929,7 +935,7 @@ function minigameScreen(round: Round, kinds: MinigameKind[], onDone: () => void)
   const say = () => speak(instruction, () => duckBgm(true), () => duckBgm(false));
   // 🔊 は正解の言葉を読む（やることは最初に1回読む）
   const cur = round.questions[round.index];
-  const sayWord = () => speak(cur.lang === 'en' ? (isAlphabet(cur) ? letterName(cur.hira) : cur.hira) : spokenText(cur), () => duckBgm(true), () => duckBgm(false), cur.lang === 'en' ? 'en' : 'ja');
+  const sayWord = () => speak(speechOf(cur), () => duckBgm(true), () => duckBgm(false), cur.lang === 'en' ? 'en' : 'ja');
   const instruction = mq.instruction?.[kind] ?? info.instruction;
   show(
     h(
@@ -1869,7 +1875,7 @@ function questionsScreen(cat: Category, message = '', group: QGroup = 'ja'): voi
       questionPicture(q, 'q-card-pic'),
       h('span', { class: 'q-card-word' }, ja ? q.hira : dispQ(q, q.hira)),
       q.kana ? h('span', { class: 'q-card-kana' }, q.kana) : null,
-      ja && h(
+      (ja || !q.builtin) && h(
         'div',
         { class: 'q-card-tools' },
         photoInput,
@@ -1895,6 +1901,7 @@ function questionsScreen(cat: Category, message = '', group: QGroup = 'ja'): voi
         { class: 'seg toolbar' },
         h('button', { class: 'seg-btn', onclick: () => { setEnabled(list.map((q) => q.id), true); rerender(); } }, 'ぜんぶ ON'),
         h('button', { class: 'seg-btn', onclick: () => { setEnabled(list.map((q) => q.id), false); rerender(); } }, 'ぜんぶ OFF'),
+        group !== 'line' && h('button', { class: 'seg-btn create', onclick: () => createDialog(group === 'en' ? 'en' : 'ja', cat, rerender) }, '＋ つくる'),
         ja && fileInput,
         ja && h('button', { class: 'seg-btn', onclick: () => fileInput.click() }, 'JSONを読み込む'),
         ja && exportBtn,
@@ -1902,11 +1909,94 @@ function questionsScreen(cat: Category, message = '', group: QGroup = 'ja'): voi
       h('p', { class: 'q-note' },
         message || (group === 'line'
           ? `タップで ON/OFF。ON の形から、設定の「1回の数」だけ やさしい順に出します（いま ${onCount}こ）。`
-          : `タップで ON/OFF。ON の問題から1回に最大10問を出します（いま ${onCount}問）。${ja ? `単語は${MAX_CHARS}文字まで。` : '英語の絵・写真は「ひらがな カタカナ」の同じ絵の問題で変えます。'}`)),
+          : `タップで ON/OFF。ON の問題から1回に最大10問を出します（いま ${onCount}問）。${ja ? `単語は${MAX_CHARS}文字まで。` : '最初からある英語の問題の絵・写真は「ひらがな カタカナ」の同じ絵の問題で変えます（「＋ つくる」で作った問題は ここで変えられます）。'}`)),
       onCount === 0 && h('p', { class: 'q-note warn' }, group === 'line' ? 'ON の形がないので、「せんの れんしゅう」は押せません' : 'このカテゴリは ON の問題がないので、子どもの画面で選べません'),
       h('div', { class: 'q-grid' }, ...cards),
     ),
   );
+}
+
+/**
+ * 先生が問題を作る（2026-10-27）: 写真（iPad の写真・その場で撮る）＋言葉＋よみかた。英語は 日本語・カタカナも。
+ * よみかた があれば、言葉のかわりにそれを読む（名前のアクセント・ローマ字の名前など）
+ */
+function createDialog(lang: 'ja' | 'en', cat: Category, done: (msg: string) => void): void {
+  const cats: [Category, string][] = lang === 'en' ? [['mono', 'もの'], ['ugoki', 'うごき']] : [['mono', 'もの'], ['kimochi', 'きもち'], ['ugoki', 'うごき']];
+  let category: Category = cats.some(([c]) => c === cat) ? cat : 'mono';
+  let photo: Blob | null = null;
+
+  const field = (label: string, input: HTMLElement, note = '') =>
+    h('label', { class: 'create-field' }, h('span', { class: 'create-label' }, label), input, note ? h('small', {}, note) : null);
+  const text = (placeholder: string) => h('input', { type: 'text', class: 'create-input', placeholder, autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false' });
+  const word = text(lang === 'en' ? '例: taro' : '例: たろうくん');
+  const ja = text('例: たろう');
+  const kana = text('例: タロウ');
+  const reading = text(lang === 'en' ? '例: taro（英語の声で読む文字）' : '例: たろーくん');
+
+  const catSeg = h('div', { class: 'seg' });
+  const paintCat = () => catSeg.replaceChildren(...cats.map(([c, label]) =>
+    h('button', { class: `seg-btn ${c === category ? 'on' : ''}`, type: 'button', onclick: () => { category = c; paintCat(); } }, label)));
+  paintCat();
+
+  const preview = h('div', { class: 'create-photo' }, h('span', {}, 'しゃしん なし'));
+  const fileInput = h('input', { type: 'file', accept: 'image/*', class: 'hidden-input' });
+  fileInput.addEventListener('change', () => {
+    const f = fileInput.files?.[0];
+    if (!f) return;
+    photo = f;
+    preview.replaceChildren(h('img', { src: URL.createObjectURL(f), alt: '' }));
+  });
+
+  const test = h('button', {
+    class: 'seg-btn', type: 'button',
+    onclick: () => {
+      unlockSpeech();
+      const t = reading.value.trim() || word.value.trim();
+      if (t) speak(t, undefined, undefined, lang === 'en' ? 'en' : 'ja');
+    },
+  }, '▶ ためす');
+
+  const msg = h('p', { class: 'create-msg' });
+  const save: HTMLButtonElement = h('button', {
+    class: 'mid-btn primary', type: 'button',
+    onclick: async () => {
+      save.disabled = true;
+      msg.textContent = 'ほぞんしています…';
+      try {
+        const r = await addCustom({ lang, category, word: word.value, ja: ja.value, kana: kana.value, reading: reading.value, photo });
+        if ('error' in r) {
+          msg.textContent = r.error;
+          return;
+        }
+        overlay.remove();
+        done(`「${word.value.trim()}」をつくりました`);
+      } catch {
+        msg.textContent = 'ほぞんできませんでした（写真が読めないときは、ほかの写真で ためしてください）';
+      } finally {
+        save.disabled = false;
+      }
+    },
+  }, 'ほぞん');
+
+  const overlay = h('div', { class: 'overlay create-overlay' },
+    h('div', { class: 'dialog create-dialog' },
+      h('h2', {}, lang === 'en' ? 'えいごの もんだいを つくる' : 'もんだいを つくる'),
+      h('div', { class: 'create-body' },
+        h('div', { class: 'create-left' }, preview, fileInput,
+          h('button', { class: 'seg-btn', type: 'button', onclick: () => fileInput.click() }, '写真をえらぶ・とる')),
+        h('div', { class: 'create-right' },
+          field('しゅるい', catSeg),
+          field(lang === 'en' ? 'えいご' : 'ことば', word, lang === 'en' ? `a〜z の${MAX_CHARS}文字まで` : `ひらがな・カタカナ ${MAX_CHARS}文字まで（カタカナはひらがなにそろえます）`),
+          lang === 'en' ? field('にほんご', ja, '「いぬ は dog」の画面で使うひらがな') : null,
+          lang === 'en' ? field('カタカナの よみかた', kana, 'ことばの下に出す（なくてもよい）') : null,
+          field('よみかた（なくてもよい）', h('div', { class: 'create-inline' }, reading, test),
+            lang === 'en' ? '英語の声がうまく読めないとき、聞こえ方に近いつづりを入れる' : '読みまちがえるとき（名前のアクセント・「は」の読みなど）に入れる'))),
+      msg,
+      h('div', { class: 'dialog-buttons' },
+        h('button', { class: 'mid-btn secondary', type: 'button', onclick: () => overlay.remove() }, 'やめる'),
+        save)));
+  app.append(overlay);
+  word.focus();
 }
 
 function importDialog(plan: ImportPlan, done: (msg: string) => void): void {

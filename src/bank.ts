@@ -35,9 +35,15 @@ function persist(): void {
   write(DISABLED_KEY, [...disabled]);
 }
 
+/** 日本語の問題（最初から＋先生が足したもの）。先生が作った英語の問題は customEnQuestions */
 export function allQuestions(cat?: Category): Question[] {
-  const all = [...BUILTIN_QUESTIONS, ...custom];
+  const all = [...BUILTIN_QUESTIONS, ...custom.filter((q) => q.lang !== 'en')];
   return cat ? all.filter((q) => q.category === cat) : all;
+}
+
+/** 先生が作った英語の問題（2026-10-27） */
+export function customEnQuestions(cat?: Category): Question[] {
+  return custom.filter((q) => q.lang === 'en' && (!cat || q.category === cat));
 }
 
 export function isEnabled(id: string): boolean {
@@ -62,6 +68,53 @@ export async function deleteCustom(id: string): Promise<void> {
 
 export async function attachPhoto(id: string, file: Blob): Promise<void> {
   await savePhoto(id, await shrinkImage(file));
+}
+
+// ------------------------------------------------------------ アプリの中で問題を作る（2026-10-27）
+
+export interface NewQuestion {
+  lang: 'ja' | 'en';
+  category: Category;
+  /** 日本語はひらがな・カタカナ、英語はアルファベット */
+  word: string;
+  /** 英語だけ: 日本語（ひらがな）・カタカナの読み方 */
+  ja?: string;
+  kana?: string;
+  /** よみかた（なくてもよい） */
+  reading?: string;
+  photo?: Blob | null;
+}
+
+const EN_WORD = /^[a-z]+$/;
+
+/** 先生が作った問題を足す。だめなら理由を返す */
+export async function addCustom(n: NewQuestion): Promise<{ id: string } | { error: string }> {
+  const reading = n.reading?.trim() || undefined;
+  const stamp = Date.now().toString(36);
+  if (n.lang === 'en') {
+    const word = n.word.trim().toLowerCase();
+    if (!word) return { error: 'えいごの ことばを いれてください' };
+    if (!EN_WORD.test(word)) return { error: 'えいごは a〜z の字だけにしてください（スペースや記号は打てません）' };
+    if (word.length > MAX_CHARS) return { error: `${MAX_CHARS}文字までです（${word.length}文字）` };
+    if (n.category !== 'mono' && n.category !== 'ugoki') return { error: 'しゅるいは もの／うごき です' };
+    const ja = normalizeKana(n.ja ?? '');
+    if (!ja) return { error: 'にほんご（ひらがな）を いれてください（「いぬ は dog」の画面で使います）' };
+    const kana = (n.kana ?? '').trim().replace(/[ぁ-ゖ]/g, (c) => String.fromCharCode(c.charCodeAt(0) + 0x60));
+    const id = `c_en_${n.category}_${word}_${stamp}`;
+    custom.push({ id, type: 'word', category: n.category, hira: word, emoji: '❔', builtin: false, lang: 'en', ja, kana: kana || undefined, reading });
+    persist();
+    if (n.photo) await attachPhoto(id, n.photo);
+    return { id };
+  }
+  const word = normalizeKana(n.word);
+  const err = checkWord(word);
+  if (err) return { error: err };
+  if (!['mono', 'kimochi', 'ugoki'].includes(n.category)) return { error: 'しゅるいは もの／きもち／うごき です' };
+  const id = `c_${n.category}_${word}_${stamp}`;
+  custom.push({ id, type: 'word', category: n.category, hira: word, emoji: '❔', builtin: false, reading });
+  persist();
+  if (n.photo) await attachPhoto(id, n.photo);
+  return { id };
 }
 
 // ------------------------------------------------------------ JSON 読み込み
@@ -153,6 +206,20 @@ export function parseImport(text: string): ImportPlan {
       return;
     }
 
+    const reading = typeof r.reading === 'string' && r.reading.trim() ? r.reading.trim() : undefined;
+    // 英語（2026-10-27）: {"lang":"en","word":"taro","ja":"たろう","kana":"タロウ","category":"mono"}
+    if (r.lang === 'en') {
+      const w = String(r.word ?? '').trim().toLowerCase();
+      const c = CATEGORY_ALIASES[String(r.category ?? '').trim()];
+      const ja = normalizeKana(String(r.ja ?? ''));
+      if (!EN_WORD.test(w) || w.length > MAX_CHARS) return errors.push(`${n}「${w}」: えいごは a〜z の${MAX_CHARS}文字までです`);
+      if (c !== 'mono' && c !== 'ugoki') return errors.push(`${n}「${w}」: category は もの／うごき にしてください`);
+      if (!ja) return errors.push(`${n}「${w}」: ja（にほんご）がありません`);
+      const eid = id || `c_en_${c}_${w}`;
+      items.push({ id: eid, image, question: { id: eid, type: 'word', category: c, hira: w, emoji, builtin: false, lang: 'en', ja, kana: typeof r.kana === 'string' ? r.kana.trim() || undefined : undefined, reading } });
+      return;
+    }
+
     const word = normalizeKana(String(r.word ?? r.hira ?? ''));
     const cat = CATEGORY_ALIASES[String(r.category ?? '').trim()];
     if (!word) return errors.push(`${n}: 単語（word）がありません`);
@@ -171,6 +238,7 @@ export function parseImport(text: string): ImportPlan {
         hira: word,
         emoji,
         builtin: false,
+        reading,
       },
     });
   });
@@ -184,8 +252,9 @@ export function parseImport(text: string): ImportPlan {
 export async function applyImport(plan: ImportPlan, mode: 'add' | 'replace'): Promise<number> {
   const incoming = new Set(plan.items.map((p) => p.id));
   if (mode === 'replace') {
-    for (const q of custom) if (!incoming.has(q.id)) await removePhoto(q.id).catch(() => undefined);
-    custom = [];
+    // 先生が作った英語の問題は、日本語の読み込みでは消さない
+    for (const q of custom) if (!incoming.has(q.id) && q.lang !== 'en') await removePhoto(q.id).catch(() => undefined);
+    custom = custom.filter((q) => q.lang === 'en');
     disabled = new Set(BUILTIN_QUESTIONS.map((q) => q.id).filter((id) => !incoming.has(id)));
   }
   for (const p of plan.items) {
@@ -205,7 +274,7 @@ export async function applyImport(plan: ImportPlan, mode: 'add' | 'replace'): Pr
 /** 出題 ON の問題を書き出す。写真も含めるので、そのまま別の iPad で読み込める */
 export async function exportJson(): Promise<Blob> {
   const questions = [];
-  for (const q of allQuestions().filter((x) => isEnabled(x.id))) {
+  for (const q of [...allQuestions(), ...customEnQuestions()].filter((x) => isEnabled(x.id))) {
     const blob = hasPhoto(q.id) ? await photoBlob(q.id) : null;
     questions.push({
       id: q.id,
@@ -213,6 +282,8 @@ export async function exportJson(): Promise<Blob> {
       category: q.category,
       ...(q.type === 'sentence' && q.parts ? { subject: q.parts[0], predicate: q.parts[1] } : { word: q.hira }),
       ...(q.builtin ? {} : { emoji: q.emoji }),
+      ...(q.lang === 'en' ? { lang: 'en', ja: q.ja, kana: q.kana } : {}),
+      ...(q.reading ? { reading: q.reading } : {}),
       ...(blob ? { image: await blobToDataUrl(blob) } : {}),
     });
   }
