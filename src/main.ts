@@ -361,7 +361,7 @@ function applyParticles(qs: Question[], random = false): Question[] {
 
 /** せんの れんしゅう: 20この形から10こ、やさしい順に */
 function startLineRound(): void {
-  const picked = shuffle(LINE_QUESTIONS).slice(0, ROUND_SIZE).sort((a, b) => a.id.localeCompare(b.id));
+  const picked = shuffle(LINE_QUESTIONS).slice(0, settings.lineCount).sort((a, b) => a.id.localeCompare(b.id));
   const round: Round = { questions: picked, index: 0 };
   try {
     localStorage.setItem(LAST_ROUND_KEY, JSON.stringify(picked.map((q) => q.id)));
@@ -661,7 +661,7 @@ function linedLetter(ch: string): HTMLCanvasElement {
 // ヒント: うすい赤の線が、一筆書きの動きでゆっくり進む。もう一度押すと、赤を消してから はじめから
 
 const LINE_PX = 600;
-/** 見本の線の太さ（四角の一辺に対する割合。設定「なぞりの見本の太さ」） */
+/** 見本の線の太さ（四角の一辺に対する割合。設定「線の見本の太さ」） */
 const LINE_GUIDE: Record<Weight, number> = { thin: 0.045, normal: 0.065, bold: 0.09 };
 const LINE_TOLERANCE = LINE_PX * 0.045; // 線のふちから、これくらいまでは「なぞれている」
 const HINT_RED = 'rgba(229, 72, 77, 0.45)';
@@ -673,7 +673,7 @@ function lineScreen(round: Round): void {
   const shape = lineShape(q.id)!;
   const pts = shape.pts;
   const S = LINE_PX;
-  const gw = S * LINE_GUIDE[settings.traceWeight];
+  const gw = S * LINE_GUIDE[settings.lineWeight];
   const canvas = (cls: string) => h('canvas', { class: cls, width: String(S), height: String(S) });
   const guide = canvas('line-layer');
   const hintC = canvas('line-layer');
@@ -824,7 +824,7 @@ function lineScreen(round: Round): void {
   );
   window.setTimeout(say, 300);
   // 問題を出したら、まずヒントを1回見せて（書き方の動き）、灰色にもどす。あとはヒントボタンでいつでも
-  window.setTimeout(() => { if (hintC.isConnected) playHint(true); }, 600);
+  if (settings.lineHint) window.setTimeout(() => { if (hintC.isConnected) playHint(true); }, 600);
 }
 
 /** 左上の「やめる」と ⚙（問題・ミニゲームの両方に出す） */
@@ -857,7 +857,9 @@ function openSettingsModal(round: Round, inMini = false): void {
   };
   const closeBtn = h('button', { class: 'mid-btn secondary modal-close', onclick: close }, 'とじる');
   box.append(closeBtn, ...pinPad(() => {
-    box.replaceChildren(closeBtn, h('h2', {}, '設定（先生用）'), ...settingRows(),
+    const q = round.questions[round.index];
+    const tab: SettingTab = q.category === 'line' ? 'line' : q.lang === 'en' ? 'en' : 'ja';
+    box.replaceChildren(closeBtn, h('h2', {}, '設定（先生用）'), settingPanel([], tab),
       h('p', { class: 'q-note' }, '「とじる」で、いまの問題を新しい設定で出し直します。'));
   }));
   app.append(overlay);
@@ -1609,8 +1611,34 @@ function pinPad(onOk: () => void): HTMLElement[] {
 
 // ------------------------------------------------------------ 設定（先生用）
 
-/** 遊び方の設定の行（設定画面と、問題中の設定モーダルで共通） */
-function settingRows(): HTMLElement[] {
+// 設定はタブで分ける（2026-10-27）: 共通／ひらがな カタカナ／アルファベット／線なぞり
+type SettingTab = 'common' | 'ja' | 'en' | 'line';
+const SETTING_TABS: [SettingTab, string][] = [['common', '共通'], ['ja', 'ひらがな カタカナ'], ['en', 'アルファベット'], ['line', '線なぞり']];
+/** さいごに開いたタブ（設定画面を開き直しても同じタブ） */
+let settingTab: SettingTab = 'common';
+
+/**
+ * 設定のタブと中身（設定画面と、問題中の設定モーダルで共通）。
+ * commonExtra は「共通」タブの下に足す行（設定画面だけ: 問題の管理・暗証番号など）
+ */
+function settingPanel(commonExtra: HTMLElement[] = [], first?: SettingTab): HTMLElement {
+  if (first) settingTab = first;
+  const rows = settingRows();
+  const body = h('div', { class: 'setting-body' });
+  const tabs = h('div', { class: 'seg setting-tabs' });
+  const paint = () => {
+    Array.from(tabs.children).forEach((b, i) => b.classList.toggle('on', SETTING_TABS[i][0] === settingTab));
+    body.replaceChildren(...rows[settingTab], ...(settingTab === 'common' ? commonExtra : []));
+  };
+  for (const [id, label] of SETTING_TABS) {
+    tabs.append(h('button', { class: 'seg-btn', onclick: () => { settingTab = id; paint(); } }, label));
+  }
+  paint();
+  return h('div', { class: 'setting-panel' }, tabs, body);
+}
+
+/** 遊び方の設定の行（タブごと） */
+function settingRows(): Record<SettingTab, HTMLElement[]> {
   const choice = <K extends keyof Settings>(key: K, label: string, options: [Settings[K], string][]) => {
     const group = h('div', { class: 'seg' });
     const paint = () =>
@@ -1623,23 +1651,36 @@ function settingRows(): HTMLElement[] {
     paint();
     return h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, label), group);
   };
-  return [
-    choice('script', '文字', [['hira', 'ひらがな'], ['kata', 'カタカナ']]),
-    choice('letterCase', 'えいごの 文字', [['lower', 'こもじ（abc）'], ['upper', 'おおもじ（ABC）']]),
-    enVoiceRow(),
-    choice('input', '入力方法', [['keyboard', 'キーボード'], ['handwriting', 'てがき'], ['trace', 'なぞり']]),
-    choice('prompt', '出題', [['look', '① 見本あり'], ['listen', '② 読み上げのみ'], ['picture', '③ 絵だけ']]),
-    choice('aColumn', 'あ行の位置', [['right', '右はし（50音表と同じ）'], ['left', '左はし']]),
-    choice('sound', 'おと（BGM）', [[true, 'あり'], [false, 'なし']]),
-    choice('volume', '音量', [['low', '小'], ['mid', '中'], ['high', '大']]),
-    choice('particleMode', 'ぶん・きもちの じょし', [['ga', '「が」'], ['ha', '「は」（わ と よむ）'], ['mix', '「が」「は」こうたい']]),
-    choice('particleInput', '文の「が」「は」', [[false, '最初から入れておく'], [true, '子どもが打つ・書く']]),
-    choice('keySet', 'キーボードの字', [['all', '50音'], ['k25', '25音'], ['k10', '10音'], ['answer', '答えの字だけ']]),
-    choice('traceWeight', 'なぞりの見本の太さ', [['thin', 'ほそい'], ['normal', 'ふつう'], ['bold', 'ふとい']]),
-    choice('penWidth', 'ペンの太さ', [['thin', 'ほそい'], ['normal', 'ふつう'], ['bold', 'ふとい']]),
-    choice('minigame', 'ミニゲーム', [[true, 'あり（問題の前に毎回）'], [false, 'なし']]),
-    minigameKindsRow(),
-  ];
+  return {
+    // ひらがな カタカナ と アルファベット の両方に効くもの・音・ミニゲーム
+    common: [
+      choice('input', '入力方法', [['keyboard', 'キーボード'], ['handwriting', 'てがき'], ['trace', 'なぞり']]),
+      choice('prompt', '出題', [['look', '① 見本あり'], ['listen', '② 読み上げのみ'], ['picture', '③ 絵だけ']]),
+      choice('keySet', 'キーボードの字', [['all', '50音／ぜんぶ'], ['k25', '25音／20もじ'], ['k10', '10音／10もじ'], ['answer', '答えの字だけ']]),
+      choice('traceWeight', 'なぞりの見本の太さ', [['thin', 'ほそい'], ['normal', 'ふつう'], ['bold', 'ふとい']]),
+      choice('penWidth', 'ペンの太さ', [['thin', 'ほそい'], ['normal', 'ふつう'], ['bold', 'ふとい']]),
+      choice('sound', 'おと（BGM）', [[true, 'あり'], [false, 'なし']]),
+      choice('volume', '音量', [['low', '小'], ['mid', '中'], ['high', '大']]),
+      choice('minigame', 'ミニゲーム', [[true, 'あり（問題の前に毎回）'], [false, 'なし']]),
+      minigameKindsRow(),
+    ],
+    ja: [
+      choice('script', '文字', [['hira', 'ひらがな'], ['kata', 'カタカナ']]),
+      choice('aColumn', 'あ行の位置', [['right', '右はし（50音表と同じ）'], ['left', '左はし']]),
+      choice('particleMode', 'ぶん・きもちの じょし', [['ga', '「が」'], ['ha', '「は」（わ と よむ）'], ['mix', '「が」「は」こうたい']]),
+      choice('particleInput', '文の「が」「は」', [[false, '最初から入れておく'], [true, '子どもが打つ・書く']]),
+    ],
+    en: [
+      choice('letterCase', 'えいごの 文字', [['lower', 'こもじ（abc）'], ['upper', 'おおもじ（ABC）']]),
+      enVoiceRow(),
+    ],
+    line: [
+      choice('lineWeight', '線の見本の太さ', [['thin', 'ほそい'], ['normal', 'ふつう'], ['bold', 'ふとい']]),
+      choice('lineHint', 'はじめのヒント', [[true, 'あり（問題を出したら1回）'], [false, 'なし']]),
+      choice('lineCount', '1回の数', [[5, '5こ'], [10, '10こ'], [20, '20こ（ぜんぶ）']]),
+      h('p', { class: 'q-note' }, 'ペンの太さは「共通」で変えられます。'),
+    ],
+  };
 }
 
 /**
@@ -1690,14 +1731,15 @@ function settingsScreen(): void {
       { class: 'screen settings' },
       backButton(startScreen),
       h('h2', {}, '設定（先生用）'),
-      ...settingRows(),
-      h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'もんだい'),
-        h('div', { class: 'seg' }, h('button', { class: 'seg-btn', onclick: () => questionsScreen('mono') }, '出題する問題を選ぶ・読み込む'))),
-      h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'てがきのきろく'),
-        h('div', { class: 'seg' }, h('button', { class: 'seg-btn', onclick: () => void writingsScreen() }, '見る・書き出す'))),
-      h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'ワークシート'),
-        h('div', { class: 'seg' }, h('button', { class: 'seg-btn', onclick: () => { worksheetBack = settingsScreen; worksheetScreen(); } }, '作る・印刷する'))),
-      h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, '暗証番号'), h('div', { class: 'seg' }, pinInput, pinSave, pinMsg)),
+      settingPanel([
+        h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'もんだい'),
+          h('div', { class: 'seg' }, h('button', { class: 'seg-btn', onclick: () => questionsScreen('mono') }, '出題する問題を選ぶ・読み込む'))),
+        h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'てがきのきろく'),
+          h('div', { class: 'seg' }, h('button', { class: 'seg-btn', onclick: () => void writingsScreen() }, '見る・書き出す'))),
+        h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'ワークシート'),
+          h('div', { class: 'seg' }, h('button', { class: 'seg-btn', onclick: () => { worksheetBack = settingsScreen; worksheetScreen(); } }, '作る・印刷する'))),
+        h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, '暗証番号'), h('div', { class: 'seg' }, pinInput, pinSave, pinMsg)),
+      ]),
     ),
   );
 }

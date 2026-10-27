@@ -38,6 +38,10 @@ export interface Settings {
   letterCase: LetterCase;
   /** 英語の声の名前（'' は じどう）。iPad で鳴らない声があったので選べるように */
   enVoice: string;
+  /** せんの れんしゅう（2026-10-27）: 見本の線の太さ・はじめにヒントを見せるか・1回の数 */
+  lineWeight: Weight;
+  lineHint: boolean;
+  lineCount: 5 | 10 | 20;
   /** キーボードの字の数。変えるまで同じ難しさが続く */
   keySet: KeySet;
   /** なぞりの見本（うすい字）の太さ */
@@ -64,6 +68,9 @@ const DEFAULTS: Settings = {
   particleMode: 'ga',
   letterCase: 'lower',
   enVoice: '',
+  lineWeight: 'normal',
+  lineHint: true,
+  lineCount: 10,
   keySet: 'all',
   traceWeight: 'normal',
   penWidth: 'normal',
@@ -92,6 +99,9 @@ export function loadSettings(): Settings {
       if (!PARTICLE_MODES.includes(s.particleMode)) s.particleMode = 'ga';
       if (s.letterCase !== 'upper') s.letterCase = 'lower';
       if (typeof s.enVoice !== 'string') s.enVoice = '';
+      if (!WEIGHTS.includes(s.lineWeight)) s.lineWeight = 'normal';
+      if (typeof s.lineHint !== 'boolean') s.lineHint = true;
+      if (![5, 10, 20].includes(s.lineCount)) s.lineCount = 10;
       return s;
     }
   } catch {
