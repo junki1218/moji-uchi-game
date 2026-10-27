@@ -293,7 +293,10 @@ function hockeyGame(q: MiniQuestion, onProgress: (n: number) => void, fx: Fx): G
   let t = 0;
   const puck = { x: 0, y: 0, vx: 0, vy: 0, rot: 0 };
   let held = false;
-  let hist: { x: number; y: number }[] = [];
+  /** 指の動き（ゴールへの線で止めない、指そのものの位置と時刻）。はじく速さはここから出す */
+  let hist: { x: number; y: number; t: number }[] = [];
+  const FLICK_MS = 90; // 離す直前の これだけの間の動きで速さを決める
+  const FRAME_MS = 1000 / 60;
   let img: HTMLImageElement | null = null;
   void q.pictureUrl().then((url) => {
     if (!url) return;
@@ -407,27 +410,37 @@ function hockeyGame(q: MiniQuestion, onProgress: (n: number) => void, fx: Fx): G
       if (done) return;
       if (Math.hypot(x - puck.x, y - puck.y) < R * 1.6) {
         held = true;
-        hist = [{ x, y }];
+        hist = [{ x, y, t: performance.now() }];
         puck.vx = puck.vy = 0;
       }
     },
     move(x, y) {
       if (!held) return;
+      const now = performance.now();
+      hist.push({ x, y, t: now });
+      while (hist.length > 2 && now - hist[0].t > FLICK_MS) hist.shift();
       // 持っている間は下半分だけ動かせる（ゴールに手で置けないように）
       puck.x = Math.max(R, Math.min(W - R, x));
       puck.y = Math.max(H * 0.55, Math.min(H - R, y));
-      hist.push({ x: puck.x, y: puck.y });
-      if (hist.length > 5) hist.shift();
+      // 指が線をこえたら、その勢いのまま手をはなれる（線で止めると、見えない壁にぶつかったようになっていた。2026-10-27）
+      if (y < H * 0.55) this.up();
     },
     up() {
       if (!held) return;
       held = false;
-      if (hist.length >= 2) {
-        let vx = 0, vy = 0;
-        for (let i = 1; i < hist.length; i++) { vx += hist[i].x - hist[i - 1].x; vy += hist[i].y - hist[i - 1].y; }
-        // 子どもの弱いはじきでも届くよう、少し強める
-        puck.vx = (vx / (hist.length - 1)) * 1.4;
-        puck.vy = (vy / (hist.length - 1)) * 1.4;
+      if (hist.length < 2) return;
+      // 速さは「指の動き ÷ かかった時間」（iPad の 120Hz でも同じ強さになるよう、1コマ＝1/60秒に直す）
+      const a = hist[0];
+      const b = hist[hist.length - 1];
+      const dt = Math.max(b.t - a.t, 8);
+      // 子どもの弱いはじきでも届くよう、少し強める
+      puck.vx = ((b.x - a.x) / dt) * FRAME_MS * 1.4;
+      puck.vy = ((b.y - a.y) / dt) * FRAME_MS * 1.4;
+      // 上へはじいたのに遅すぎるときは、ゴールに届くくらいまで足す
+      const minUp = H * 0.022;
+      if (puck.vy < -1 && puck.vy > -minUp) {
+        const k = minUp / -puck.vy;
+        puck.vx *= k; puck.vy *= k;
       }
     },
   };
