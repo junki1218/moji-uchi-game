@@ -4,8 +4,8 @@
 
 import { BUILTIN_QUESTIONS, type Category, type Question } from './questions';
 
-/** 英語版で出すカテゴリ */
-export const EN_CATEGORIES: Category[] = ['mono', 'ugoki'];
+/** 英語版で出すカテゴリ（アルファベットは 2026-10-27 追加） */
+export const EN_CATEGORIES: Category[] = ['mono', 'ugoki', 'alphabet'];
 
 /** [日本語の問題の id（＝絵）, 英単語, カタカナ] */
 const ROWS: [string, string, string][] = [
@@ -60,8 +60,27 @@ export const EN_QUESTIONS: Question[] = ROWS.flatMap(([img, word, kana]) => {
   }];
 });
 
+// アルファベット（2026-10-27）: 1問＝1文字。「いぬ は dog」の画面は出さない。
+// ミニゲームは 小文字 → 大文字 のマッチング（a に A をあてる）。カタカナは字の名前（読み上げの英語の声に合わせる）
+const LETTER_KANA = ['エー', 'ビー', 'シー', 'ディー', 'イー', 'エフ', 'ジー', 'エイチ', 'アイ', 'ジェー', 'ケー', 'エル', 'エム',
+  'エヌ', 'オー', 'ピー', 'キュー', 'アール', 'エス', 'ティー', 'ユー', 'ブイ', 'ダブリュー', 'エックス', 'ワイ', 'ズィー'];
+
+export const ALPHABET_QUESTIONS: Question[] = Array.from('abcdefghijklmnopqrstuvwxyz', (c, i) => ({
+  id: `en_abc_${c}`,
+  type: 'word' as const,
+  category: 'alphabet' as const,
+  hira: c,
+  emoji: `${c.toUpperCase()}${c}`,
+  builtin: false,
+  lang: 'en' as const,
+  kana: LETTER_KANA[i],
+}));
+
+export const isAlphabet = (q: Question) => q.category === 'alphabet';
+
 export function enQuestions(cat?: Category): Question[] {
-  return cat ? EN_QUESTIONS.filter((q) => q.category === cat) : EN_QUESTIONS;
+  const all = [...EN_QUESTIONS, ...ALPHABET_QUESTIONS];
+  return cat ? all.filter((q) => q.category === cat) : all;
 }
 
 /** アルファベット表（ABC順、7字ずつ4段） */

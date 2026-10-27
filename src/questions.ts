@@ -2,7 +2,8 @@
 // emoji は画像が届くまでの仮表示。画像は src/images/{id}.webp（tools/sync_images.py が作る）。
 // 先生が JSON で足す問題は bank.ts が扱う。
 
-export type Category = 'mono' | 'kimochi' | 'ugoki' | 'bun' | 'bunkimochi';
+/** alphabet は英語版だけ（2026-10-27） */
+export type Category = 'mono' | 'kimochi' | 'ugoki' | 'bun' | 'bunkimochi' | 'alphabet';
 
 /** 単語1つの長さの上限（打つキーの数。ゃ・ー も1字） */
 export const MAX_CHARS = 10;

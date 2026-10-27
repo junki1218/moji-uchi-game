@@ -37,6 +37,8 @@ export interface MiniQuestion {
   toScript: (s: string) => string;
   /** 錠前のダイヤルに出す字（なければ50音。英語版はアルファベット） */
   dialChars?: string[];
+  /** やることの説明を変えるとき（アルファベットの マッチング） */
+  instruction?: Partial<Record<MinigameKind, string>>;
 }
 
 const TAU = Math.PI * 2;
@@ -389,7 +391,8 @@ function hockeyGame(q: MiniQuestion, onProgress: (n: number) => void, fx: Fx): G
       g.beginPath(); g.arc(0, 0, R * 0.9, 0, TAU); g.clip();
       if (img) g.drawImage(img, -R * 0.9, -R * 0.9, R * 1.8, R * 1.8);
       else {
-        g.font = `${R}px sans-serif`;
+        g.font = `bold ${R}px "Andika", sans-serif`; // アルファベットの小文字も描く
+        g.fillStyle = '#e0607e'; // 絵文字は色つきだが、字は色をつけないと白い丸に白で見えない
         g.textAlign = 'center';
         g.textBaseline = 'middle';
         g.fillText(q.emoji, 0, 4);

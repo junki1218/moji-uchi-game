@@ -12,7 +12,7 @@ import { speak, stopSpeech, unlockSpeech, type SpeechLang } from './speech';
 import { MINIGAMES, runMinigame, type MiniQuestion, type MinigameKind } from './minigames';
 import { letters } from './kinetic';
 import { drawEnGlyph, drawEnLines, enLines, fillCentered } from './glyph';
-import { ALPHABET_ROWS, EN_CATEGORIES, EN_QUESTIONS, enQuestions } from './english';
+import { ALPHABET_QUESTIONS, ALPHABET_ROWS, EN_CATEGORIES, EN_QUESTIONS, enQuestions, isAlphabet } from './english';
 
 // 新しい版が届いたら、ゲームの途中ではなくスタート画面に戻ったときに読み込み直す
 // （古いプログラムと新しい絵が混ざって、絵と問題が食い違うのを防ぐ）
@@ -273,10 +273,15 @@ function langScreen(): void {
 
 // ------------------------------------------------------------ カテゴリ
 
+/** 英語版のカテゴリ（もの・うごき・アルファベット） */
+function enCategories(): { id: Category; label: string; emoji: string }[] {
+  return [...CATEGORIES.filter((c) => EN_CATEGORIES.includes(c.id)), { id: 'alphabet', label: 'アルファベット', emoji: '🔤' }];
+}
+
 function categoryScreen(): void {
   playBgm('bgm1_start');
   // 英語版は「もの」「うごき」だけ（「ぶん」は後日）
-  const cats = lang === 'en' ? CATEGORIES.filter((c) => EN_CATEGORIES.includes(c.id)) : CATEGORIES;
+  const cats = lang === 'en' ? enCategories() : CATEGORIES;
   show(
     h(
       'main',
@@ -292,7 +297,7 @@ function categoryScreen(): void {
           return h(
             'button',
             { class: `category-btn ${empty ? 'disabled' : ''}`, disabled: empty, onclick: () => startRound(c.id) },
-            picture(`cat_${c.id}`, emoji(c.emoji), 'category-pic'),
+            c.id === 'alphabet' ? h('div', { class: 'picture category-pic abc-cat' }, h('span', { class: 'abc-cat-text' }, 'Aa')) : picture(`cat_${c.id}`, emoji(c.emoji), 'category-pic'),
             h('span', { class: 'category-label' }, letters(c.label, 'kt-pop')),
           );
         }),
@@ -422,7 +427,8 @@ async function readOut(cells: HTMLElement[], answer: string[], pIdx: number | nu
 
 function questionScreen(round: Round, afterMini = false): void {
   // 英語版: ミニゲームの前に、まず「いぬ は dog」を見せて読む
-  if (round.questions[round.index].lang === 'en' && round.introAt !== round.index) {
+  const q0 = round.questions[round.index];
+  if (q0.lang === 'en' && !isAlphabet(q0) && round.introAt !== round.index) {
     introScreen(round);
     return;
   }
@@ -441,7 +447,8 @@ function questionScreen(round: Round, afterMini = false): void {
   const fixed = particleFixed(pIdx);
   const en = q.lang === 'en';
   const shown = (c: string) => disp(c);
-  const say = () => speak(en ? q.hira : spokenText(q), () => duckBgm(true), () => duckBgm(false), en ? 'en' : 'ja');
+  // アルファベットは字の名前（大文字で渡すと「エー」と読む）
+  const say = () => speak(en ? (isAlphabet(q) ? q.hira.toUpperCase() : q.hira) : spokenText(q), () => duckBgm(true), () => duckBgm(false), en ? 'en' : 'ja');
 
   const trace = settings.input === 'trace';
   const lined = en && settings.input !== 'keyboard'; // 英語のてがき: 見本も4本線
@@ -461,7 +468,7 @@ function questionScreen(round: Round, afterMini = false): void {
     // 英語: カタカナの読み方を、いつも単語の下に
     en && q.kana ? h('div', { class: 'en-kana' }, q.kana) : null,
   );
-  const pic = questionPicture(q, 'q-pic');
+  const pic = isAlphabet(q) ? abcPicture(q, 'q-pic') : questionPicture(q, 'q-pic');
   const top = h('div', { class: `q-top ${q.type === 'sentence' ? 'sentence' : ''}` }, pic, side);
 
   // 答えができたら、まず1文字ずつ大きくして読み上げる（字と音を結びつける）→ 花丸
@@ -515,7 +522,7 @@ function questionScreen(round: Round, afterMini = false): void {
       h('header', { class: 'game-header' },
         headerLeft(round, false),
         progress(round), hintBtn),
-      en ? enBanner(q) : null,
+      en && !isAlphabet(q) ? enBanner(q) : null,
       top,
       input,
     ),
@@ -579,6 +586,14 @@ function introScreen(round: Round): void {
   // 声が出ないときも進めるように、少したったら「つぎへ」を出す
   window.setTimeout(() => { nextBtn.hidden = false; }, 6000);
   window.setTimeout(say, 400);
+}
+
+/** アルファベットの問題の「絵」: 大文字と小文字を大きく（Aa） */
+function abcPicture(q: Question, cls: string, only?: string): HTMLElement {
+  const up = q.hira.toUpperCase();
+  return h('div', { class: `picture ${cls} abc-pic` },
+    only !== undefined ? h('span', { class: 'abc-one' }, only)
+      : h('span', { class: 'abc-pair' }, h('span', {}, up), h('span', {}, q.hira)));
 }
 
 /** 英語のてがきの見本: 4本線の上に字（キャンバス） */
@@ -681,10 +696,11 @@ function minigameScreen(round: Round, kinds: MinigameKind[], onDone: () => void)
     }
   };
 
-  const say = () => speak(info.instruction, () => duckBgm(true), () => duckBgm(false));
+  const say = () => speak(instruction, () => duckBgm(true), () => duckBgm(false));
   // 🔊 は正解の言葉を読む（やることは最初に1回読む）
   const cur = round.questions[round.index];
-  const sayWord = () => speak(cur.lang === 'en' ? cur.hira : spokenText(cur), () => duckBgm(true), () => duckBgm(false), cur.lang === 'en' ? 'en' : 'ja');
+  const sayWord = () => speak(cur.lang === 'en' ? (isAlphabet(cur) ? cur.hira.toUpperCase() : cur.hira) : spokenText(cur), () => duckBgm(true), () => duckBgm(false), cur.lang === 'en' ? 'en' : 'ja');
+  const instruction = mq.instruction?.[kind] ?? info.instruction;
   show(
     h(
       'main',
@@ -692,9 +708,9 @@ function minigameScreen(round: Round, kinds: MinigameKind[], onDone: () => void)
       h('header', { class: 'game-header' }, headerLeft(round, true), progress(round)),
       h('div', { class: 'mini-head' },
         h('button', { class: 'speaker-btn', 'aria-label': 'ことばを よみあげ', onclick: sayWord }, '🔊'),
-        h('p', { class: 'mini-instruction' }, letters(info.instruction, 'kt-drop')),
+        h('p', { class: 'mini-instruction' }, letters(instruction, 'kt-drop')),
         stars),
-      cur.lang === 'en' ? enBanner(cur) : null,
+      cur.lang === 'en' && !isAlphabet(cur) ? enBanner(cur) : null,
       stage,
     ),
   );
@@ -705,7 +721,32 @@ function minigameScreen(round: Round, kinds: MinigameKind[], onDone: () => void)
 }
 
 /** 次の問題から、ミニゲームに渡す情報を作る（まちがいの言葉は同じカテゴリのほかの問題から） */
+/** アルファベットのミニゲーム: 小文字（パック・絵）に、大文字（玉・ゴール・ダイヤル）をあてる */
+function abcMiniQuestion(q: Question): MiniQuestion {
+  const lower = q.hira;
+  const up = lower.toUpperCase();
+  const others = shuffle(ALPHABET_ROWS.flat().filter((c) => c !== lower)).map((c) => c.toUpperCase());
+  return {
+    answer: up,
+    chars: [up],
+    fixed: new Set<number>(),
+    others,
+    picture: () => abcPicture(q, 'mini-q-pic', lower),
+    pictureUrl: async () => null,
+    emoji: lower,
+    showSample: false, // 見本の大文字を出すと、あてる意味がなくなる
+    toScript: (s) => s,
+    dialChars: ALPHABET_ROWS.flat().map((c) => c.toUpperCase()),
+    instruction: {
+      bubble: 'おなじ もじの おおもじの しゃぼんだまを みっつ わろう',
+      lock: 'おなじ もじの おおもじに あわせて かぎを あけよう',
+      hockey: 'おなじ もじの おおもじの ゴールに いれよう',
+    },
+  };
+}
+
 function miniQuestion(q: Question): MiniQuestion {
+  if (isAlphabet(q)) return abcMiniQuestion(q);
   const show1 = (s: string) => dispQ(q, s);
   const answer = chars(q.hira);
   const fixed = particleFixed(particleIndex(q));
@@ -1725,12 +1766,12 @@ function saveSheetOptions(o: SheetOptions): void {
 function worksheetScreen(selected: string[] = lastRoundIds(), cat?: Category, wl?: Lang): void {
   stopBgm();
   // 英語版の問題も選べる（2026-10-27）。日本語と英語は同じプリントにまぜてもよい
-  const all = [...allQuestions(), ...EN_QUESTIONS];
+  const all = [...allQuestions(), ...EN_QUESTIONS, ...ALPHABET_QUESTIONS];
   const sel = selected.filter((id) => all.some((q) => q.id === id));
   // ことば・カテゴリの指定がなければ、選んでいる問題（＝さいごに遊んだ問題）のものを開く
   const first = all.find((q) => q.id === sel[0]);
   const showLang: Lang = wl ?? (first?.lang === 'en' ? 'en' : 'ja');
-  const cats = showLang === 'en' ? CATEGORIES.filter((c) => EN_CATEGORIES.includes(c.id)) : CATEGORIES;
+  const cats = showLang === 'en' ? enCategories() : CATEGORIES;
   const showCat: Category = cat && cats.some((c) => c.id === cat) ? cat : first && cats.some((c) => c.id === first.category) ? first.category : 'mono';
   const rerender = (next: string[]) => worksheetScreen(next, showCat, showLang);
 
@@ -1793,7 +1834,7 @@ function worksheetScreen(selected: string[] = lastRoundIds(), cat?: Category, wl
 
 /** 見た目の確認と PDF の保存。確認画面には PDF と同じページの絵を出す。iPad は共有シートの「"ファイル"に保存」 */
 function worksheetPrint(ids: string[]): void {
-  const all = [...allQuestions(), ...EN_QUESTIONS];
+  const all = [...allQuestions(), ...EN_QUESTIONS, ...ALPHABET_QUESTIONS];
   const qs = applyParticles(ids.map((id) => all.find((q) => q.id === id)).filter((q): q is Question => !!q));
   const opts = loadSheetOptions();
   const nPages = pageCount(qs.map((q) => ({ en: q.lang === 'en' })), opts);
