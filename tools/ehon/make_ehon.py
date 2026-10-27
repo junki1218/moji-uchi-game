@@ -183,6 +183,10 @@ def main() -> None:
             p = tf.paragraphs[0] if k == 0 else tf.add_paragraph()
             p.alignment = PP_ALIGN.CENTER
             size, bold, color = STYLE[kind]
+            # 大きい字の行は、6字以上なら字を小さくして1行に収める（Google スライドで「はっちゃ／ん」と折れないように）
+            n = len(re.sub(r"\[([がは])\]", r"\1", text))
+            if kind in ("main", "title") and n > 5:
+                size = max(24, round(size * 5 / n))
             if not text:
                 r = p.add_run()
                 r.text = " "

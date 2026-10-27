@@ -184,7 +184,7 @@ interface EhonBook {
 
 const EHON_BOOKS: EhonBook[] = [
   { no: 1, title: 'くろまる がっくん', id: '1HCh2Wph8ASZyXvOPRZkWTAEZGIR5-iPDqGPenowOpWs', marks: ['が'] },
-  { no: 2, title: 'がっくんと はっちゃん', id: '1z3vt6AEqnvu0PeymGuCSesbLZAbRlReNBvSJg1gBHT8', marks: ['が', 'は'] },
+  { no: 2, title: 'がっくんと はっちゃん', id: '1pY8s9pXFCIncA9JIyFNpmtcK3g1VaZ8LTVid7oPyw8E', marks: ['が', 'は'] },
 ];
 
 const ehonUrl = (b: EhonBook) => `https://docs.google.com/presentation/d/${b.id}/embed?start=false&loop=false&delayms=60000`;
