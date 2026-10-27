@@ -3,7 +3,7 @@ import { registerSW } from 'virtual:pwa-register';
 import { CATEGORIES, MAX_CHARS, type Category, type Question, withParticle, spokenText, type Particle } from './questions';
 import { allQuestions, applyImport, attachPhoto, deleteCustom, enabledQuestions, exportJson, isEnabled, parseImport, setEnabled, type ImportPlan } from './bank';
 import { hasPhoto, loadPhotoIndex, photoUrl, removePhoto } from './photos';
-import { DEFAULT_SHEET, pageCount, savePdf, worksheetPages, worksheetPdf, type SheetOptions } from './worksheet-pdf';
+import { DEFAULT_SHEET, pageCount, savePdf, worksheetPages, worksheetPdf, type SheetItem, type SheetOptions, type SheetSize } from './worksheet-pdf';
 import { clearWritings, deleteWriting, exportWritings, listWritings, MAX_WRITINGS, saveWriting } from './writings';
 import { chars, DAKUON, inScript, SEION, SMALL } from './kana';
 import { loadSettings, saveSettings, VOLUME_LEVEL, type KeySet, type Settings, type Weight, type ParticleMode } from './settings';
@@ -2004,14 +2004,67 @@ const LAST_ROUND_KEY = 'moji-uchi-game/last-round';
 let worksheetBack: () => void = settingsScreen;
 
 // ------------------------------------------------------------ プリント（スタート画面から）
-// ストック＝配布用の PDF（tools/make_worksheets.py で作って public/worksheets/ に置いたもの）
+// ストック＝いつでも使えるプリント。2026-10-27 からは、ボタンを押したときにアプリの中で PDF を作る
+//   （オリジナルと同じ描き方。ひらがな カタカナ／英語／線なぞり × みてかく／なぞる × ふつう／おおきい）。
+//   前の public/worksheets/ の PDF（tools/make_worksheets.py）はもう使っていない
 // オリジナル＝さいごに遊んだ問題で作るワークシート（設定の「ワークシート」と同じ画面）
 
-/** [ファイル名の部分, 見出し, 絵（cat_○○）] */
-const STOCK_CATEGORIES: [string, string, string][] = [
-  ['mono', 'もの', 'mono'], ['kimochi', 'きもち', 'kimochi'], ['ugoki', 'うごき', 'ugoki'], ['bun', 'ぶん', 'bun'],
-  ['bunkimochi', 'ぶん・きもち「が」', 'bunkimochi'], ['bunkimochi_ha', 'ぶん・きもち「は」', 'bunkimochi'],
-];
+type StockGroup = 'ja' | 'en' | 'line';
+interface StockSet {
+  key: string;
+  label: string;
+  pic: () => HTMLElement;
+  qs: () => Question[];
+}
+
+const builtinOf = (cat: Category) => allQuestions(cat).filter((q) => q.builtin);
+const catPic = (cat: string) => () => picture(`cat_${cat}`, () => h('span'), 'stock-pic');
+
+const STOCK_SETS: Record<StockGroup, StockSet[]> = {
+  ja: [
+    { key: 'mono', label: 'もの', pic: catPic('mono'), qs: () => builtinOf('mono') },
+    { key: 'kimochi', label: 'きもち', pic: catPic('kimochi'), qs: () => builtinOf('kimochi') },
+    { key: 'ugoki', label: 'うごき', pic: catPic('ugoki'), qs: () => builtinOf('ugoki') },
+    { key: 'bun', label: 'ぶん', pic: catPic('bun'), qs: () => builtinOf('bun') },
+    { key: 'bunkimochi', label: 'ぶん・きもち「が」', pic: catPic('bunkimochi'), qs: () => builtinOf('bunkimochi').map((q) => withParticle(q, 'が')) },
+    { key: 'bunkimochi_ha', label: 'ぶん・きもち「は」', pic: catPic('bunkimochi'), qs: () => builtinOf('bunkimochi').map((q) => withParticle(q, 'は')) },
+  ],
+  en: [
+    { key: 'mono', label: 'もの', pic: catPic('mono'), qs: () => enQuestions('mono') },
+    { key: 'ugoki', label: 'うごき', pic: catPic('ugoki'), qs: () => enQuestions('ugoki') },
+    { key: 'abc', label: 'アルファベット', pic: () => h('div', { class: 'picture stock-pic abc-cat' }, h('span', { class: 'abc-cat-text' }, 'Aa')), qs: () => ALPHABET_QUESTIONS },
+  ],
+  line: [
+    { key: 'easy', label: 'やさしい 10こ', pic: () => h('div', { class: 'picture stock-pic line-pic' }, shapeThumb(LINE_SHAPES[0].pts)), qs: () => LINE_QUESTIONS.slice(0, 10) },
+    { key: 'hard', label: 'むずかしい 10こ', pic: () => h('div', { class: 'picture stock-pic line-pic' }, shapeThumb(LINE_SHAPES[16].pts)), qs: () => LINE_QUESTIONS.slice(10) },
+    { key: 'all', label: 'ぜんぶ 20こ', pic: () => h('div', { class: 'picture stock-pic line-pic' }, shapeThumb(LINE_SHAPES[8].pts)), qs: () => LINE_QUESTIONS },
+  ],
+};
+
+/** ボタンの種類: [字の種類, みてかく／なぞる, ボタンの字] */
+type StockVariant = { script?: 'hira' | 'kata'; upper?: boolean; kind: 'copy' | 'trace'; label: string; file: string };
+const STOCK_VARIANTS: Record<StockGroup, StockVariant[]> = {
+  ja: [
+    { script: 'hira', kind: 'copy', label: 'ひらがな みてかく', file: 'hira-copy' },
+    { script: 'hira', kind: 'trace', label: 'ひらがな なぞる', file: 'hira-trace' },
+    { script: 'kata', kind: 'copy', label: 'カタカナ みてかく', file: 'kata-copy' },
+    { script: 'kata', kind: 'trace', label: 'カタカナ なぞる', file: 'kata-trace' },
+  ],
+  en: [
+    { upper: false, kind: 'copy', label: 'こもじ みてかく', file: 'lower-copy' },
+    { upper: false, kind: 'trace', label: 'こもじ なぞる', file: 'lower-trace' },
+    { upper: true, kind: 'copy', label: 'おおもじ みてかく', file: 'upper-copy' },
+    { upper: true, kind: 'trace', label: 'おおもじ なぞる', file: 'upper-trace' },
+  ],
+  line: [
+    { kind: 'copy', label: 'みてかく', file: 'copy' },
+    { kind: 'trace', label: 'なぞる', file: 'trace' },
+  ],
+};
+
+/** さいごに開いたタブ */
+let stockGroup: StockGroup = 'ja';
+let stockSize: SheetSize = 'normal';
 
 function printScreen(): void {
   stopBgm();
@@ -2032,30 +2085,85 @@ function printScreen(): void {
   );
 }
 
+/**
+ * ストック: 右に タブ（青: ひらがな カタカナ／英語／線なぞり、緑: ふつう／おおきい）、左に プリントとボタン。
+ * ボタンは2段: 1回目で PDF を作り、できたら「ほぞん」（iPad は、時間のかかる処理のあとに共有シートを出すと止められることがあるため）
+ */
 function stockScreen(): void {
-  const base = import.meta.env.BASE_URL;
-  const link = (cat: string, label: string, kata: boolean) =>
-    h('a', {
-      class: 'mid-btn stock-link',
-      href: `${base}worksheets/worksheet_${cat}${kata ? '_kata' : ''}.pdf`,
-      download: `ワークシート_${label}${kata ? '_カタカナ' : ''}.pdf`,
-      target: '_blank',
-      rel: 'noopener',
-    }, kata ? 'カタカナ' : 'ひらがな');
+  stopBgm();
+  const note = h('p', { class: 'q-note stock-note' });
+  const paintNote = () => {
+    const per = stockGroup === 'en' ? (stockSize === 'large' ? 2 : 3) : stockSize === 'large' ? 2 : 5;
+    const dir = stockGroup === 'en' || stockSize === 'large' ? 'A4 よこ' : 'A4 たて';
+    note.textContent = `${dir}・1まいに ${per}もん。ボタンを おすと PDF を つくります。できたら もう一度 おして ほぞん（iPad は「"ファイル"に保存」）。`;
+  };
+
+  const button = (set: StockSet, v: StockVariant) => {
+    let blob: Blob | null = null;
+    const name = `gakkun-stock-${stockGroup}-${set.key}-${v.file}${stockSize === 'large' ? '-large' : ''}.pdf`;
+    const btn: HTMLButtonElement = h('button', {
+      class: `mid-btn stock-dl ${v.kind}`,
+      onclick: async () => {
+        if (blob) {
+          const how = await savePdf(blob, name);
+          note.textContent = how === 'cancelled' ? '保存をやめました' : how === 'shared' ? 'PDFを渡しました（「"ファイル"に保存」を選ぶと iPad に残ります）' : `PDFを保存しました（${name}）`;
+          return;
+        }
+        btn.disabled = true;
+        btn.textContent = 'つくっています…';
+        try {
+          const opts: SheetOptions = { kind: v.kind, size: stockSize, grid: 'cross' };
+          const items = await Promise.all(set.qs().map((q) => sheetItem(q, { script: v.script, upper: v.upper })));
+          blob = await worksheetPdf(await worksheetPages(items, opts), opts);
+          btn.textContent = '⬇ ほぞん';
+          btn.classList.add('ready');
+        } catch {
+          btn.textContent = v.label;
+          note.textContent = 'PDFを作れませんでした。もう一度ためしてください';
+        } finally {
+          btn.disabled = false;
+        }
+      },
+    }, v.label);
+    return btn;
+  };
+
+  const list = h('div', { class: 'stock-list' });
+  const paintList = () => {
+    list.replaceChildren(...STOCK_SETS[stockGroup].map((set) =>
+      h('div', { class: 'stock-row' },
+        set.pic(),
+        h('span', { class: 'stock-label' }, set.label, h('small', {}, `${set.qs().length}もん`)),
+        h('div', { class: 'stock-btns' }, ...STOCK_VARIANTS[stockGroup].map((v) => button(set, v))))));
+    paintNote();
+  };
+
+  const groupTabs: [StockGroup, string][] = [['ja', 'ひらがな カタカナ'], ['en', '英語'], ['line', '線なぞり']];
+  const sizeTabs: [SheetSize, string][] = [['normal', 'ふつう'], ['large', 'おおきい']];
+  const tabs = h('div', { class: 'stock-tabs' });
+  const paintTabs = () => {
+    tabs.replaceChildren(
+      ...groupTabs.map(([id, label]) => h('button', {
+        class: `seg-btn tab-blue ${stockGroup === id ? 'on' : ''}`,
+        onclick: () => { stockGroup = id; paintTabs(); paintList(); },
+      }, label)),
+      h('div', { class: 'stock-tab-gap' }),
+      ...sizeTabs.map(([id, label]) => h('button', {
+        class: `seg-btn tab-green ${stockSize === id ? 'on' : ''}`,
+        onclick: () => { stockSize = id; paintTabs(); paintList(); },
+      }, label)),
+    );
+  };
+  paintTabs();
+  paintList();
+
   show(
     h(
       'main',
-      { class: 'screen print-menu' },
+      { class: 'screen print-menu stock-screen' },
       backButton(printScreen),
       h('h2', {}, 'ストック'),
-      h('p', { class: 'q-note' }, '20問前後・A4 縦4枚。おしたら PDF が ひらきます（iPad は 共有 から「"ファイル"に保存」・プリント）。インターネットが いります。'),
-      h('div', { class: 'stock-list' },
-        ...STOCK_CATEGORIES.map(([cat, label, pic]) =>
-          h('div', { class: 'stock-row' },
-            picture(`cat_${pic}`, () => h('span'), 'stock-pic'),
-            h('span', { class: 'stock-label' }, label),
-            link(cat, label, false),
-            link(cat, label, true)))),
+      h('div', { class: 'stock-panel' }, tabs, h('div', { class: 'stock-main' }, note, list)),
     ),
   );
 }
@@ -2157,6 +2265,28 @@ function worksheetScreen(selected: string[] = lastRoundIds(), cat?: Category, wl
 }
 
 /** 見た目の確認と PDF の保存。確認画面には PDF と同じページの絵を出す。iPad は共有シートの「"ファイル"に保存」 */
+/**
+ * 問題を、プリントの1問にする（オリジナルとストックで共通）。
+ * script／upper を渡すと、設定の ひらがな・カタカナ／こもじ・おおもじ のかわりにそれを使う（ストック）
+ */
+async function sheetItem(q: Question, over: { script?: 'hira' | 'kata'; upper?: boolean } = {}): Promise<SheetItem> {
+  const en = q.lang === 'en';
+  const show1 = (s: string) => en
+    ? ((over.upper ?? settings.letterCase === 'upper') ? s.toUpperCase() : s)
+    : inScript(s, over.script ?? settings.script);
+  return {
+    chars: q.category === 'line' ? [] : chars(show1(q.hira)),
+    shape: q.category === 'line' ? lineShape(q.id)?.pts : undefined,
+    particle: particleIndex(q),
+    // 先生が付けた写真はその URL を使う
+    imageUrl: await questionImageUrl(q),
+    // アルファベットは絵の代わりに字
+    emoji: isAlphabet(q) ? show1(q.hira) : q.emoji,
+    en,
+    kana: q.kana,
+  };
+}
+
 function worksheetPrint(ids: string[]): void {
   const all = [...allQuestions(), ...EN_QUESTIONS, ...ALPHABET_QUESTIONS, ...LINE_QUESTIONS];
   const qs = applyParticles(ids.map((id) => all.find((q) => q.id === id)).filter((q): q is Question => !!q));
@@ -2204,17 +2334,7 @@ function worksheetPrint(ids: string[]): void {
   );
 
   void (async () => {
-    const items = await Promise.all(qs.map(async (q) => ({
-      chars: q.category === 'line' ? [] : chars(dispQ(q, q.hira)),
-      shape: q.category === 'line' ? lineShape(q.id)?.pts : undefined,
-      particle: particleIndex(q),
-      // 先生が付けた写真はその URL を使う
-      imageUrl: await questionImageUrl(q),
-      // アルファベットは絵の代わりに字（設定の こもじ／おおもじ だけ）
-      emoji: isAlphabet(q) ? dispQ(q, q.hira) : q.emoji,
-      en: q.lang === 'en',
-      kana: q.kana,
-    })));
+    const items = await Promise.all(qs.map((q) => sheetItem(q)));
     canvases = await worksheetPages(items, opts);
     pagesBox.replaceChildren(...canvases.map((c) => {
       c.className = `ws-page-img ${c.width > c.height ? 'landscape' : ''}`;
