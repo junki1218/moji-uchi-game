@@ -1117,3 +1117,13 @@ canvas.pad-ghost { width: 100%; height: 100%; }
 
 /* 英語の声を選ぶ（2026-10-27） */
 .voice-select { font-size: 18px; padding: 8px 10px; border-radius: 12px; border: 2px solid var(--line); background: var(--card); max-width: min(60vw, 520px); }
+
+/* 英語の問題の画面を iPad に収める（2026-10-27）: 🔊 は絵の左、帯とカタカナを小さく、右の列のあいだを詰める */
+.screen.game.en:not(.intro) .en-banner { font-size: min(2.6vw, 3.8vh); padding: 0.2vh 1.6vw; border-width: 2px; }
+.screen.game.en .q-top { gap: 2.5vw; }
+.screen.game.en .q-pic { max-height: 30vh; }
+.screen.game.en .q-side { gap: 0.8vh; }
+.screen.game.en .q-side .en-kana { font-size: min(2vw, 3vh); line-height: 1.1; }
+.screen.game.en .speaker-btn { font-size: min(3.6vw, 5vh); }
+/* 単語として読むとき: 答えのマスをまとめて光らせる */
+.answer-cell.readout-word, .hw-cell.readout-word { border-color: var(--en-ink); box-shadow: 0 0 0 4px rgba(47, 111, 184, 0.25); }

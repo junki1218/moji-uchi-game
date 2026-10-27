@@ -421,6 +421,14 @@ async function readOut(cells: HTMLElement[], answer: string[], pIdx: number | nu
       cell.classList.remove('readout');
       await wait(READ_GAP_MS);
     }
+    // 英語は、1文字ずつ読んだあとに単語としてもう一度読む（S, H, I, P …… ship。2026-10-27）
+    if (en && answer.length > 1 && cells.every((c) => c.isConnected)) {
+      await wait(READ_GAP_MS);
+      cells.forEach((c) => c.classList.add('readout-word'));
+      await speakAndWait(answer.join(''), 'en');
+      await wait(READ_PAUSE_MS);
+      cells.forEach((c) => c.classList.remove('readout-word'));
+    }
     return cells.every((c) => c.isConnected) || cells.length === 0;
   } finally {
     duckBgm(false);
@@ -462,16 +470,18 @@ function questionScreen(round: Round, afterMini = false): void {
             : h('span', { class: 'sample-cell' }, shown(c))))
       : null;
 
+  const speaker = h('button', { class: 'speaker-btn', 'aria-label': 'よみあげ', onclick: say }, '🔊');
+  // 英語は 🔊 を絵の左へ（右の列が縦に長くなり、iPad で上の帯やキーボードにかぶったため。2026-10-27）
   const side = h(
     'div',
     { class: 'q-side' },
-    h('button', { class: 'speaker-btn', 'aria-label': 'よみあげ', onclick: say }, '🔊'),
+    en ? null : speaker,
     sample,
     // 英語: カタカナの読み方を、いつも単語の下に
     en && q.kana ? h('div', { class: 'en-kana' }, q.kana) : null,
   );
   const pic = questionPicture(q, 'q-pic');
-  const top = h('div', { class: `q-top ${q.type === 'sentence' ? 'sentence' : ''}` }, pic, side);
+  const top = h('div', { class: `q-top ${q.type === 'sentence' ? 'sentence' : ''}` }, en ? speaker : null, pic, side);
 
   // 答えができたら、まず1文字ずつ大きくして読み上げる（字と音を結びつける）→ 花丸
   let finishing = false;
