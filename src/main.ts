@@ -665,6 +665,7 @@ const LINE_PX = 600;
 const LINE_GUIDE: Record<Weight, number> = { thin: 0.045, normal: 0.065, bold: 0.09 };
 const LINE_TOLERANCE = LINE_PX * 0.045; // 線のふちから、これくらいまでは「なぞれている」
 const HINT_RED = 'rgba(229, 72, 77, 0.45)';
+const LINE_HINT_HOLD_MS = 700; // 問題を出したときのヒント: 書き終えてから灰色にもどすまで
 
 function lineScreen(round: Round): void {
   playBgm('bgm2_question');
@@ -760,8 +761,11 @@ function lineScreen(round: Round): void {
   for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
   const total = pathLength(pts);
   const duration = Math.min(7000, Math.max(2500, total * 2600));
-  const playHint = () => {
+  let clearTimer = 0;
+  /** clearAfter: 書き終えたら少しおいて赤を消し、灰色にもどす（問題を出したときの1回目） */
+  const playHint = (clearAfter = false) => {
     cancelAnimationFrame(anim);
+    clearTimeout(clearTimer);
     hg.clearRect(0, 0, S, S); // いったん もとの灰色にもどす
     const t0 = performance.now() + 250;
     const frame = (now: number) => {
@@ -784,10 +788,11 @@ function lineScreen(round: Round): void {
       hg.arc(hx * S, hy * S, gw * 0.6, 0, Math.PI * 2);
       hg.fill();
       if (f < 1) anim = requestAnimationFrame(frame);
+      else if (clearAfter) clearTimer = window.setTimeout(() => hg.clearRect(0, 0, S, S), LINE_HINT_HOLD_MS);
     };
     anim = requestAnimationFrame(frame);
   };
-  const hintBtn = h('button', { class: 'hint-btn', onclick: playHint }, '💡 ヒント');
+  const hintBtn = h('button', { class: 'hint-btn', onclick: () => playHint() }, '💡 ヒント');
 
   const say = () => speak(`${shape.name} を なぞろう`, () => duckBgm(true), () => duckBgm(false));
   const erase = () => ctx.clearRect(0, 0, S, S);
@@ -818,6 +823,8 @@ function lineScreen(round: Round): void {
     ),
   );
   window.setTimeout(say, 300);
+  // 問題を出したら、まずヒントを1回見せて（書き方の動き）、灰色にもどす。あとはヒントボタンでいつでも
+  window.setTimeout(() => { if (hintC.isConnected) playHint(true); }, 600);
 }
 
 /** 左上の「やめる」と ⚙（問題・ミニゲームの両方に出す） */
