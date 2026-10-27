@@ -3,7 +3,7 @@ import { registerSW } from 'virtual:pwa-register';
 import { CATEGORIES, MAX_CHARS, type Category, type Question, withParticle, spokenText, type Particle } from './questions';
 import { allQuestions, applyImport, attachPhoto, deleteCustom, enabledQuestions, exportJson, isEnabled, parseImport, setEnabled, type ImportPlan } from './bank';
 import { hasPhoto, loadPhotoIndex, photoUrl, removePhoto } from './photos';
-import { DEFAULT_SHEET, perPage, savePdf, worksheetPages, worksheetPdf, type SheetOptions } from './worksheet-pdf';
+import { DEFAULT_SHEET, pageCount, savePdf, worksheetPages, worksheetPdf, type SheetOptions } from './worksheet-pdf';
 import { clearWritings, deleteWriting, exportWritings, listWritings, MAX_WRITINGS, saveWriting } from './writings';
 import { chars, DAKUON, inScript, SEION, SMALL } from './kana';
 import { loadSettings, saveSettings, VOLUME_LEVEL, type KeySet, type Settings, type Weight, type ParticleMode } from './settings';
@@ -1756,7 +1756,7 @@ function worksheetScreen(selected: string[] = lastRoundIds(), cat?: Category, wl
 
   // 印刷の前に選ぶ: 種類（みてかく／なぞる）・大きさ（ふつう／おおきい）・マス（十字線／カラーマス）
   const opts = loadSheetOptions();
-  const pages = Math.ceil(sel.length / perPage(opts));
+  const pages = pageCount(sel.map((id) => ({ en: all.find((q) => q.id === id)?.lang === 'en' })), opts);
   const pick = <K extends keyof SheetOptions>(key: K, label: string, options: [SheetOptions[K], string][]) =>
     h('div', { class: 'setting-row ws-opt' }, h('span', { class: 'setting-label' }, label),
       h('div', { class: 'seg' }, ...options.map(([v, text]) =>
@@ -1771,7 +1771,7 @@ function worksheetScreen(selected: string[] = lastRoundIds(), cat?: Category, wl
       backButton(worksheetBack, worksheetBack === settingsScreen ? '設定へ' : 'もどる'),
       h('h2', {}, 'ワークシート（オリジナル）'),
       pick('kind', 'しゅるい', [['copy', 'みてかく（視写）'], ['trace', 'なぞる']]),
-      pick('size', 'おおきさ', [['normal', 'ふつう（A4たて・5もん）'], ['large', 'おおきい（A4よこ・2もん）']]),
+      pick('size', 'おおきさ', [['normal', showLang === 'en' ? 'ふつう（A4よこ・3もん）' : 'ふつう（A4たて・5もん）'], ['large', 'おおきい（A4よこ・2もん）']]),
       pick('grid', 'マス', [['cross', 'じゅうじせん'], ['color', 'カラーマス']]),
       h('div', { class: 'setting-row ws-opt' }, h('span', { class: 'setting-label' }, 'ぶん・きもちの じょし'),
         h('div', { class: 'seg' }, ...([['ga', '「が」'], ['ha', '「は」'], ['mix', '「が」「は」こうたい']] as [ParticleMode, string][]).map(([v, text]) =>
@@ -1796,11 +1796,15 @@ function worksheetPrint(ids: string[]): void {
   const all = [...allQuestions(), ...EN_QUESTIONS];
   const qs = applyParticles(ids.map((id) => all.find((q) => q.id === id)).filter((q): q is Question => !!q));
   const opts = loadSheetOptions();
-  const nPages = Math.ceil(qs.length / perPage(opts));
-  const what = `${opts.kind === 'trace' ? 'なぞる' : 'みてかく'}・${opts.size === 'large' ? 'A4 よこ' : 'A4 たて'} ${nPages}枚・${opts.grid === 'color' ? 'カラーマス' : 'じゅうじせん'}`;
+  const nPages = pageCount(qs.map((q) => ({ en: q.lang === 'en' })), opts);
+  const hasEn = qs.some((q) => q.lang === 'en');
+  const hasJa = qs.some((q) => q.lang !== 'en');
+  // 英語はいつも A4 よこ（ふつう 3問・おおきい 2問）
+  const dir = opts.size === 'large' || !hasJa ? 'A4 よこ' : hasEn ? 'A4 たて・よこ' : 'A4 たて';
+  const what = `${opts.kind === 'trace' ? 'なぞる' : 'みてかく'}・${dir} ${nPages}枚・${hasJa ? (opts.grid === 'color' ? 'カラーマス' : 'じゅうじせん') : '4ほんせん'}`;
 
   const note = h('span', { class: 'ws-bar-note' }, `${what}。ページを作っています…`);
-  const pagesBox = h('div', { class: `ws-pages ${opts.size === 'large' ? 'landscape' : ''}` });
+  const pagesBox = h('div', { class: 'ws-pages' });
   let canvases: HTMLCanvasElement[] = [];
   const doPdf: HTMLButtonElement = h('button', {
     class: 'mid-btn primary',
@@ -1846,7 +1850,7 @@ function worksheetPrint(ids: string[]): void {
     })));
     canvases = await worksheetPages(items, opts);
     pagesBox.replaceChildren(...canvases.map((c) => {
-      c.className = 'ws-page-img';
+      c.className = `ws-page-img ${c.width > c.height ? 'landscape' : ''}`;
       return c;
     }));
     note.textContent = `${what}。よければ「PDFを保存」`;

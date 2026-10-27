@@ -38,7 +38,13 @@ export interface SheetOptions {
 export const DEFAULT_SHEET: SheetOptions = { kind: 'copy', size: 'normal', grid: 'cross' };
 
 /** 1枚に入る問題の数 */
-export const perPage = (o: SheetOptions): number => (o.size === 'large' ? 2 : 5);
+export const perPage = (o: SheetOptions, en = false): number => (o.size === 'large' ? 2 : en ? 3 : 5);
+
+/** ページの数。英語は A4 よこ（ふつう 3問・おおきい 2問）で、日本語とは別のページにする（2026-10-27） */
+export function pageCount(items: { en?: boolean }[], o: SheetOptions): number {
+  const en = items.filter((it) => it.en).length;
+  return Math.ceil((items.length - en) / perPage(o)) + Math.ceil(en / perPage(o, true));
+}
 
 const DPI = 200;
 const S = DPI / 25.4; // 1mm あたりの px
@@ -51,12 +57,14 @@ const MASU = { sky: '#cdeefc', pink: '#fcd9e6', yellow: '#fff1a8', green: '#d3f1
 const TRACE_INK = '#bdbdbd'; // なぞる字の色（印刷してもなぞれるうすさ）
 
 /** ページの寸法と、1問ぶんの大きさ（mm） */
-function layout(o: SheetOptions) {
+function layout(o: SheetOptions, en = false) {
   const large = o.size === 'large';
-  const pageW = large ? 297 : 210;
-  const pageH = large ? 210 : 297;
-  const pic = large ? 62 : 34;
-  const gap = large ? 10 : 6;
+  // 英語は見本と書く行を横に並べるので、いつも A4 よこ
+  const land = large || en;
+  const pageW = land ? 297 : 210;
+  const pageH = land ? 210 : 297;
+  const pic = large ? 62 : en ? 46 : 34;
+  const gap = large ? 10 : en ? 8 : 6;
   const maxCell = large ? 40 : 16;
   return { pageW, pageH, pic, gap, maxCell, writeW: pageW - MARGIN_X * 2 - pic - gap };
 }
@@ -110,8 +118,8 @@ function drawChar(g: CanvasRenderingContext2D, ch: string, x: number, y: number,
   fillCenteredAt(g, ch, x + cell / 2, y + cell / 2);
 }
 
-async function drawPage(items: SheetItem[], o: SheetOptions, pageNo: number, pages: number): Promise<HTMLCanvasElement> {
-  const L = layout(o);
+async function drawPage(items: SheetItem[], o: SheetOptions, pageNo: number, pages: number, en = false): Promise<HTMLCanvasElement> {
+  const L = layout(o, en);
   const c = document.createElement('canvas');
   c.width = Math.round(L.pageW * S);
   c.height = Math.round(L.pageH * S);
@@ -154,7 +162,7 @@ async function drawPage(items: SheetItem[], o: SheetOptions, pageNo: number, pag
   // 問題
   const top = headY + 14;
   const bottom = L.pageH - MARGIN_Y - 4;
-  const slotH = (bottom - top) / perPage(o);
+  const slotH = (bottom - top) / perPage(o, en);
   const longest = Math.max(...items.map((it) => it.chars.length));
   const rowGap = o.size === 'large' ? 4 : 2.5;
   // マスの大きさ: 横は書ける幅、縦は2行（上の行＋下の行）が1問ぶんに入る大きさ
@@ -171,17 +179,17 @@ async function drawPage(items: SheetItem[], o: SheetOptions, pageNo: number, pag
   };
   const enItems = items.filter((it) => it.en);
   // 英語のページは横が足りなくなるので、絵を小さめにして4本線を大きくとる
-  const picBox = Math.min(L.pic, slotH - 6) * (enItems.length ? 0.72 : 1);
+  const picBox = Math.min(L.pic, slotH - 6) * (enItems.length ? 0.85 : 1);
   const enWriteW = L.writeW + Math.min(L.pic, slotH - 6) - picBox;
   const enH = enItems.length
-    ? Math.min(o.size === 'large' ? 60 : 34, slotH - 8, ...enItems.map((it) => (enWriteW - EN_ARROW) / (enRowW1(it) * 2)))
+    ? Math.min(o.size === 'large' ? 60 : 46, slotH - 8, ...enItems.map((it) => (enWriteW - EN_ARROW) / (enRowW1(it) * 2)))
     : 0;
 
   for (let i = 0; i < items.length; i++) {
     const it = items[i];
     const cy = top + slotH * i + slotH / 2;
     // 絵
-    const kanaH = it.kana ? (o.size === 'large' ? 9 : 5) : 0;
+    const kanaH = it.kana ? (o.size === 'large' ? 9 : en ? 7 : 5) : 0;
     const pic = picBox - kanaH;
     const px = MARGIN_X + kanaH / 2;
     const py = cy - (pic + kanaH) / 2;
@@ -293,22 +301,27 @@ export async function worksheetPages(items: SheetItem[], o: SheetOptions): Promi
     document.fonts.load(`40px ${GOTHIC}`, 'がっくんのこくごワークシートなぞりがきなまえがつにち'),
   ]).catch(() => undefined);
 
-  const n = perPage(o);
-  const pages = Math.ceil(items.length / n);
+  // 日本語のページ（設定の向き）→ 英語のページ（A4 よこ）の順
+  const pages = pageCount(items, o);
   const out: HTMLCanvasElement[] = [];
-  for (let p = 0; p < pages; p++) out.push(await drawPage(items.slice(p * n, (p + 1) * n), o, p + 1, pages));
+  for (const en of [false, true]) {
+    const group = items.filter((it) => !!it.en === en);
+    const n = perPage(o, en);
+    for (let i = 0; i < group.length; i += n) out.push(await drawPage(group.slice(i, i + n), o, out.length + 1, pages, en));
+  }
   return out;
 }
 
 /** ワークシートの PDF を作る（worksheetPages で作ったページから） */
-export async function worksheetPdf(canvases: HTMLCanvasElement[], o: SheetOptions): Promise<Blob> {
+export async function worksheetPdf(canvases: HTMLCanvasElement[], _o: SheetOptions): Promise<Blob> {
   const { jsPDF } = await import('jspdf');
-  const L = layout(o);
-  const orientation = o.size === 'large' ? 'landscape' : 'portrait';
-  const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation });
+  // ページごとに向きを決める（日本語と英語がまざると、たて と よこ がまざる）
+  const land = (c: HTMLCanvasElement) => c.width > c.height;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: canvases[0] && land(canvases[0]) ? 'landscape' : 'portrait' });
   canvases.forEach((canvas, p) => {
-    if (p > 0) doc.addPage('a4', orientation);
-    doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, L.pageW, L.pageH);
+    const l = land(canvas);
+    if (p > 0) doc.addPage('a4', l ? 'landscape' : 'portrait');
+    doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, l ? 297 : 210, l ? 210 : 297);
   });
   return doc.output('blob');
 }
