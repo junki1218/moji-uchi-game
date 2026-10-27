@@ -1197,3 +1197,14 @@ canvas.pad-ghost { width: 100%; height: 100%; }
 .create-inline .create-input { flex: 1; }
 .create-msg { min-height: 1.4em; margin: 1vh 0; color: #c0392b; font-weight: 700; text-align: center; }
 .made-pic { display: grid; place-items: center; background: #fff7e6; font-size: min(4vw, 5vh); }
+
+/* ワークシート（オリジナル）: 次へ進む大きな緑のボタン（2026-10-27） */
+.ws-go {
+  width: min(90vw, 760px); padding: 2vh 3vw; border-radius: 24px; border: none;
+  background: #4caf50; color: #fff; box-shadow: 0 6px 0 #3b8a3e;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.ws-go:active { transform: translateY(4px); box-shadow: 0 2px 0 #3b8a3e; }
+.ws-go:disabled { background: #b7d8b8; box-shadow: none; }
+.ws-go-main { font-size: min(4vw, 5.6vh); font-weight: 800; }
+.ws-go-sub { font-size: min(2.2vw, 3vh); font-weight: 700; opacity: 0.9; }
