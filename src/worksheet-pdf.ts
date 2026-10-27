@@ -160,12 +160,29 @@ async function drawPage(items: SheetItem[], o: SheetOptions, pageNo: number, pag
   // マスの大きさ: 横は書ける幅、縦は2行（上の行＋下の行）が1問ぶんに入る大きさ
   const cell = Math.min(L.maxCell, Math.floor((L.writeW / longest) * 10) / 10, Math.floor(((slotH - 6 - rowGap) / 2) * 10) / 10);
 
+  // 英語は 左に見本・右に書く行（2026-10-27。上下だと、見本の4本目と書く行の1本目がまぎれて分かりにくい）。
+  // 4本線の高さはページの英語の問題でそろえる: 1行なので縦は1問ぶんいっぱいまで、横は 見本＋矢印＋書く行（見本の1.2倍以上）が入る大きさ
+  const EN_ARROW = o.size === 'large' ? 14 : 9;
+  const EN_GAP = 0.12; // 字と字のあいだ（4本線の高さに対する割合）
+  const EN_SIDE = 0.15; // 行のはじの余白
+  const enRowW1 = (it: SheetItem) => {
+    const L1 = enLines(g, 1);
+    return it.chars.reduce((s, ch) => s + enGlyphWidth(ch, L1) + EN_GAP, EN_GAP) + EN_SIDE * 2;
+  };
+  const enItems = items.filter((it) => it.en);
+  // 英語のページは横が足りなくなるので、絵を小さめにして4本線を大きくとる
+  const picBox = Math.min(L.pic, slotH - 6) * (enItems.length ? 0.72 : 1);
+  const enWriteW = L.writeW + Math.min(L.pic, slotH - 6) - picBox;
+  const enH = enItems.length
+    ? Math.min(o.size === 'large' ? 60 : 34, slotH - 8, ...enItems.map((it) => (enWriteW - EN_ARROW) / (enRowW1(it) * 2)))
+    : 0;
+
   for (let i = 0; i < items.length; i++) {
     const it = items[i];
     const cy = top + slotH * i + slotH / 2;
     // 絵
     const kanaH = it.kana ? (o.size === 'large' ? 9 : 5) : 0;
-    const pic = Math.min(L.pic, slotH - 6) - kanaH;
+    const pic = picBox - kanaH;
     const px = MARGIN_X + kanaH / 2;
     const py = cy - (pic + kanaH) / 2;
     g.save();
@@ -197,25 +214,36 @@ async function drawPage(items: SheetItem[], o: SheetOptions, pageNo: number, pag
     }
 
     // 上の行（見本 か なぞる字）と、下の行（自分で書く）
-    const lx = MARGIN_X + Math.min(L.pic, slotH - 6) + L.gap;
+    const lx = MARGIN_X + picBox + L.gap;
     const sy = cy - (cell * 2 + rowGap) / 2;
     const wy = sy + cell + rowGap;
     if (it.en) {
-      // 英語: マスの代わりに、行の幅いっぱいの4本線（カラーマスと同じ色の仲間）。字は線にのせる
+      // 英語: 左に見本（またはなぞる字）、右に書く行。マスの代わりに4本線（カラーマスと同じ色の仲間）
       // 字と字のあいだは、ひとつの単語に見えるくらいにつめる（字の幅をはかって、少しだけあける）
-      const top = enLines(g, cell, sy);
-      const bot = enLines(g, cell, wy);
-      const gap = cell * 0.12;
-      const widths = it.chars.map((ch) => enGlyphWidth(ch, top));
-      const rowW = Math.max(cell * 2, widths.reduce((s, w) => s + w + gap, gap) + cell * 0.6);
-      drawEnLines(g, lx, rowW, top, 0.3);
-      drawEnLines(g, lx, rowW, bot, 0.3);
-      let x = lx + cell * 0.3 + gap;
+      const ly = enLines(g, enH, cy - enH / 2);
+      const gap = enH * EN_GAP;
+      const widths = it.chars.map((ch) => enGlyphWidth(ch, ly));
+      const sampleW = Math.max(enH, enRowW1(it) * enH);
+      const lw = o.size === 'large' ? 0.4 : 0.3;
+      drawEnLines(g, lx, sampleW, ly, lw);
+      let x = lx + enH * EN_SIDE + gap;
       it.chars.forEach((ch, k) => {
         g.fillStyle = o.kind === 'trace' ? TRACE_INK : '#222';
-        drawEnGlyph(g, ch, x + widths[k] / 2, top);
+        drawEnGlyph(g, ch, x + widths[k] / 2, ly);
         x += widths[k] + gap;
       });
+      // 矢印（見本 → 書く行）
+      const ax = lx + sampleW + EN_ARROW / 2;
+      const ay = (ly.ys[1] + ly.ys[2]) / 2;
+      const ah = EN_ARROW * 0.28;
+      g.fillStyle = '#c8bfb2';
+      g.beginPath();
+      g.moveTo(ax - ah, ay - ah); g.lineTo(ax + ah, ay); g.lineTo(ax - ah, ay + ah);
+      g.closePath();
+      g.fill();
+      // 書く行: 右のはしまで
+      const wx = lx + sampleW + EN_ARROW;
+      drawEnLines(g, wx, L.pageW - MARGIN_X - wx, ly, lw);
       g.textBaseline = 'alphabetic';
     } else it.chars.forEach((ch, k) => {
       const cx = lx + k * cell;
