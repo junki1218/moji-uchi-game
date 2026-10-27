@@ -1,4 +1,5 @@
-// 手書きモードで子どもが書いた字の記録。1問＝画像1枚（書いた字を横に並べ、下に単語と日時）。
+// 手書きモードで子どもが書いた字の記録。1問＝画像1枚（書いた字を横に並べ、下に単語・書き方・日時）。
+// 書き方（なぞり／みてかく／きいてかく／えをみてかく）は 2026-10-27 から残す。それより前の記録にはない
 // 新しい方から MAX_WRITINGS 件だけ残し、古いものから消す。先生が設定画面から見て、端末へ書き出せる。
 
 import { tx } from './idb';
@@ -14,6 +15,8 @@ export interface Writing {
   word: string;
   createdAt: string; // ISO
   png: Blob;
+  /** 書き方（なぞり・みてかく・きいてかく・えをみてかく）。前の記録にはない */
+  mode?: string;
 }
 
 function stamp(d: Date): string {
@@ -22,10 +25,11 @@ function stamp(d: Date): string {
 }
 
 /** 1文字ずつの字（正方形の canvas）を横に並べた記録画像を作る */
-function compose(glyphs: HTMLCanvasElement[], word: string, at: Date): Promise<Blob> {
+function compose(glyphs: HTMLCanvasElement[], word: string, at: Date, mode: string): Promise<Blob> {
   const n = glyphs.length;
   const c = document.createElement('canvas');
-  c.width = PAD * 2 + n * CELL + (n - 1) * 12;
+  // 字が少ないときも、下の「単語［書き方］日時」が入る幅にする
+  c.width = Math.max(PAD * 2 + n * CELL + (n - 1) * 12, 620);
   c.height = PAD * 2 + CELL + LABEL_H;
   const g = c.getContext('2d')!;
   g.fillStyle = '#ffffff';
@@ -49,15 +53,15 @@ function compose(glyphs: HTMLCanvasElement[], word: string, at: Date): Promise<B
   g.fillStyle = '#6b6259';
   g.font = '28px "Hiragino Maru Gothic ProN", "BIZ UDPGothic", sans-serif';
   g.textBaseline = 'middle';
-  g.fillText(`${word}　${stamp(at)}`, PAD, PAD + CELL + LABEL_H / 2 + 4);
+  g.fillText(`${word}　［${mode}］　${stamp(at)}`, PAD, PAD + CELL + LABEL_H / 2 + 4);
   return new Promise((resolve, reject) =>
     c.toBlob((b) => (b ? resolve(b) : reject(new Error('画像にできません'))), 'image/png'),
   );
 }
 
-export async function saveWriting(glyphs: HTMLCanvasElement[], word: string): Promise<void> {
+export async function saveWriting(glyphs: HTMLCanvasElement[], word: string, mode: string): Promise<void> {
   const at = new Date();
-  const rec: Writing = { key: at.getTime(), word, createdAt: at.toISOString(), png: await compose(glyphs, word, at) };
+  const rec: Writing = { key: at.getTime(), word, mode, createdAt: at.toISOString(), png: await compose(glyphs, word, at, mode) };
   await tx('writings', 'readwrite', (s) => s.put(rec, rec.key));
   // 古いものから消して MAX_WRITINGS 件に保つ（キーは時刻なので小さい方が古い）
   const keys = (await tx('writings', 'readonly', (s) => s.getAllKeys())) as number[];
@@ -82,7 +86,7 @@ export async function clearWritings(): Promise<void> {
 export function fileName(w: Writing): string {
   const d = new Date(w.createdAt);
   const p = (n: number) => String(n).padStart(2, '0');
-  return `tegaki_${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}_${w.word}.png`;
+  return `tegaki_${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}_${w.word}${w.mode ? `_${w.mode}` : ''}.png`;
 }
 
 /**

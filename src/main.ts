@@ -1513,7 +1513,9 @@ function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | nu
   const doneBtn = h('button', {
     class: 'mid-btn primary',
     onclick: () => {
-      if (written.some(Boolean)) void saveWriting(glyphs, disp(answer.join(''))).catch(() => undefined);
+      // 書き方も残す（なぞり／みてかく／きいてかく／えをみてかく。2026-10-27）
+      const mode = trace ? 'なぞり' : settings.prompt === 'look' ? 'みてかく' : settings.prompt === 'listen' ? 'きいてかく' : 'えをみてかく';
+      if (written.some(Boolean)) void saveWriting(glyphs, disp(answer.join('')), mode).catch(() => undefined);
       onDone();
     },
   }, 'できた');
@@ -2054,6 +2056,7 @@ async function writingsScreen(message = ''): Promise<void> {
       h('img', { src: url, alt: `${w.word} のてがき`, class: 'w-img' }),
       h('div', { class: 'w-meta' },
         h('span', { class: 'w-word' }, w.word),
+        h('span', { class: `w-mode ${w.mode === 'なぞり' ? 'trace' : w.mode ? 'write' : 'unknown'}` }, w.mode ?? 'しゅるい ふめい'),
         h('span', { class: 'w-date' }, `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`)),
       h('div', { class: 'q-card-tools' },
         h('button', { class: 'mini-btn', onclick: () => void exportWritings([w]) }, '書き出す'),
@@ -2078,7 +2081,7 @@ async function writingsScreen(message = ''): Promise<void> {
           onclick: () => { if (confirm(`記録 ${ws.length}件をすべて消しますか？`)) void clearWritings().then(leave(() => void writingsScreen('すべて消しました'))); },
         }, 'ぜんぶけす')),
       h('p', { class: 'q-note' },
-        message || `てがきモードで「できた」を押した問題を、新しい順に最大${MAX_WRITINGS}件まで残します（古いものから消えます）。iPad では共有から「画像を保存」「ファイルに保存」ができます。`),
+        message || `てがき・なぞりで「できた」を押した問題を、新しい順に最大${MAX_WRITINGS}件まで残します（古いものから消えます）。書き方（なぞり／みてかく／きいてかく／えをみてかく）もいっしょに残ります。iPad では共有から「画像を保存」「ファイルに保存」ができます。`),
       ws.length === 0 && h('p', { class: 'q-note' }, 'まだ記録がありません'),
       h('div', { class: 'w-grid' }, ...cards),
     ),
