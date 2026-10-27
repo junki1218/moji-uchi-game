@@ -12,7 +12,7 @@ import { currentEnglishVoice, englishVoices, setEnglishVoice, speak, stopSpeech,
 import { MINIGAMES, runMinigame, type MiniQuestion, type MinigameKind } from './minigames';
 import { letters } from './kinetic';
 import { drawEnGlyph, drawEnLines, enLines, fillCentered } from './glyph';
-import { ALPHABET_QUESTIONS, ALPHABET_ROWS, EN_CATEGORIES, EN_QUESTIONS, enQuestions, isAlphabet } from './english';
+import { ALPHABET_QUESTIONS, ALPHABET_ROWS, EN_CATEGORIES, EN_QUESTIONS, enQuestions, isAlphabet, letterName } from './english';
 
 // 新しい版が届いたら、ゲームの途中ではなくスタート画面に戻ったときに読み込み直す
 // （古いプログラムと新しい絵が混ざって、絵と問題が食い違うのを防ぐ）
@@ -413,8 +413,8 @@ async function readOut(cells: HTMLElement[], answer: string[], pIdx: number | nu
       const cell = cells[i];
       if (!cell.isConnected) return false;
       cell.classList.add('readout');
-      // 英語は字の名前（大文字で渡すと「エイ」「ビー」と読む。小文字の a は「ア」と読まれることがある）
-      if (en) await speakAndWait(answer[i].toUpperCase(), 'en');
+      // 英語は字の名前（D をそのまま渡すと iPad は「Capital D」と読むので、小文字1字を渡す）
+      if (en) await speakAndWait(letterName(answer[i]), 'en');
       else await speakAndWait(i === pIdx && answer[i] === 'は' ? 'わ' : charReading(answer[i]));
       await wait(READ_PAUSE_MS);
       cell.classList.remove('readout');
@@ -448,8 +448,8 @@ function questionScreen(round: Round, afterMini = false): void {
   const fixed = particleFixed(pIdx);
   const en = q.lang === 'en';
   const shown = (c: string) => disp(c);
-  // アルファベットは字の名前（大文字で渡すと「エー」と読む）
-  const say = () => speak(en ? (isAlphabet(q) ? q.hira.toUpperCase() : q.hira) : spokenText(q), () => duckBgm(true), () => duckBgm(false), en ? 'en' : 'ja');
+  // アルファベットは字の名前
+  const say = () => speak(en ? (isAlphabet(q) ? letterName(q.hira) : q.hira) : spokenText(q), () => duckBgm(true), () => duckBgm(false), en ? 'en' : 'ja');
 
   const trace = settings.input === 'trace';
   const lined = en && settings.input !== 'keyboard'; // 英語のてがき: 見本も4本線
@@ -700,7 +700,7 @@ function minigameScreen(round: Round, kinds: MinigameKind[], onDone: () => void)
   const say = () => speak(instruction, () => duckBgm(true), () => duckBgm(false));
   // 🔊 は正解の言葉を読む（やることは最初に1回読む）
   const cur = round.questions[round.index];
-  const sayWord = () => speak(cur.lang === 'en' ? (isAlphabet(cur) ? cur.hira.toUpperCase() : cur.hira) : spokenText(cur), () => duckBgm(true), () => duckBgm(false), cur.lang === 'en' ? 'en' : 'ja');
+  const sayWord = () => speak(cur.lang === 'en' ? (isAlphabet(cur) ? letterName(cur.hira) : cur.hira) : spokenText(cur), () => duckBgm(true), () => duckBgm(false), cur.lang === 'en' ? 'en' : 'ja');
   const instruction = mq.instruction?.[kind] ?? info.instruction;
   show(
     h(
@@ -1452,7 +1452,7 @@ function enVoiceRow(): HTMLElement {
     setEnglishVoice(sel.value);
     fill();
   });
-  const test = h('button', { class: 'seg-btn', onclick: () => { unlockSpeech(); speak('Hello. A, B, C. Dog, cat.', undefined, undefined, 'en'); } }, '▶ ためす');
+  const test = h('button', { class: 'seg-btn', onclick: () => { unlockSpeech(); speak('Hello. Dog, cat.', undefined, undefined, 'en'); } }, '▶ ためす');
   return h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'えいごの こえ'), h('div', { class: 'seg' }, sel, test));
 }
 

@@ -78,6 +78,12 @@ export const ALPHABET_QUESTIONS: Question[] = Array.from('abcdefghijklmnopqrstuv
 
 export const isAlphabet = (q: Question) => q.category === 'alphabet';
 
+// 字の名前の読み上げ（2026-10-27）。大文字1字（D）を渡すと iPad は「Capital D」と読むので、小文字1字を渡す
+// （1字だけなら字の名前「ディー」と読む）。
+
+/** 英語の声に渡す、字の名前 */
+export const letterName = (c: string): string => c.toLowerCase();
+
 export function enQuestions(cat?: Category): Question[] {
   const all = [...EN_QUESTIONS, ...ALPHABET_QUESTIONS];
   return cat ? all.filter((q) => q.category === cat) : all;
