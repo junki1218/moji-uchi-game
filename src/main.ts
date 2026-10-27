@@ -1,12 +1,12 @@
 import './style.css';
 import { registerSW } from 'virtual:pwa-register';
-import { CATEGORIES, MAX_CHARS, type Category, type Question } from './questions';
+import { CATEGORIES, MAX_CHARS, type Category, type Question, withParticle, spokenText, type Particle } from './questions';
 import { allQuestions, applyImport, attachPhoto, deleteCustom, enabledQuestions, exportJson, isEnabled, parseImport, setEnabled, type ImportPlan } from './bank';
 import { hasPhoto, loadPhotoIndex, photoUrl, removePhoto } from './photos';
 import { DEFAULT_SHEET, perPage, savePdf, worksheetPages, worksheetPdf, type SheetOptions } from './worksheet-pdf';
 import { clearWritings, deleteWriting, exportWritings, listWritings, MAX_WRITINGS, saveWriting } from './writings';
 import { chars, DAKUON, inScript, SEION, SMALL } from './kana';
-import { loadSettings, saveSettings, VOLUME_LEVEL, type KeySet, type Settings, type Weight } from './settings';
+import { loadSettings, saveSettings, VOLUME_LEVEL, type KeySet, type Settings, type Weight, type ParticleMode } from './settings';
 import { duckBgm, playBgm, playJingle, setSound, sfx, stopBgm, unlockAudio } from './audio';
 import { speak, stopSpeech, unlockSpeech } from './speech';
 import { MINIGAMES, runMinigame, type MiniQuestion, type MinigameKind } from './minigames';
@@ -259,13 +259,26 @@ interface Round {
 
 function startRound(cat: Category): void {
   const pool = enabledQuestions(cat);
-  const round: Round = { questions: shuffle(pool).slice(0, ROUND_SIZE), index: 0 };
+  const round: Round = { questions: applyParticles(shuffle(pool).slice(0, ROUND_SIZE), true), index: 0 };
   try {
     localStorage.setItem(LAST_ROUND_KEY, JSON.stringify(round.questions.map((q) => q.id)));
   } catch {
     // 覚えられなくても遊べる
   }
   questionScreen(round);
+}
+
+/**
+ * ぶん・きもちの助詞を設定に合わせる（2026-10-27）。が・は のときは1問ずつ交代
+ * （random＝どちらから始めるかをばらす。プリントは「が」から）
+ */
+function applyParticles(qs: Question[], random = false): Question[] {
+  let k = random && Math.random() < 0.5 ? 1 : 0;
+  return qs.map((q) => {
+    if (q.category !== 'bunkimochi' || q.type !== 'sentence') return q;
+    const p: Particle = settings.particleMode === 'ha' ? 'は' : settings.particleMode === 'mix' ? (k++ % 2 ? 'は' : 'が') : 'が';
+    return withParticle(q, p);
+  });
 }
 
 function progress(round: Round): HTMLElement {
@@ -327,14 +340,14 @@ function speakAndWait(text: string): Promise<void> {
 }
 
 /** 答えのマスを1つずつ大きくして読み上げ、元に戻す。途中で画面を離れたら false */
-async function readOut(cells: HTMLElement[], answer: string[]): Promise<boolean> {
+async function readOut(cells: HTMLElement[], answer: string[], pIdx: number | null = null): Promise<boolean> {
   duckBgm(true);
   try {
     for (let i = 0; i < cells.length; i++) {
       const cell = cells[i];
       if (!cell.isConnected) return false;
       cell.classList.add('readout');
-      await speakAndWait(charReading(answer[i]));
+      await speakAndWait(i === pIdx && answer[i] === 'は' ? 'わ' : charReading(answer[i]));
       await wait(READ_PAUSE_MS);
       cell.classList.remove('readout');
       await wait(READ_GAP_MS);
@@ -360,7 +373,7 @@ function questionScreen(round: Round, afterMini = false): void {
   const pIdx = particleIndex(q);
   const fixed = particleFixed(pIdx);
   const shown = (c: string) => inScript(c, settings.script);
-  const say = () => speak(q.hira, () => duckBgm(true), () => duckBgm(false));
+  const say = () => speak(spokenText(q), () => duckBgm(true), () => duckBgm(false));
 
   const trace = settings.input === 'trace';
   const sample =
@@ -386,7 +399,7 @@ function questionScreen(round: Round, afterMini = false): void {
     const screen = app.querySelector<HTMLElement>('.screen.game');
     screen?.classList.add('reading'); // 読み上げ中は入力を受け付けない（やめる は押せる）
     const cells = [...(screen?.querySelectorAll<HTMLElement>('.answer .answer-cell, .hw-cells .hw-cell') ?? [])];
-    void readOut(cells, answer).then((ok) => { if (ok) celebrate(); });
+    void readOut(cells, answer, pIdx).then((ok) => { if (ok) celebrate(); });
   };
   const celebrate = () => {
     const overlay = h('div', { class: 'overlay clear' }, hanamaru('pop'));
@@ -456,6 +469,7 @@ function openSettingsModal(round: Round, inMini = false): void {
     overlay.remove();
     if (JSON.stringify(settings) !== before) {
       stopSpeech();
+      if (JSON.parse(before).particleMode !== settings.particleMode) round.questions = applyParticles(round.questions, true);
       if (inMini) {
         stopActiveMini();
         questionScreen(round); // ミニゲームから出し直す
@@ -521,7 +535,7 @@ function minigameScreen(round: Round, kinds: MinigameKind[], onDone: () => void)
 
   const say = () => speak(info.instruction, () => duckBgm(true), () => duckBgm(false));
   // 🔊 は正解の言葉を読む（やることは最初に1回読む）
-  const sayWord = () => speak(round.questions[round.index].hira, () => duckBgm(true), () => duckBgm(false));
+  const sayWord = () => speak(spokenText(round.questions[round.index]), () => duckBgm(true), () => duckBgm(false));
   show(
     h(
       'main',
@@ -546,7 +560,7 @@ function miniQuestion(q: Question): MiniQuestion {
   const answer = chars(q.hira);
   const fixed = particleFixed(particleIndex(q));
   const others = shuffle(
-    [...new Set(allQuestions(q.category).map((x) => x.hira).filter((w) => w !== q.hira))],
+    [...new Set(allQuestions(q.category).map((x) => withParticle(x, q.particle ?? 'が').hira).filter((w) => w !== q.hira))],
   ).map(disp);
   const pictureUrl = async () => {
     if (hasPhoto(q.id)) return photoUrl(q.id);
@@ -743,9 +757,11 @@ const PAD_PX = 600;
 // 字をマスの真ん中に描く fillCentered は glyph.ts（ワークシートの PDF と共通）
 
 /**
- * 文の「が」の見本（黒い丸に白い字）。丸と字を同じキャンバスに描いて、字を丸の真ん中にそろえる
+ * 文の「が」の見本（黒い丸に白い字）。「は」はピンクの丸に黒い字（えほんの はっちゃん と同じ色。2026-10-27）。丸と字を同じキャンバスに描いて、字を丸の真ん中にそろえる
  * （CSS の丸と文字を重ねると、フォントによって字がずれていた）
  */
+const HA_BG = '#F9C9D6';
+
 function particleBadge(ch: string, cls = 'particle-badge'): HTMLCanvasElement {
   const S = 240;
   const c = h('canvas', { class: cls, width: String(S), height: String(S), 'aria-label': ch, role: 'img' });
@@ -753,11 +769,12 @@ function particleBadge(ch: string, cls = 'particle-badge'): HTMLCanvasElement {
   const draw = () => {
     const g = c.getContext('2d')!;
     g.clearRect(0, 0, S, S);
-    g.fillStyle = '#222';
+    const ha = ch === 'は' || ch === 'ハ';
+    g.fillStyle = ha ? HA_BG : '#222';
     g.beginPath();
     g.arc(S / 2, S / 2, S * 0.41, 0, Math.PI * 2);
     g.fill();
-    g.fillStyle = '#fff';
+    g.fillStyle = ha ? '#222' : '#fff';
     g.font = font();
     fillCentered(g, ch, S, S);
   };
@@ -1182,7 +1199,8 @@ function settingRows(): HTMLElement[] {
     choice('aColumn', 'あ行の位置', [['right', '右はし（50音表と同じ）'], ['left', '左はし']]),
     choice('sound', 'おと（BGM）', [[true, 'あり'], [false, 'なし']]),
     choice('volume', '音量', [['low', '小'], ['mid', '中'], ['high', '大']]),
-    choice('particleInput', '文の「が」', [[false, '最初から入れておく'], [true, '子どもが打つ・書く']]),
+    choice('particleMode', 'ぶん・きもちの じょし', [['ga', '「が」'], ['ha', '「は」（わ と よむ）'], ['mix', '「が」「は」こうたい']]),
+    choice('particleInput', '文の「が」「は」', [[false, '最初から入れておく'], [true, '子どもが打つ・書く']]),
     choice('keySet', 'キーボードの字', [['all', '50音'], ['k25', '25音'], ['k10', '10音'], ['answer', '答えの字だけ']]),
     choice('traceWeight', 'なぞりの見本の太さ', [['thin', 'ほそい'], ['normal', 'ふつう'], ['bold', 'ふとい']]),
     choice('penWidth', 'ペンの太さ', [['thin', 'ほそい'], ['normal', 'ふつう'], ['bold', 'ふとい']]),
@@ -1448,8 +1466,10 @@ let worksheetBack: () => void = settingsScreen;
 // ストック＝配布用の PDF（tools/make_worksheets.py で作って public/worksheets/ に置いたもの）
 // オリジナル＝さいごに遊んだ問題で作るワークシート（設定の「ワークシート」と同じ画面）
 
-const STOCK_CATEGORIES: [string, string][] = [
-  ['mono', 'もの'], ['kimochi', 'きもち'], ['ugoki', 'うごき'], ['bun', 'ぶん'], ['bunkimochi', 'ぶん・きもち'],
+/** [ファイル名の部分, 見出し, 絵（cat_○○）] */
+const STOCK_CATEGORIES: [string, string, string][] = [
+  ['mono', 'もの', 'mono'], ['kimochi', 'きもち', 'kimochi'], ['ugoki', 'うごき', 'ugoki'], ['bun', 'ぶん', 'bun'],
+  ['bunkimochi', 'ぶん・きもち「が」', 'bunkimochi'], ['bunkimochi_ha', 'ぶん・きもち「は」', 'bunkimochi'],
 ];
 
 function printScreen(): void {
@@ -1489,9 +1509,9 @@ function stockScreen(): void {
       h('h2', {}, 'ストック'),
       h('p', { class: 'q-note' }, '20問前後・A4 縦4枚。おしたら PDF が ひらきます（iPad は 共有 から「"ファイル"に保存」・プリント）。インターネットが いります。'),
       h('div', { class: 'stock-list' },
-        ...STOCK_CATEGORIES.map(([cat, label]) =>
+        ...STOCK_CATEGORIES.map(([cat, label, pic]) =>
           h('div', { class: 'stock-row' },
-            picture(`cat_${cat}`, () => h('span'), 'stock-pic'),
+            picture(`cat_${pic}`, () => h('span'), 'stock-pic'),
             h('span', { class: 'stock-label' }, label),
             link(cat, label, false),
             link(cat, label, true)))),
@@ -1536,7 +1556,7 @@ function worksheetScreen(selected: string[] = lastRoundIds(), cat?: Category): v
   const tabs = h('div', { class: 'seg' }, ...CATEGORIES.map((c) =>
     h('button', { class: `seg-btn ${c.id === showCat ? 'on' : ''}`, onclick: () => worksheetScreen(sel, c.id) }, c.label)));
 
-  const cards = allQuestions(showCat).map((q) => {
+  const cards = applyParticles(allQuestions(showCat)).map((q) => {
     const on = sel.includes(q.id);
     return h('div', {
       class: `q-card ${on ? 'on' : 'off'}`,
@@ -1568,6 +1588,12 @@ function worksheetScreen(selected: string[] = lastRoundIds(), cat?: Category): v
       pick('kind', 'しゅるい', [['copy', 'みてかく（視写）'], ['trace', 'なぞる']]),
       pick('size', 'おおきさ', [['normal', 'ふつう（A4たて・5もん）'], ['large', 'おおきい（A4よこ・2もん）']]),
       pick('grid', 'マス', [['cross', 'じゅうじせん'], ['color', 'カラーマス']]),
+      h('div', { class: 'setting-row ws-opt' }, h('span', { class: 'setting-label' }, 'ぶん・きもちの じょし'),
+        h('div', { class: 'seg' }, ...([['ga', '「が」'], ['ha', '「は」'], ['mix', '「が」「は」こうたい']] as [ParticleMode, string][]).map(([v, text]) =>
+          h('button', {
+            class: `seg-btn ${settings.particleMode === v ? 'on' : ''}`,
+            onclick: () => { settings = { ...settings, particleMode: v }; saveSettings(settings); rerender(sel); },
+          }, text)))),
       h('div', { class: 'seg toolbar' },
         h('button', { class: 'seg-btn', onclick: () => rerender(lastRoundIds()) }, 'さいごに遊んだ問題'),
         h('button', { class: 'seg-btn', onclick: () => rerender([]) }, 'えらび直す（ぜんぶ外す）'),
@@ -1582,7 +1608,7 @@ function worksheetScreen(selected: string[] = lastRoundIds(), cat?: Category): v
 /** 見た目の確認と PDF の保存。確認画面には PDF と同じページの絵を出す。iPad は共有シートの「"ファイル"に保存」 */
 function worksheetPrint(ids: string[]): void {
   const all = allQuestions();
-  const qs = ids.map((id) => all.find((q) => q.id === id)).filter((q): q is Question => !!q);
+  const qs = applyParticles(ids.map((id) => all.find((q) => q.id === id)).filter((q): q is Question => !!q));
   const opts = loadSheetOptions();
   const nPages = Math.ceil(qs.length / perPage(opts));
   const what = `${opts.kind === 'trace' ? 'なぞる' : 'みてかく'}・${opts.size === 'large' ? 'A4 よこ' : 'A4 たて'} ${nPages}枚・${opts.grid === 'color' ? 'カラーマス' : 'じゅうじせん'}`;

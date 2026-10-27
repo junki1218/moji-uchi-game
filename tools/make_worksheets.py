@@ -6,6 +6,7 @@
 - もの／うごき／きもち／ぶん／ぶん・きもち の5つ。各カテゴリの20問すべて（A4 縦・1枚5問 → 4枚）
 - それぞれ ひらがな版 と カタカナ版（2026-10-05 追加）。カタカナ版でも文の「が」はひらがなのまま
 - 文の「が」は、見本の行で黒い丸に白い字（アプリの見本と同じ）
+- ぶん・きもちは「は」の版も作る（2026-10-27。worksheet_bunkimochi_ha）。「は」はピンクの丸に黒い字
 - レイアウトはアプリのワークシート（src/worksheet-pdf.ts）と同じ:
   絵（34mm）＋見本の行（教科書体）＋書く行（十字の補助線）
 - 見本の字は Windows の「UD デジタル教科書体 N-B」、見出しは BIZ UDゴシック
@@ -33,7 +34,7 @@ FONT_KYOKASHO = "C:/Windows/Fonts/UDDigiKyokashoN-B.ttc"
 FONT_GOTHIC_B = "C:/Windows/Fonts/BIZ-UDGothicB.ttc"
 FONT_GOTHIC_R = "C:/Windows/Fonts/BIZ-UDGothicR.ttc"
 
-CATEGORIES = [("mono", "もの"), ("ugoki", "うごき"), ("kimochi", "きもち"), ("bun", "ぶん"), ("bunkimochi", "ぶん・きもち")]
+CATEGORIES = [("mono", "もの"), ("ugoki", "うごき"), ("kimochi", "きもち"), ("bun", "ぶん"), ("bunkimochi", "ぶん・きもち"), ("bunkimochi_ha", "ぶん・きもち「は」")]
 WORD_CATEGORIES = ("mono", "ugoki", "kimochi")
 PARTICLE = "が"
 
@@ -94,6 +95,8 @@ def load_items() -> dict[str, list[Item]]:
     for cat in ("bun", "bunkimochi"):
         found = re.findall(rf"sentence\('({cat}_\d{{2}})', '([^']+)', '([^']+)'", t)
         items[cat] = [(qid, list(s + PARTICLE + v), len(s)) for qid, s, v in found]
+    # 「は」の版（絵は同じ id のもの）
+    items["bunkimochi_ha"] = [(qid, w[:pi] + ["は"] + w[pi + 1 :], pi) for qid, w, pi in items["bunkimochi"]]
     return items
 
 
@@ -180,10 +183,11 @@ def draw_page(items: list[Item], label: str, page_no: int, pages: int) -> Image.
             for yy in (sy, wy):
                 d.rectangle((px(cx), px(yy), px(cx + cell), px(yy + cell)), outline="#555555", width=px(0.35))
             if k == particle:
-                # 文の「が」は黒い丸に白い字
+                # 文の「が」は黒い丸に白い字、「は」はピンクの丸に黒い字
+                ha = ch == "は"
                 r = cell * 0.4
-                d.ellipse((px(cx + cell / 2 - r), px(sy + cell / 2 - r), px(cx + cell / 2 + r), px(sy + cell / 2 + r)), fill=ink)
-                text_centered(d, px(cx + cell / 2), px(sy + cell / 2), ch, f_particle, "white")
+                d.ellipse((px(cx + cell / 2 - r), px(sy + cell / 2 - r), px(cx + cell / 2 + r), px(sy + cell / 2 + r)), fill="#F9C9D6" if ha else ink)
+                text_centered(d, px(cx + cell / 2), px(sy + cell / 2), ch, f_particle, ink if ha else "white")
             else:
                 text_centered(d, px(cx + cell / 2), px(sy + cell / 2), ch, f_cell, ink)
 

@@ -95,13 +95,14 @@ function drawCell(g: CanvasRenderingContext2D, x: number, y: number, cell: numbe
   g.strokeRect(x, y, cell, cell);
 }
 
-/** マスの中に字を1つ（文の「が」は黒い丸に白い字） */
+/** マスの中に字を1つ（文の「が」は黒い丸に白い字、「は」はピンクの丸に黒い字） */
 function drawChar(g: CanvasRenderingContext2D, ch: string, x: number, y: number, cell: number, particle: boolean, color: string): void {
+  const ha = ch === 'は' || ch === 'ハ';
   if (particle) {
-    g.fillStyle = '#222';
+    g.fillStyle = ha ? '#F9C9D6' : '#222';
     g.beginPath(); g.arc(x + cell / 2, y + cell / 2, cell * 0.41, 0, Math.PI * 2); g.fill();
   }
-  g.fillStyle = particle ? '#fff' : color;
+  g.fillStyle = particle ? (ha ? '#222' : '#fff') : color;
   g.font = `600 ${cell * (particle ? 0.56 : 0.72)}px ${KYOKASHO}`;
   fillCenteredAt(g, ch, x + cell / 2, y + cell / 2);
 }
@@ -192,7 +193,7 @@ async function drawPage(items: SheetItem[], o: SheetOptions, pageNo: number, pag
       const cx = lx + k * cell;
       const isParticle = k === it.particle;
       if (o.kind === 'trace') {
-        // なぞる行: マスの中にうすい字（「が」は黒い丸のまま）
+        // なぞる行: マスの中にうすい字（「が」「は」は丸のまま）
         drawCell(g, cx, sy, cell, o.grid);
         drawChar(g, ch, cx, sy, cell, isParticle, TRACE_INK);
       } else {

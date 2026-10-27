@@ -13,6 +13,8 @@ export type MinigameKind = 'bubble' | 'lock' | 'hockey';
 export type KeySet = 'all' | 'k25' | 'k10' | 'answer';
 /** 太さ（2026-10-17）: なぞりの見本の字・ペンの線 */
 export type Weight = 'thin' | 'normal' | 'bold';
+/** ぶん・きもちの助詞（2026-10-27）: ga＝「が」、ha＝「は」、mix＝「が」と「は」を1問ずつ交代 */
+export type ParticleMode = 'ga' | 'ha' | 'mix';
 
 export const VOLUME_LEVEL: Record<Volume, number> = { low: 0.3, mid: 0.6, high: 0.9 };
 
@@ -28,6 +30,8 @@ export interface Settings {
   minigameKinds: MinigameKind[];
   /** 文の「が」を子どもが打つ・書くか（false＝最初から入れておく） */
   particleInput: boolean;
+  /** ぶん・きもちの助詞（が／は／が・は） */
+  particleMode: ParticleMode;
   /** キーボードの字の数。変えるまで同じ難しさが続く */
   keySet: KeySet;
   /** なぞりの見本（うすい字）の太さ */
@@ -51,6 +55,7 @@ const DEFAULTS: Settings = {
   minigame: true,
   minigameKinds: ['bubble', 'lock', 'hockey'],
   particleInput: false,
+  particleMode: 'ga',
   keySet: 'all',
   traceWeight: 'normal',
   penWidth: 'normal',
@@ -62,6 +67,7 @@ const KEY = 'moji-uchi-game/settings';
 const MINIGAME_KINDS: MinigameKind[] = ['bubble', 'lock', 'hockey'];
 const KEY_SETS: KeySet[] = ['all', 'k25', 'k10', 'answer'];
 const WEIGHTS: Weight[] = ['thin', 'normal', 'bold'];
+const PARTICLE_MODES: ParticleMode[] = ['ga', 'ha', 'mix'];
 
 export function loadSettings(): Settings {
   try {
@@ -75,6 +81,7 @@ export function loadSettings(): Settings {
       if (!KEY_SETS.includes(s.keySet)) s.keySet = 'all';
       if (!WEIGHTS.includes(s.traceWeight)) s.traceWeight = 'normal';
       if (!WEIGHTS.includes(s.penWidth)) s.penWidth = 'normal';
+      if (!PARTICLE_MODES.includes(s.particleMode)) s.particleMode = 'ga';
       return s;
     }
   } catch {

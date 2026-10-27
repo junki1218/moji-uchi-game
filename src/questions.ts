@@ -17,8 +17,9 @@ export type QuestionType = 'word' | 'sentence';
 /** 文の〇〇＋●●の合計の上限（画面に収めるため。各語は MAX_CHARS まで） */
 export const MAX_SENTENCE_CHARS = 12;
 
-/** 文の真ん中に入る助詞（打たせない） */
+/** 文の真ん中に入る助詞（打たせない）。ぶん・きもちは設定で「は」にもできる（withParticle） */
 export const PARTICLE = 'が';
+export type Particle = 'が' | 'は';
 
 export interface Question {
   id: string;
@@ -28,6 +29,8 @@ export interface Question {
   hira: string;
   /** 文のときだけ: [〇〇, ●●] */
   parts?: [string, string];
+  /** 文の助詞（なければ「が」）。「は」は「わ」と読む */
+  particle?: Particle;
   emoji: string;
   /** 最初から入っている問題（削除できない。画像は src/images/{id}.webp） */
   builtin: boolean;
@@ -52,6 +55,18 @@ export function sentence(id: string, subject: string, predicate: string, emoji: 
     emoji,
     builtin,
   };
+}
+
+/** 文の助詞を入れかえた問題（単語はそのまま） */
+export function withParticle(q: Question, p: Particle): Question {
+  if (q.type !== 'sentence' || !q.parts) return q;
+  return { ...q, hira: q.parts[0] + p + q.parts[1], particle: p };
+}
+
+/** 読み上げる文。助詞の「は」は「わ」と読ませる（ひらがなだけだと「は」と読まれることがある） */
+export function spokenText(q: Question): string {
+  if (q.type === 'sentence' && q.parts && q.particle === 'は') return `${q.parts[0]} わ ${q.parts[1]}`;
+  return q.hira;
 }
 
 const q = (category: Category, rows: [string, string][]): Question[] =>
