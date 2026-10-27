@@ -1138,7 +1138,8 @@ canvas.pad-ghost { width: 100%; height: 100%; }
 .line-head { display: flex; align-items: center; gap: 2vw; }
 .line-title { margin: 0; font-size: min(4.4vw, 6.4vh); }
 .line-stage {
-  position: relative; width: min(62vh, 80vw); aspect-ratio: 1; flex: none;
+  /* 大きさは「残りの高さ」で決める（vh は iPad の Safari でアドレスバーの分まで入って大きくなりすぎ、ボタンがはみ出した。2026-10-27） */
+  position: relative; flex: 1 1 0; min-height: 0; height: auto; width: auto; max-width: 92vw; max-height: 92vw; aspect-ratio: 1;
   background: var(--card); border: 4px solid var(--line); border-radius: 24px; overflow: hidden;
 }
 .line-layer { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
