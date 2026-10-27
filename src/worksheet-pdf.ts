@@ -121,7 +121,8 @@ function drawChar(g: CanvasRenderingContext2D, ch: string, x: number, y: number,
 }
 
 /**
- * せんの れんしゅう 1問: 左の四角に見本（みてかく＝黒い線、なぞる＝うすい線）、右に何もない四角。
+ * せんの れんしゅう 1問。みてかく＝左に黒い見本 → 右に何もない四角（視写）。
+ * なぞる＝左右どちらも うすい線（なぞりを2回。見本も何もない四角も出さない。2026-10-27）。
  * どちらも書きはじめに緑の点。マスの設定（十字線／カラーマス）は四角に使う
  */
 function drawShapeItem(g: CanvasRenderingContext2D, pts: [number, number][], o: SheetOptions, pageW: number, cy: number, slotH: number): void {
@@ -136,14 +137,21 @@ function drawShapeItem(g: CanvasRenderingContext2D, pts: [number, number][], o: 
   g.lineJoin = 'round';
   g.strokeStyle = o.kind === 'trace' ? TRACE_INK : '#222';
   g.lineWidth = b * (o.kind === 'trace' ? 0.06 : 0.025);
-  g.beginPath();
-  g.moveTo(x0 + pts[0][0] * b, y0 + pts[0][1] * b);
-  for (const [px, py] of pts.slice(1)) g.lineTo(x0 + px * b, y0 + py * b);
-  g.stroke();
-  // 書きはじめ（両方の四角に。右は同じ場所から書く目安）
+  const trace = o.kind === 'trace';
+  for (const x of trace ? [x0, x1] : [x0]) {
+    g.beginPath();
+    g.moveTo(x + pts[0][0] * b, y0 + pts[0][1] * b);
+    for (const [px, py] of pts.slice(1)) g.lineTo(x + px * b, y0 + py * b);
+    g.stroke();
+  }
+  // 書きはじめ（両方の四角に。みてかくの右は同じ場所から書く目安）
   g.fillStyle = '#4caf50';
   for (const x of [x0, x1]) {
     g.beginPath(); g.arc(x + pts[0][0] * b, y0 + pts[0][1] * b, b * 0.035, 0, Math.PI * 2); g.fill();
+  }
+  if (trace) {
+    g.restore();
+    return;
   }
   // 矢印（見本 → 書く四角）
   const ax = x0 + b + gap / 2;
@@ -291,6 +299,20 @@ async function drawPage(items: SheetItem[], o: SheetOptions, pageNo: number, pag
         drawEnGlyph(g, ch, x + widths[k] / 2, ly);
         x += widths[k] + gap;
       });
+      // なぞる: 右にも同じなぞる字をもう1つ（見本・何もない行は出さない。2026-10-27）
+      if (o.kind === 'trace') {
+        const x2 = lx + sampleW + EN_ARROW;
+        drawEnLines(g, x2, sampleW, ly, lw);
+        let xx = x2 + enH * EN_SIDE + gap;
+        it.chars.forEach((ch, k) => {
+          g.fillStyle = TRACE_INK;
+          drawEnGlyph(g, ch, xx + widths[k] / 2, ly);
+          xx += widths[k] + gap;
+        });
+        g.textBaseline = 'alphabetic';
+        separator(i);
+        continue;
+      }
       // 矢印（見本 → 書く行）
       const ax = lx + sampleW + EN_ARROW / 2;
       const ay = (ly.ys[1] + ly.ys[2]) / 2;
@@ -319,6 +341,8 @@ async function drawPage(items: SheetItem[], o: SheetOptions, pageNo: number, pag
         drawChar(g, ch, cx, sy, cell, isParticle, '#222');
       }
       drawCell(g, cx, wy, cell, o.grid);
+      // なぞる: 下の行も なぞる字（なぞりを2回。2026-10-27）
+      if (o.kind === 'trace') drawChar(g, ch, cx, wy, cell, isParticle, TRACE_INK);
     });
     g.textBaseline = 'alphabetic';
 
