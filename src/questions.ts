@@ -3,7 +3,7 @@
 // 先生が JSON で足す問題は bank.ts が扱う。
 
 /** alphabet は英語版だけ（2026-10-27） */
-export type Category = 'mono' | 'kimochi' | 'ugoki' | 'bun' | 'bunkimochi' | 'alphabet' | 'youbi' | 'line';
+export type Category = 'mono' | 'kimochi' | 'ugoki' | 'bun' | 'bunkimochi' | 'alphabet' | 'youbi' | 'doubutsu' | 'line';
 
 /** 単語1つの長さの上限（打つキーの数。ゃ・ー も1字） */
 export const MAX_CHARS = 10;

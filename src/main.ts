@@ -13,7 +13,7 @@ import { MINIGAMES, runMinigame, type MiniQuestion, type MinigameKind } from './
 import { letters } from './kinetic';
 import { drawEnGlyph, drawEnLines, enLines, fillCentered } from './glyph';
 import { LINE_QUESTIONS, LINE_SHAPES, lineShape, pathLength, shapeThumb, tracePath, type Pt } from './lines';
-import { ALPHABET_QUESTIONS, ALPHABET_ROWS, EN_CATEGORIES, EN_QUESTIONS, enQuestions, fixedCase, isAlphabet, letterName } from './english';
+import { ALPHABET_QUESTIONS, ALPHABET_ROWS, EN_CATEGORY_LIST, EN_QUESTIONS, enQuestions, fixedCase, isAlphabet, letterName } from './english';
 
 // 新しい版が届いたら、ゲームの途中ではなくスタート画面に戻ったときに読み込み直す
 // （古いプログラムと新しい絵が混ざって、絵と問題が食い違うのを防ぐ）
@@ -289,9 +289,9 @@ function langScreen(): void {
 
 // ------------------------------------------------------------ カテゴリ
 
-/** 英語版のカテゴリ（もの・うごき・アルファベット・ようび） */
+/** 英語版のカテゴリ（もの・どうぶつ・うごき・アルファベット・ようび） */
 function enCategories(): { id: Category; label: string; emoji: string }[] {
-  return [...CATEGORIES.filter((c) => EN_CATEGORIES.includes(c.id)), { id: 'alphabet', label: 'アルファベット', emoji: '🔤' }, { id: 'youbi', label: 'ようび', emoji: '📅' }];
+  return EN_CATEGORY_LIST;
 }
 
 function categoryScreen(): void {
@@ -1772,7 +1772,7 @@ function settingsScreen(): void {
       h('h2', {}, '設定（先生用）'),
       settingPanel({
         ja: [qRow('ja', '選ぶ・写真・JSONの読み込み')],
-        en: [qRow('en', '選ぶ（もの・うごき・アルファベット・ようび）')],
+        en: [qRow('en', '選ぶ（もの・どうぶつ・うごき・アルファベット・ようび）')],
         line: [qRow('line', '選ぶ（20この形）')],
         common: [
         h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'てがきのきろく'),
@@ -1936,7 +1936,7 @@ function questionsScreen(cat: Category, message = '', group: QGroup = 'ja'): voi
  * よみかた があれば、言葉のかわりにそれを読む（名前のアクセント・ローマ字の名前など）
  */
 function createDialog(lang: 'ja' | 'en', cat: Category, done: (msg: string) => void): void {
-  const cats: [Category, string][] = lang === 'en' ? [['mono', 'もの'], ['ugoki', 'うごき']] : [['mono', 'もの'], ['kimochi', 'きもち'], ['ugoki', 'うごき']];
+  const cats: [Category, string][] = lang === 'en' ? [['mono', 'もの'], ['doubutsu', 'どうぶつ'], ['ugoki', 'うごき']] : [['mono', 'もの'], ['kimochi', 'きもち'], ['ugoki', 'うごき']];
   let category: Category = cats.some(([c]) => c === cat) ? cat : 'mono';
   let photo: Blob | null = null;
 
@@ -2142,6 +2142,7 @@ const STOCK_SETS: Record<StockGroup, StockSet[]> = {
   ],
   en: [
     { key: 'mono', label: 'もの', pic: catPic('mono'), qs: () => enBuiltinOf('mono') },
+    { key: 'doubutsu', label: 'どうぶつ', pic: catPic('doubutsu'), qs: () => enBuiltinOf('doubutsu') },
     { key: 'ugoki', label: 'うごき', pic: catPic('ugoki'), qs: () => enBuiltinOf('ugoki') },
     { key: 'youbi', label: 'ようび', pic: catPic('youbi'), qs: () => enBuiltinOf('youbi') },
     { key: 'abc', label: 'アルファベット', pic: () => h('div', { class: 'picture stock-pic abc-cat' }, h('span', { class: 'abc-cat-text' }, 'Aa')), qs: () => ALPHABET_QUESTIONS },

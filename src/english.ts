@@ -5,8 +5,17 @@
 import { BUILTIN_QUESTIONS, type Category, type Question } from './questions';
 import { customEnQuestions } from './bank';
 
-/** 英語版で出すカテゴリ（アルファベットは 2026-10-27、ようびは 2026-10-30 追加） */
-export const EN_CATEGORIES: Category[] = ['mono', 'ugoki', 'alphabet', 'youbi'];
+/** 英語版のカテゴリ（えらぶ画面・設定・プリントのタブの順）。アルファベットは 2026-10-27、ようび・どうぶつは 2026-10-30 追加 */
+export const EN_CATEGORY_LIST: { id: Category; label: string; emoji: string }[] = [
+  { id: 'mono', label: 'もの', emoji: '🍎' },
+  { id: 'doubutsu', label: 'どうぶつ', emoji: '🐘' },
+  { id: 'ugoki', label: 'うごき', emoji: '🏃' },
+  { id: 'alphabet', label: 'アルファベット', emoji: '🔤' },
+  { id: 'youbi', label: 'ようび', emoji: '📅' },
+];
+
+/** 「もの」の絵のうち、英語では「どうぶつ」に分けるもの（2026-10-30） */
+const ANIMALS = new Set(['dog', 'cat', 'fish', 'elephant', 'rabbit', 'lion', 'gorilla', 'dinosaur']);
 
 /** [日本語の問題の id（＝絵）, 英単語, カタカナ, 日本語（文の絵を使うとき）]。文の絵は「もの」にする */
 const ROWS: [string, string, string, string?][] = [
@@ -24,7 +33,7 @@ const ROWS: [string, string, string, string?][] = [
   ['mono_17', 'cap', 'キャップ'],
   ['mono_18', 'fish', 'フィッシュ'],
   ['mono_20', 'cake', 'ケーキ'],
-  // 動物（2026-10-30）: 日本語の「ぶん」「ぶん・きもち」の絵を流用
+  // 動物（2026-10-30）: 日本語の「ぶん」「ぶん・きもち」の絵を流用。dog・cat・fish とあわせて「どうぶつ」
   ['bun_03', 'elephant', 'エレファント', 'ぞう'],
   ['bun_11', 'rabbit', 'ラビット', 'うさぎ'],
   ['bunkimochi_08', 'lion', 'ライオン', 'らいおん'],
@@ -69,7 +78,7 @@ export const EN_QUESTIONS: Question[] = [
     return [{
       id: `en_${img}`,
       type: 'word' as const,
-      category: ja ? 'mono' as const : base.category,
+      category: ANIMALS.has(word) ? 'doubutsu' as const : ja ? 'mono' as const : base.category,
       hira: word,
       emoji: base.emoji,
       builtin: true,

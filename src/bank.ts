@@ -101,7 +101,7 @@ export async function addCustom(n: NewQuestion): Promise<{ id: string } | { erro
     if (!word) return { error: 'えいごの ことばを いれてください' };
     if (!EN_WORD.test(word)) return { error: 'えいごは a〜z の字だけにしてください（スペースや記号は打てません）' };
     if (word.length > MAX_CHARS) return { error: `${MAX_CHARS}文字までです（${word.length}文字）` };
-    if (n.category !== 'mono' && n.category !== 'ugoki') return { error: 'しゅるいは もの／うごき です' };
+    if (!['mono', 'doubutsu', 'ugoki'].includes(n.category)) return { error: 'しゅるいは もの／どうぶつ／うごき です' };
     const ja = normalizeKana(n.ja ?? '');
     if (!ja) return { error: 'にほんご（ひらがな）を いれてください（「いぬ は dog」の画面で使います）' };
     const kana = (n.kana ?? '').trim().replace(/[ぁ-ゖ]/g, (c) => String.fromCharCode(c.charCodeAt(0) + 0x60));
@@ -215,10 +215,11 @@ export function parseImport(text: string): ImportPlan {
     // 英語（2026-10-27）: {"lang":"en","word":"taro","ja":"たろう","kana":"タロウ","category":"mono"}
     if (r.lang === 'en') {
       const w = String(r.word ?? '').trim().toLowerCase();
-      const c = CATEGORY_ALIASES[String(r.category ?? '').trim()];
+      const rc = String(r.category ?? '').trim();
+      const c = rc === 'doubutsu' || rc === 'どうぶつ' ? 'doubutsu' : CATEGORY_ALIASES[rc];
       const ja = normalizeKana(String(r.ja ?? ''));
       if (!EN_WORD.test(w) || w.length > MAX_CHARS) return errors.push(`${n}「${w}」: えいごは a〜z の${MAX_CHARS}文字までです`);
-      if (c !== 'mono' && c !== 'ugoki') return errors.push(`${n}「${w}」: category は もの／うごき にしてください`);
+      if (c !== 'mono' && c !== 'doubutsu' && c !== 'ugoki') return errors.push(`${n}「${w}」: category は もの／どうぶつ／うごき にしてください`);
       if (!ja) return errors.push(`${n}「${w}」: ja（にほんご）がありません`);
       const eid = id || `c_en_${c}_${w}`;
       items.push({ id: eid, image, question: { id: eid, type: 'word', category: c, hira: w, emoji, builtin: false, lang: 'en', ja, kana: typeof r.kana === 'string' ? r.kana.trim() || undefined : undefined, reading } });
