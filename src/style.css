@@ -1213,3 +1213,33 @@ canvas.pad-ghost { width: 100%; height: 100%; }
 .w-mode { display: inline-block; font-size: 13px; font-weight: 700; padding: 1px 10px; border-radius: 999px; background: #e8f3e8; color: #2e7d32; }
 .w-mode.trace { background: #fde7ee; color: #b0305a; }
 .w-mode.unknown { background: #eee; color: #777; }
+
+/* ---------- 英語クイズ（2026-10-30） ---------- */
+
+.category-grid:has(.category-btn:nth-child(6)) .category-btn:nth-child(n + 4) { grid-column: auto / span 2; }
+.quiz-cat-pic { position: relative; display: grid; place-items: center; background: #eaf3fc; border-radius: 18px; }
+.quiz-cat-pic .speaker-icon { width: 62%; height: 62%; }
+.quiz-cat-q { position: absolute; right: 8%; top: 4%; font-size: 0.42em; font-weight: 800; color: #2f7fd1; }
+.screen.quiz { justify-content: flex-start; gap: 2.5vh; padding-top: 2vh; }
+.quiz-say { position: absolute; left: max(16px, env(safe-area-inset-left)); top: calc(max(12px, env(safe-area-inset-top)) + min(9vh, 64px)); display: flex; gap: 14px; }
+.quiz-say-btn { width: min(9vw, 12vh); height: min(9vw, 12vh); padding: 0; border: none; background: none; border-radius: 50%; box-shadow: 0 4px 0 rgba(0, 0, 0, 0.15); }
+.quiz-say-btn:active { transform: scale(0.9); }
+.quiz-say-btn:disabled { opacity: 0.3; }
+.quiz-say-btn .speaker-icon { width: 100%; height: 100%; display: block; }
+.quiz-ask { margin: 7vh 0 0; font-size: min(4vw, 6vh); font-weight: 800; }
+.quiz-cards { display: flex; gap: 3vw; justify-content: center; align-items: center; flex: 1; width: 100%; }
+.quiz-card {
+  background: var(--card); border: 4px solid var(--line); border-radius: 24px;
+  padding: 1.6vh 1.6vw 1.2vh; display: flex; flex-direction: column; align-items: center; gap: 1vh;
+  transition: transform 0.35s cubic-bezier(0.3, 1.5, 0.5, 1), opacity 0.4s;
+}
+.quiz-pic { width: min(24vw, 38vh); height: min(24vw, 38vh); font-size: min(16vw, 26vh); }
+.quiz-word { font-family: Andika, sans-serif; font-weight: 700; font-size: min(4.2vw, 6.5vh); line-height: 1.2; }
+.quiz-card.right { transform: scale(1.25); border-color: #5cb85c; z-index: 2; }
+.quiz-card.fade { opacity: 0.25; }
+.quiz-card.wrong { transform: scale(1.18); border-color: #e0483e; z-index: 2; }
+.quiz-card.wrong.gone { transform: scale(0.2); opacity: 0; pointer-events: none; }
+/* 英語はボタンが6つ（2026-10-30）: 2段に収まるよう、絵と字を小さく、名前は折り返さない */
+.category-grid:has(.category-btn:nth-child(6)) .category-pic { width: min(14vw, 21vh); height: min(14vw, 21vh); font-size: min(10vw, 15vh); }
+.category-grid:has(.category-btn:nth-child(6)) .category-label { white-space: nowrap; font-size: min(3.6vw, 5.4vh); }
+.category-grid:has(.category-btn:nth-child(6)) .category-btn { padding: 1.4vh 1.6vw 1.6vh; gap: 1vh; }

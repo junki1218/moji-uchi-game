@@ -116,27 +116,30 @@ export function setSound(on: boolean, vol: number): void {
 // 開発完了/ZukeiCollectApp/script.js の correctSound() / fanfaleSound() を流用（音程・長さ・音色は同じ）。
 // 移植にあたり、setTimeout ではなく AudioContext の時刻で並べ、BGM と同じ音量設定（master）を通す。
 
-export type JingleName = 'correct' | 'finish';
+export type JingleName = 'correct' | 'finish' | 'pinpon' | 'bubu';
 
-const JINGLES: Record<JingleName, { freqs: number[]; step: number; dur: number[] }> = {
+const JINGLES: Record<JingleName, { freqs: number[]; step: number; dur: number[]; wave?: OscillatorType; gain?: number }> = {
   // correctSound(): 880Hz 0.1秒 → 0.1秒後に 1760Hz 0.4秒
   correct: { freqs: [880, 1760], step: 0.1, dur: [0.1, 0.4] },
   // fanfaleSound(): 8音を 0.15秒ずつずらし、各 0.6秒
   finish: { freqs: [523, 659, 783, 1046, 783, 1046, 1318, 1567], step: 0.15, dur: [0.6] },
+  // 英語クイズ（2026-10-30）: 正解「ピンポーン」（高→低）、不正解「ブブー」（低いブザー）
+  pinpon: { freqs: [1318, 1046], step: 0.22, dur: [0.25, 0.9] },
+  bubu: { freqs: [150, 150], step: 0.2, dur: [0.16, 0.55], wave: 'square', gain: 0.12 },
 };
 
 export function playJingle(name: JingleName): void {
   if (!ctx || ctx.state !== 'running' || !master) return;
-  const { freqs, step, dur } = JINGLES[name];
+  const { freqs, step, dur, wave = 'sine', gain = 0.2 } = JINGLES[name];
   const t0 = ctx.currentTime + 0.02;
   freqs.forEach((f, i) => {
     const d = dur[i] ?? dur[dur.length - 1];
     const t = t0 + i * step;
     const osc = ctx!.createOscillator();
     const g = ctx!.createGain();
-    osc.type = 'sine';
+    osc.type = wave;
     osc.frequency.setValueAtTime(f, t);
-    g.gain.setValueAtTime(0.2, t);
+    g.gain.setValueAtTime(gain, t);
     g.gain.exponentialRampToValueAtTime(0.01, t + d);
     osc.connect(g).connect(master!);
     osc.start(t);

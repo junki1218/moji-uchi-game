@@ -317,6 +317,12 @@ function categoryScreen(): void {
             h('span', { class: 'category-label' }, letters(c.label, 'kt-pop')),
           );
         }),
+        // 英語クイズ（2026-10-30）: 聞いて、3つの絵から選ぶ
+        lang === 'en'
+          ? h('button', { class: 'category-btn quiz-cat', disabled: quizPool().length < 3, onclick: startQuiz },
+            h('div', { class: 'picture category-pic quiz-cat-pic' }, speakerIcon('blue'), h('span', { class: 'quiz-cat-q' }, '?')),
+            h('span', { class: 'category-label' }, letters('えいご クイズ', 'kt-pop')))
+          : null,
       ),
     ),
   );
@@ -1553,6 +1559,96 @@ function handwritingArea(answer: string[], fixed: Set<number>, pIdx: number | nu
     h('p', { class: 'hw-help' }, trace ? 'ますを タップして なぞろう' : 'ますを タップして かこう'),
     h('div', { class: 'hw-buttons' }, doneBtn),
   );
+}
+
+// ------------------------------------------------------------ 英語クイズ（2026-10-30）
+// 絵は出さずに、まず英語で読む。3つの絵（下につづり）から、読まれた言葉を選ぶ。
+// 正解 → ピンポーンで絵を大きく。不正解 → ブブーで絵を大きくしてから消し、残りから選びなおす（正解するまで進まない）。
+// 左上のボタン: 青＝英語の発音をもう一度、赤＝カタカナの読み（日本語の声）
+
+const QUIZ_CHOICES = 3;
+const QUIZ_NEXT_MS = 1600;
+const QUIZ_WRONG_MS = 900;
+
+/** クイズに出す問題（出題 ON の英単語。アルファベットは出さない） */
+function quizPool(): Question[] {
+  return enQuestions().filter((q) => !isAlphabet(q) && isEnabled(q.id));
+}
+
+/** まちがいの2つ: 同じカテゴリから（足りなければ ほかのカテゴリからも） */
+function quizChoices(q: Question, pool: Question[]): Question[] {
+  const others = (qs: Question[]) => shuffle(qs.filter((x) => x.id !== q.id && x.hira !== q.hira));
+  const same = others(pool.filter((x) => x.category === q.category));
+  const rest = others(pool.filter((x) => x.category !== q.category));
+  return shuffle([q, ...[...same, ...rest].slice(0, QUIZ_CHOICES - 1)]);
+}
+
+function startQuiz(): void {
+  const pool = quizPool();
+  const round: Round = { questions: shuffle(pool).slice(0, ROUND_SIZE), index: 0 };
+  void (document.fonts?.load(`700 40px Andika`) ?? Promise.resolve()).catch(() => undefined).finally(() => quizScreen(round, pool));
+}
+
+/** 丸の中にスピーカーの絵（青＝英語、赤＝カタカナ） */
+function speakerIcon(color: 'blue' | 'red'): SVGSVGElement {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 48 48');
+  svg.setAttribute('class', `speaker-icon ${color}`);
+  svg.innerHTML = `<circle cx="24" cy="24" r="23" fill="${color === 'blue' ? '#2f7fd1' : '#e0483e'}"/>`
+    + '<path d="M11 19h6l8-7v24l-8-7h-6z" fill="#fff"/>'
+    + '<path d="M29 18c3 3 3 9 0 12M33 14c5 5 5 15 0 20" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>';
+  return svg;
+}
+
+function quizScreen(round: Round, pool: Question[]): void {
+  playBgm('bgm2_question');
+  const q = round.questions[round.index];
+  let done = false;
+  const sayEn = () => speak(speechOf(q), () => duckBgm(true), () => duckBgm(false), 'en');
+  const sayKana = () => speak(q.kana || q.hira, () => duckBgm(true), () => duckBgm(false), 'ja');
+
+  const cards = quizChoices(q, pool).map((c) => {
+    const card: HTMLButtonElement = h('button', { class: 'quiz-card', onclick: () => choose(c, card) },
+      questionPicture(c, 'quiz-pic'),
+      h('span', { class: 'quiz-word' }, dispQ(c, c.hira)));
+    return card;
+  });
+
+  function choose(c: Question, card: HTMLButtonElement): void {
+    if (done || card.disabled) return;
+    if (c.id === q.id) {
+      done = true;
+      playJingle('pinpon');
+      card.classList.add('right');
+      cards.forEach((x) => { if (x !== card) x.classList.add('fade'); });
+      window.setTimeout(() => {
+        round.index++;
+        if (round.index < round.questions.length) quizScreen(round, pool);
+        else finishScreen();
+      }, QUIZ_NEXT_MS);
+      return;
+    }
+    playJingle('bubu');
+    card.disabled = true;
+    card.classList.add('wrong');
+    window.setTimeout(() => card.classList.add('gone'), QUIZ_WRONG_MS);
+    // 消えたら場所もつめて、残った2つを真ん中に
+    window.setTimeout(() => { card.style.display = 'none'; }, QUIZ_WRONG_MS + 400);
+  }
+
+  show(
+    h(
+      'main',
+      { class: 'screen quiz en' },
+      h('header', { class: 'game-header' }, h('div', { class: 'header-left' }, quitButton()), progress(round)),
+      h('div', { class: 'quiz-say' },
+        h('button', { class: 'quiz-say-btn', 'aria-label': 'えいごで もういちど', onclick: sayEn }, speakerIcon('blue')),
+        h('button', { class: 'quiz-say-btn', 'aria-label': 'カタカナの よみかた', disabled: !q.kana, onclick: sayKana }, speakerIcon('red'))),
+      h('p', { class: 'quiz-ask' }, letters('どれかな？', 'kt-pop')),
+      h('div', { class: 'quiz-cards' }, ...cards),
+    ),
+  );
+  window.setTimeout(sayEn, 400);
 }
 
 // ------------------------------------------------------------ おわり
