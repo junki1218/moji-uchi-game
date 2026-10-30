@@ -1243,3 +1243,6 @@ canvas.pad-ghost { width: 100%; height: 100%; }
 .category-grid:has(.category-btn:nth-child(6)) .category-pic { width: min(14vw, 21vh); height: min(14vw, 21vh); font-size: min(10vw, 15vh); }
 .category-grid:has(.category-btn:nth-child(6)) .category-label { white-space: nowrap; font-size: min(3.6vw, 5.4vh); }
 .category-grid:has(.category-btn:nth-child(6)) .category-btn { padding: 1.4vh 1.6vw 1.6vh; gap: 1vh; }
+/* 問題が多いとき（ABC順26問・クイズ20問。2026-10-30）は、上の丸を小さくして ボタンにかぶらないように */
+.progress:has(.dot:nth-child(13)) { gap: 0.5vw; }
+.progress:has(.dot:nth-child(13)) .dot { width: min(1.3vw, 1.9vh); height: min(1.3vw, 1.9vh); }

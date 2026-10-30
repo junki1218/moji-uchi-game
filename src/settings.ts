@@ -17,6 +17,11 @@ export type Weight = 'thin' | 'normal' | 'bold';
 export type ParticleMode = 'ga' | 'ha' | 'mix';
 /** 英語版の字（2026-10-27）: lower＝小文字、upper＝大文字 */
 export type LetterCase = 'lower' | 'upper';
+/** えいご クイズに出すカテゴリ（2026-10-30） */
+export type QuizCat = 'mono' | 'doubutsu' | 'ugoki' | 'youbi' | 'alphabet';
+export const QUIZ_CATS: QuizCat[] = ['mono', 'doubutsu', 'ugoki', 'youbi', 'alphabet'];
+/** アルファベットの出しかた（2026-10-30）: random＝ばらばらに10問、abc＝ABC順に ON の字ぜんぶ */
+export type AbcOrder = 'random' | 'abc';
 
 export const VOLUME_LEVEL: Record<Volume, number> = { low: 0.3, mid: 0.6, high: 0.9 };
 
@@ -42,6 +47,10 @@ export interface Settings {
   lineWeight: Weight;
   lineHint: boolean;
   lineCount: 5 | 10 | 20;
+  /** えいご クイズ（2026-10-30）: 出すカテゴリ（1つ以上）と1回の数 */
+  quizCats: QuizCat[];
+  quizCount: 5 | 10 | 20;
+  abcOrder: AbcOrder;
   /** キーボードの字の数。変えるまで同じ難しさが続く */
   keySet: KeySet;
   /** なぞりの見本（うすい字）の太さ */
@@ -71,6 +80,9 @@ const DEFAULTS: Settings = {
   lineWeight: 'normal',
   lineHint: true,
   lineCount: 10,
+  quizCats: ['mono', 'doubutsu', 'ugoki', 'youbi'],
+  quizCount: 10,
+  abcOrder: 'random',
   keySet: 'all',
   traceWeight: 'normal',
   penWidth: 'normal',
@@ -102,6 +114,10 @@ export function loadSettings(): Settings {
       if (!WEIGHTS.includes(s.lineWeight)) s.lineWeight = 'normal';
       if (typeof s.lineHint !== 'boolean') s.lineHint = true;
       if (![5, 10, 20].includes(s.lineCount)) s.lineCount = 10;
+      const qc = Array.isArray(s.quizCats) ? s.quizCats.filter((c) => QUIZ_CATS.includes(c)) : [];
+      s.quizCats = qc.length ? qc : [...DEFAULTS.quizCats];
+      if (![5, 10, 20].includes(s.quizCount)) s.quizCount = 10;
+      if (s.abcOrder !== 'abc') s.abcOrder = 'random';
       return s;
     }
   } catch {

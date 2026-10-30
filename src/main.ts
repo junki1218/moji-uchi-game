@@ -6,7 +6,7 @@ import { hasPhoto, loadPhotoIndex, photoUrl, removePhoto } from './photos';
 import { DEFAULT_SHEET, pageCount, savePdf, worksheetPages, worksheetPdf, type SheetItem, type SheetOptions, type SheetSize } from './worksheet-pdf';
 import { clearWritings, deleteWriting, exportWritings, listWritings, MAX_WRITINGS, saveWriting } from './writings';
 import { chars, DAKUON, inScript, SEION, SMALL } from './kana';
-import { loadSettings, saveSettings, VOLUME_LEVEL, type KeySet, type Settings, type Weight, type ParticleMode } from './settings';
+import { loadSettings, QUIZ_CATS, saveSettings, VOLUME_LEVEL, type KeySet, type QuizCat, type Settings, type Weight, type ParticleMode } from './settings';
 import { duckBgm, playBgm, playJingle, setSound, sfx, stopBgm, unlockAudio } from './audio';
 import { currentEnglishVoice, englishVoices, setEnglishVoice, speak, stopSpeech, unlockSpeech, type SpeechLang } from './speech';
 import { MINIGAMES, runMinigame, type MiniQuestion, type MinigameKind } from './minigames';
@@ -345,7 +345,9 @@ interface Round {
 
 function startRound(cat: Category): void {
   const pool = lang === 'en' ? enQuestions(cat).filter((q) => isEnabled(q.id)) : enabledQuestions(cat);
-  const round: Round = { questions: applyParticles(shuffle(pool).slice(0, ROUND_SIZE), true), index: 0 };
+  // アルファベットを ABC順 にしたときは、ON の字を順にぜんぶ（2026-10-30）
+  const abc = cat === 'alphabet' && settings.abcOrder === 'abc';
+  const round: Round = { questions: applyParticles(abc ? pool : shuffle(pool).slice(0, ROUND_SIZE), true), index: 0 };
   try {
     localStorage.setItem(LAST_ROUND_KEY, JSON.stringify(round.questions.map((q) => q.id)));
   } catch {
@@ -1570,9 +1572,9 @@ const QUIZ_CHOICES = 3;
 const QUIZ_NEXT_MS = 1600;
 const QUIZ_WRONG_MS = 900;
 
-/** クイズに出す問題（出題 ON の英単語。アルファベットは出さない） */
+/** クイズに出す問題: 設定の「えいご クイズに出す」カテゴリの、出題 ON の問題 */
 function quizPool(): Question[] {
-  return enQuestions().filter((q) => !isAlphabet(q) && isEnabled(q.id));
+  return enQuestions().filter((q) => (settings.quizCats as Category[]).includes(q.category) && isEnabled(q.id));
 }
 
 /** まちがいの2つ: 同じカテゴリから（足りなければ ほかのカテゴリからも） */
@@ -1585,7 +1587,7 @@ function quizChoices(q: Question, pool: Question[]): Question[] {
 
 function startQuiz(): void {
   const pool = quizPool();
-  const round: Round = { questions: shuffle(pool).slice(0, ROUND_SIZE), index: 0 };
+  const round: Round = { questions: shuffle(pool).slice(0, settings.quizCount), index: 0 };
   void (document.fonts?.load(`700 40px Andika`) ?? Promise.resolve()).catch(() => undefined).finally(() => quizScreen(round, pool));
 }
 
@@ -1610,7 +1612,8 @@ function quizScreen(round: Round, pool: Question[]): void {
   const cards = quizChoices(q, pool).map((c) => {
     const card: HTMLButtonElement = h('button', { class: 'quiz-card', onclick: () => choose(c, card) },
       questionPicture(c, 'quiz-pic'),
-      h('span', { class: 'quiz-word' }, dispQ(c, c.hira)));
+      // アルファベットは絵が字そのものなので、下のつづりは出さない
+      isAlphabet(c) ? null : h('span', { class: 'quiz-word' }, dispQ(c, c.hira)));
     return card;
   });
 
@@ -1804,6 +1807,9 @@ function settingRows(): Record<SettingTab, HTMLElement[]> {
     en: [
       choice('letterCase', 'えいごの 文字', [['lower', 'こもじ（abc）'], ['upper', 'おおもじ（ABC）']]),
       enVoiceRow(),
+      choice('abcOrder', 'ABCの 出しかた', [['random', 'ばらばら（10もん）'], ['abc', 'ABC順（ON の字ぜんぶ）']]),
+      quizCatsRow(),
+      choice('quizCount', 'クイズの 数', [[5, '5もん'], [10, '10もん'], [20, '20もん']]),
     ],
     line: [
       choice('lineWeight', '線の見本の太さ', [['thin', 'ほそい'], ['normal', 'ふつう'], ['bold', 'ふとい']]),
@@ -1857,9 +1863,9 @@ function settingsScreen(): void {
   }, '変更');
 
   // 出題する問題は、タブごと（ひらがな カタカナ／アルファベット／線なぞり）に選ぶ（2026-10-27）
-  const qRow = (group: QGroup, text: string) =>
-    h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, '出題する問題'),
-      h('div', { class: 'seg' }, h('button', { class: 'seg-btn', onclick: () => questionsScreen(group === 'line' ? 'line' : 'mono', '', group) }, text)));
+  const qRow = (group: QGroup, text: string, cat: Category = group === 'line' ? 'line' : 'mono', label = '出題する問題') =>
+    h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, label),
+      h('div', { class: 'seg' }, h('button', { class: 'seg-btn', onclick: () => questionsScreen(cat, '', group) }, text)));
   show(
     h(
       'main',
@@ -1868,7 +1874,11 @@ function settingsScreen(): void {
       h('h2', {}, '設定（先生用）'),
       settingPanel({
         ja: [qRow('ja', '選ぶ・写真・JSONの読み込み')],
-        en: [qRow('en', '選ぶ（もの・どうぶつ・うごき・アルファベット・ようび）')],
+        en: [
+          qRow('en', '選ぶ（もの・どうぶつ・うごき・ようび）'),
+          qRow('en', '選ぶ（a〜z）', 'alphabet', 'ABCの 問題'),
+          h('p', { class: 'q-note' }, 'えいご クイズは、「クイズに 出す」で選んだ しゅるいの うち、出題する問題で ON の ことばから 出ます。'),
+        ],
         line: [qRow('line', '選ぶ（20この形）')],
         common: [
         h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'てがきのきろく'),
@@ -1880,6 +1890,28 @@ function settingsScreen(): void {
       }),
     ),
   );
+}
+
+/** えいご クイズに出すカテゴリ（複数選べる。0にはできない。2026-10-30） */
+function quizCatsRow(): HTMLElement {
+  const labels: Record<QuizCat, string> = { mono: 'もの', doubutsu: 'どうぶつ', ugoki: 'うごき', youbi: 'ようび', alphabet: 'アルファベット' };
+  const group = h('div', { class: 'seg' });
+  const paint = () =>
+    Array.from(group.children).forEach((b, i) => b.classList.toggle('on', settings.quizCats.includes(QUIZ_CATS[i])));
+  for (const c of QUIZ_CATS) {
+    group.append(h('button', {
+      class: 'seg-btn',
+      onclick: () => {
+        const has = settings.quizCats.includes(c);
+        if (has && settings.quizCats.length === 1) return; // 最後の1つは外せない
+        settings = { ...settings, quizCats: has ? settings.quizCats.filter((k) => k !== c) : QUIZ_CATS.filter((k) => k === c || settings.quizCats.includes(k)) };
+        saveSettings(settings);
+        paint();
+      },
+    }, labels[c]));
+  }
+  paint();
+  return h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'クイズに 出す'), group);
 }
 
 /** ミニゲームの種類（複数選べる。0にはできない） */
