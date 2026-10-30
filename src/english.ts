@@ -5,11 +5,11 @@
 import { BUILTIN_QUESTIONS, type Category, type Question } from './questions';
 import { customEnQuestions } from './bank';
 
-/** 英語版で出すカテゴリ（アルファベットは 2026-10-27 追加） */
-export const EN_CATEGORIES: Category[] = ['mono', 'ugoki', 'alphabet'];
+/** 英語版で出すカテゴリ（アルファベットは 2026-10-27、ようびは 2026-10-30 追加） */
+export const EN_CATEGORIES: Category[] = ['mono', 'ugoki', 'alphabet', 'youbi'];
 
-/** [日本語の問題の id（＝絵）, 英単語, カタカナ] */
-const ROWS: [string, string, string][] = [
+/** [日本語の問題の id（＝絵）, 英単語, カタカナ, 日本語（文の絵を使うとき）]。文の絵は「もの」にする */
+const ROWS: [string, string, string, string?][] = [
   ['mono_01', 'apple', 'アップル'],
   ['mono_02', 'dog', 'ドッグ'],
   ['mono_03', 'cat', 'キャット'],
@@ -24,6 +24,12 @@ const ROWS: [string, string, string][] = [
   ['mono_17', 'cap', 'キャップ'],
   ['mono_18', 'fish', 'フィッシュ'],
   ['mono_20', 'cake', 'ケーキ'],
+  // 動物（2026-10-30）: 日本語の「ぶん」「ぶん・きもち」の絵を流用
+  ['bun_03', 'elephant', 'エレファント', 'ぞう'],
+  ['bun_11', 'rabbit', 'ラビット', 'うさぎ'],
+  ['bunkimochi_08', 'lion', 'ライオン', 'らいおん'],
+  ['bunkimochi_14', 'gorilla', 'ゴリラ', 'ごりら'],
+  ['bun_12', 'dinosaur', 'ダイナソー', 'きょうりゅう'],
   ['ugoki_01', 'run', 'ラン'],
   ['ugoki_02', 'walk', 'ウォーク'],
   ['ugoki_03', 'eat', 'イート'],
@@ -44,22 +50,51 @@ const ROWS: [string, string, string][] = [
   ['ugoki_19', 'climb', 'クライム'],
 ];
 
-export const EN_QUESTIONS: Question[] = ROWS.flatMap(([img, word, kana]) => {
-  const base = BUILTIN_QUESTIONS.find((q) => q.id === img);
-  if (!base) return [];
-  return [{
-    id: `en_${img}`,
+// 曜日（2026-10-30）: 絵は素材ライブラリの Drops の曜日カード（images/youbi_mon.webp…）。
+// 英語のきまりどおり頭だけ大文字（Monday）。こもじ／おおもじ の設定にかかわらずこのまま出す
+const DAYS: [string, string, string, string][] = [
+  ['mon', 'Monday', 'マンデー', 'げつようび'],
+  ['tue', 'Tuesday', 'チューズデー', 'かようび'],
+  ['wed', 'Wednesday', 'ウェンズデー', 'すいようび'],
+  ['thu', 'Thursday', 'サーズデー', 'もくようび'],
+  ['fri', 'Friday', 'フライデー', 'きんようび'],
+  ['sat', 'Saturday', 'サタデー', 'どようび'],
+  ['sun', 'Sunday', 'サンデー', 'にちようび'],
+];
+
+export const EN_QUESTIONS: Question[] = [
+  ...ROWS.flatMap(([img, word, kana, ja]) => {
+    const base = BUILTIN_QUESTIONS.find((q) => q.id === img);
+    if (!base) return [];
+    return [{
+      id: `en_${img}`,
+      type: 'word' as const,
+      category: ja ? 'mono' as const : base.category,
+      hira: word,
+      emoji: base.emoji,
+      builtin: true,
+      lang: 'en' as const,
+      img,
+      ja: ja ?? base.hira,
+      kana,
+    }];
+  }),
+  ...DAYS.map(([key, word, kana, ja]) => ({
+    id: `en_youbi_${key}`,
     type: 'word' as const,
-    category: base.category,
+    category: 'youbi' as const,
     hira: word,
-    emoji: base.emoji,
+    emoji: '📅',
     builtin: true,
     lang: 'en' as const,
-    img,
-    ja: base.hira,
+    img: `youbi_${key}`,
+    ja,
     kana,
-  }];
-});
+  })),
+];
+
+/** 頭が大文字の言葉（曜日）。字の大きさの設定を当てない */
+export const fixedCase = (word: string) => /[A-Z]/.test(word);
 
 // アルファベット（2026-10-27）: 1問＝1文字。「いぬ は dog」の画面は出さない。
 // ミニゲームは 小文字 → 大文字 のマッチング（a に A をあてる）。カタカナは字の名前（読み上げの英語の声に合わせる）

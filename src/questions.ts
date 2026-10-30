@@ -3,7 +3,7 @@
 // 先生が JSON で足す問題は bank.ts が扱う。
 
 /** alphabet は英語版だけ（2026-10-27） */
-export type Category = 'mono' | 'kimochi' | 'ugoki' | 'bun' | 'bunkimochi' | 'alphabet' | 'line';
+export type Category = 'mono' | 'kimochi' | 'ugoki' | 'bun' | 'bunkimochi' | 'alphabet' | 'youbi' | 'line';
 
 /** 単語1つの長さの上限（打つキーの数。ゃ・ー も1字） */
 export const MAX_CHARS = 10;
@@ -32,7 +32,7 @@ export interface Question {
   parts?: [string, string];
   /** 文の助詞（なければ「が」）。「は」は「わ」と読む */
   particle?: Particle;
-  /** 英語版の問題（2026-10-27）。hira に英単語（小文字）が入る */
+  /** 英語版の問題（2026-10-27）。hira に英単語（小文字）が入る。曜日だけは頭が大文字（Monday） */
   lang?: 'en';
   /** 絵の名前（英語版は日本語の問題の絵をそのまま使う。なければ id） */
   img?: string;

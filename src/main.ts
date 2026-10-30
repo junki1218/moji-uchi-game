@@ -13,7 +13,7 @@ import { MINIGAMES, runMinigame, type MiniQuestion, type MinigameKind } from './
 import { letters } from './kinetic';
 import { drawEnGlyph, drawEnLines, enLines, fillCentered } from './glyph';
 import { LINE_QUESTIONS, LINE_SHAPES, lineShape, pathLength, shapeThumb, tracePath, type Pt } from './lines';
-import { ALPHABET_QUESTIONS, ALPHABET_ROWS, EN_CATEGORIES, EN_QUESTIONS, enQuestions, isAlphabet, letterName } from './english';
+import { ALPHABET_QUESTIONS, ALPHABET_ROWS, EN_CATEGORIES, EN_QUESTIONS, enQuestions, fixedCase, isAlphabet, letterName } from './english';
 
 // 新しい版が届いたら、ゲームの途中ではなくスタート画面に戻ったときに読み込み直す
 // （古いプログラムと新しい絵が混ざって、絵と問題が食い違うのを防ぐ）
@@ -54,14 +54,17 @@ let settings = loadSettings();
 type Lang = 'ja' | 'en' | 'line';
 let lang: Lang = 'ja';
 
+/** いま出している問題が曜日（頭が大文字）なら true。こもじ／おおもじ の設定を当てない（2026-10-30） */
+let caseFixed = false;
+
 /** 字の見せ方: 日本語はひらがな／カタカナの設定、英語は小文字／大文字の設定 */
 function disp(s: string, l: Lang = lang): string {
-  if (l === 'en') return settings.letterCase === 'upper' ? s.toUpperCase() : s;
+  if (l === 'en') return settings.letterCase === 'upper' && !caseFixed ? s.toUpperCase() : s;
   return inScript(s, settings.script);
 }
 
 /** その問題の字の見せ方（プリントは日本語と英語がまざることがある） */
-const dispQ = (q: Question, s: string) => disp(s, q.lang === 'en' ? 'en' : 'ja');
+const dispQ = (q: Question, s: string) => (q.lang === 'en' && fixedCase(q.hira) ? s : disp(s, q.lang === 'en' ? 'en' : 'ja'));
 
 /** 英語の字の大きさ・位置（4本線）。日本語はマスの真ん中 */
 function placeGlyph(g: CanvasRenderingContext2D, ch: string, w: number, hh: number): [number, number] {
@@ -286,9 +289,9 @@ function langScreen(): void {
 
 // ------------------------------------------------------------ カテゴリ
 
-/** 英語版のカテゴリ（もの・うごき・アルファベット） */
+/** 英語版のカテゴリ（もの・うごき・アルファベット・ようび） */
 function enCategories(): { id: Category; label: string; emoji: string }[] {
-  return [...CATEGORIES.filter((c) => EN_CATEGORIES.includes(c.id)), { id: 'alphabet', label: 'アルファベット', emoji: '🔤' }];
+  return [...CATEGORIES.filter((c) => EN_CATEGORIES.includes(c.id)), { id: 'alphabet', label: 'アルファベット', emoji: '🔤' }, { id: 'youbi', label: 'ようび', emoji: '📅' }];
 }
 
 function categoryScreen(): void {
@@ -469,6 +472,7 @@ async function readOut(cells: HTMLElement[], answer: string[], pIdx: number | nu
 function questionScreen(round: Round, afterMini = false): void {
   // 英語版: ミニゲームの前に、まず「いぬ は dog」を見せて読む
   const q0 = round.questions[round.index];
+  caseFixed = q0.lang === 'en' && fixedCase(q0.hira);
   // せんの れんしゅう は別の画面（ミニゲームなし）
   if (q0.category === 'line') {
     lineScreen(round);
@@ -1066,6 +1070,13 @@ function openKeySetMenu(onChange: () => void): void {
 function keyboardArea(answer: string[], fixed: Set<number>, pIdx: number | null, side: HTMLElement, onDone: () => void, hint: Hint): HTMLElement {
   let pos = 0;
   let misses = 0;
+  // 英語のキーは小文字1つ。曜日の頭（M）は、その字を打つ番だけキーを大文字で見せる（2026-10-30）
+  const keyOf = (c: string) => c.toLowerCase();
+  const relabel = () => {
+    if (lang !== 'en') return;
+    const up = /[A-Z]/.test(answer[pos] ?? '');
+    keys.forEach((k, c) => { k.textContent = up ? c.toUpperCase() : disp(c); });
+  };
   const cells = answer.map((c, i) =>
     fixed.has(i) ? h('span', { class: 'answer-cell fixed' }, disp(c)) : h('span', { class: 'answer-cell' }),
   );
@@ -1081,7 +1092,7 @@ function keyboardArea(answer: string[], fixed: Set<number>, pIdx: number | null,
   const starts = partStarts(answer, pIdx);
   let step = 0;
   const glowAt = new Set<number>();
-  const glowIfDue = () => { if (glowAt.has(pos)) keys.get(answer[pos])?.classList.add('hint'); };
+  const glowIfDue = () => { if (glowAt.has(pos)) keys.get(keyOf(answer[pos]))?.classList.add('hint'); };
   const filled = (i: number) => cells[i].classList.contains('filled');
   hint.show = () => {
     while (step < starts.length && filled(starts[step])) step++; // もう打った段は飛ばす
@@ -1106,15 +1117,15 @@ function keyboardArea(answer: string[], fixed: Set<number>, pIdx: number | null,
 
   const press = (c: string, key: HTMLButtonElement) => {
     if (pos >= answer.length) return;
-    if (c !== answer[pos]) {
+    if (c !== keyOf(answer[pos])) {
       key.classList.remove('shake');
       void key.offsetWidth; // アニメを最初から
       key.classList.add('shake');
       misses++;
-      if (misses >= HINT_AFTER_MISSES) keys.get(answer[pos])?.classList.add('hint');
+      if (misses >= HINT_AFTER_MISSES) keys.get(keyOf(answer[pos]))?.classList.add('hint');
       return;
     }
-    cells[pos].textContent = disp(c);
+    cells[pos].textContent = disp(answer[pos]);
     cells[pos].classList.remove('current', 'ghost');
     cells[pos].classList.add('filled');
     clearHint();
@@ -1125,6 +1136,7 @@ function keyboardArea(answer: string[], fixed: Set<number>, pIdx: number | null,
     while (fixed.has(pos)) pos++;
     if (pos < answer.length) {
       cells[pos].classList.add('current');
+      relabel();
       glowIfDue();
     } else onDone();
   };
@@ -1168,7 +1180,7 @@ function keyboardArea(answer: string[], fixed: Set<number>, pIdx: number | null,
   if (settings.aColumn === 'right' && lang !== 'en') blocks.reverse();
 
   // 字の数（☰ で選ぶ）。出さないキーは場所を空けたまま隠す（50音表の並びを崩さない）
-  const needed = new Set(answer.filter((_, i) => !fixed.has(i)));
+  const needed = new Set(answer.filter((_, i) => !fixed.has(i)).map(keyOf));
   const others = shuffle([...keys.keys()].filter((c) => !needed.has(c))); // この問題の間は同じ顔ぶれ
   const menuBtn = h('button', { class: 'kb-tool kb-menu', 'aria-label': 'メニュー', onclick: () => openKeySetMenu(applyKeySet) }, '☰');
   function applyKeySet(): void {
@@ -1177,6 +1189,7 @@ function keyboardArea(answer: string[], fixed: Set<number>, pIdx: number | null,
     keys.forEach((k, c) => k.classList.toggle('off', !shown.has(c)));
   }
   applyKeySet();
+  relabel();
 
   return h('div', { class: 'input-area' },
     h('div', { class: 'kb-toolbar' }, menuBtn),
@@ -1759,7 +1772,7 @@ function settingsScreen(): void {
       h('h2', {}, '設定（先生用）'),
       settingPanel({
         ja: [qRow('ja', '選ぶ・写真・JSONの読み込み')],
-        en: [qRow('en', '選ぶ（もの・うごき・アルファベット）')],
+        en: [qRow('en', '選ぶ（もの・うごき・アルファベット・ようび）')],
         line: [qRow('line', '選ぶ（20この形）')],
         common: [
         h('div', { class: 'setting-row' }, h('span', { class: 'setting-label' }, 'てがきのきろく'),
@@ -2130,6 +2143,7 @@ const STOCK_SETS: Record<StockGroup, StockSet[]> = {
   en: [
     { key: 'mono', label: 'もの', pic: catPic('mono'), qs: () => enBuiltinOf('mono') },
     { key: 'ugoki', label: 'うごき', pic: catPic('ugoki'), qs: () => enBuiltinOf('ugoki') },
+    { key: 'youbi', label: 'ようび', pic: catPic('youbi'), qs: () => enBuiltinOf('youbi') },
     { key: 'abc', label: 'アルファベット', pic: () => h('div', { class: 'picture stock-pic abc-cat' }, h('span', { class: 'abc-cat-text' }, 'Aa')), qs: () => ALPHABET_QUESTIONS },
     { key: 'made', label: 'つくった もんだい', pic: madePic, qs: () => customEnQuestions() },
   ],
@@ -2377,7 +2391,7 @@ function worksheetScreen(selected: string[] = lastRoundIds(), cat?: Category, wl
 async function sheetItem(q: Question, over: { script?: 'hira' | 'kata'; upper?: boolean } = {}): Promise<SheetItem> {
   const en = q.lang === 'en';
   const show1 = (s: string) => en
-    ? ((over.upper ?? settings.letterCase === 'upper') ? s.toUpperCase() : s)
+    ? ((over.upper ?? settings.letterCase === 'upper') && !fixedCase(q.hira) ? s.toUpperCase() : s)
     : inScript(s, over.script ?? settings.script);
   return {
     chars: q.category === 'line' ? [] : chars(show1(q.hira)),
