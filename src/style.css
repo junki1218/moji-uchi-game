@@ -1044,6 +1044,7 @@ canvas.pad-ghost { width: 100%; height: 100%; }
   .ehon-book { animation: card-in 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) backwards; }
   .ehon-book:nth-child(2) { animation-delay: 0.1s; }
   .ehon-book:nth-child(3) { animation-delay: 0.2s; }
+  .ehon-book:nth-child(4) { animation-delay: 0.3s; }
   .ehon-mark { animation: float 3.2s ease-in-out infinite; }
 }
 
@@ -1254,3 +1255,10 @@ canvas.pad-ghost { width: 100%; height: 100%; }
 .ehon-books:has(.ehon-book:nth-child(3)) .ehon-book { width: min(29vw, 44vh); padding: 3vh 1.5vw 2.5vh; }
 .ehon-books:has(.ehon-book:nth-child(3)) .ehon-mark { width: min(7.5vw, 11vh); height: min(7.5vw, 11vh); font-size: min(4.6vw, 6.6vh); }
 .ehon-books:has(.ehon-book:nth-child(3)) .ehon-title { font-size: min(2.6vw, 3.8vh); }
+
+/* えほんが4さつのとき（2026-10-31） */
+.ehon-books:has(.ehon-book:nth-child(4)) { gap: 2vw; }
+.ehon-books:has(.ehon-book:nth-child(4)) .ehon-book { width: min(22vw, 34vh); padding: 3vh 1vw 2.5vh; }
+.ehon-books:has(.ehon-book:nth-child(4)) .ehon-marks { gap: 1vw; }
+.ehon-books:has(.ehon-book:nth-child(4)) .ehon-mark { width: min(5.8vw, 9vh); height: min(5.8vw, 9vh); font-size: min(3.6vw, 5.4vh); }
+.ehon-books:has(.ehon-book:nth-child(4)) .ehon-title { font-size: min(2.2vw, 3.4vh); }
