@@ -1037,11 +1037,13 @@ canvas.pad-ghost { width: 100%; height: 100%; }
   font-family: var(--kyokasho); font-weight: 700; font-size: min(7vw, 10vh); line-height: 1;
 }
 .ehon-mark.mark-ga { background: #222; color: #fff; }
+.ehon-mark.mark-ei { background: #2f7fd1; color: #fff; }
 .ehon-mark.mark-ha { background: #fff; color: #222; border: 4px solid #e9dfd2; box-shadow: inset 0 0 0 2px #fff; }
 .ehon-title { font-size: min(3.2vw, 4.6vh); font-weight: 700; text-align: center; word-break: keep-all; overflow-wrap: anywhere; }
 @media (prefers-reduced-motion: no-preference) {
   .ehon-book { animation: card-in 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) backwards; }
   .ehon-book:nth-child(2) { animation-delay: 0.1s; }
+  .ehon-book:nth-child(3) { animation-delay: 0.2s; }
   .ehon-mark { animation: float 3.2s ease-in-out infinite; }
 }
 
@@ -1246,3 +1248,9 @@ canvas.pad-ghost { width: 100%; height: 100%; }
 /* 問題が多いとき（ABC順26問・クイズ20問。2026-10-30）は、上の丸を小さくして ボタンにかぶらないように */
 .progress:has(.dot:nth-child(13)) { gap: 0.5vw; }
 .progress:has(.dot:nth-child(13)) .dot { width: min(1.3vw, 1.9vh); height: min(1.3vw, 1.9vh); }
+
+/* えほんが3さつのとき（2026-10-31）: 横1列に収める */
+.ehon-books:has(.ehon-book:nth-child(3)) { gap: 3vw; flex-wrap: nowrap; }
+.ehon-books:has(.ehon-book:nth-child(3)) .ehon-book { width: min(29vw, 44vh); padding: 3vh 1.5vw 2.5vh; }
+.ehon-books:has(.ehon-book:nth-child(3)) .ehon-mark { width: min(7.5vw, 11vh); height: min(7.5vw, 11vh); font-size: min(4.6vw, 6.6vh); }
+.ehon-books:has(.ehon-book:nth-child(3)) .ehon-title { font-size: min(2.6vw, 3.8vh); }

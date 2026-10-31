@@ -210,6 +210,7 @@ function startScreen(): void {
 // 発表用の埋め込みプレーヤー（/embed）を全画面で出す。ネットが必要。
 // スライドは「リンクを知っている全員が閲覧可」にしておく（iPad は Google にログインしていないため）。
 // 2026-10-27: 本を選べるように（1 くろまる がっくん／2 がっくんと はっちゃん）。
+// 2026-10-31: 3さつめ（がっくんと はっちゃんと エイミー）。印の「エ」＝エイミー（英語の青）
 //   本を足すときは EHON_BOOKS に1行足す（id は Google スライドの URL の /d/ と /edit の間）
 
 interface EhonBook {
@@ -217,13 +218,14 @@ interface EhonBook {
   title: string;
   /** Google スライドの ID */
   id: string;
-  /** 表紙の印（格助詞）。が＝がっくん（黒い丸）、は＝はっちゃん（白い丸） */
-  marks: ('が' | 'は')[];
+  /** 表紙の印（格助詞）。が＝がっくん（黒い丸）、は＝はっちゃん（白い丸）、エ＝エイミー（青い丸） */
+  marks: ('が' | 'は' | 'エ')[];
 }
 
 const EHON_BOOKS: EhonBook[] = [
   { no: 1, title: 'くろまる がっくん', id: '1HCh2Wph8ASZyXvOPRZkWTAEZGIR5-iPDqGPenowOpWs', marks: ['が'] },
   { no: 2, title: 'がっくんと はっちゃん', id: '1pY8s9pXFCIncA9JIyFNpmtcK3g1VaZ8LTVid7oPyw8E', marks: ['が', 'は'] },
+  { no: 3, title: 'がっくんと はっちゃんと エイミーの えいごで なあに？', id: '13lCaRXUDdHtTe-5O-cHoe3o-BYIBLSUhMNdJ7OnMKLs', marks: ['が', 'は', 'エ'] },
 ];
 
 const ehonUrl = (b: EhonBook) => `https://docs.google.com/presentation/d/${b.id}/embed?start=false&loop=false&delayms=60000`;
@@ -242,7 +244,7 @@ function ehonScreen(): void {
         ...EHON_BOOKS.map((b) =>
           h('button', { class: 'ehon-book', onclick: () => ehonView(b) },
             h('span', { class: 'ehon-no' }, String(b.no)),
-            h('span', { class: 'ehon-marks' }, ...b.marks.map((m) => h('span', { class: `ehon-mark mark-${m === 'が' ? 'ga' : 'ha'}` }, m))),
+            h('span', { class: 'ehon-marks' }, ...b.marks.map((m) => h('span', { class: `ehon-mark mark-${m === 'が' ? 'ga' : m === 'は' ? 'ha' : 'ei'}` }, m))),
             h('span', { class: 'ehon-title' }, b.title)))),
     ),
   );
